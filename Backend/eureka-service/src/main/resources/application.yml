@@ -1,0 +1,66 @@
+﻿server:
+  port: 8761
+
+spring:
+  application:
+    name: eureka-service
+  
+  # Security Configuration - DÉSACTIVÉE pour développement
+  # security:
+  #   user:
+  #     name: admin
+  #     password: admin123
+
+eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: false
+  
+  client:
+    # Ne pas s'enregistrer lui-même comme client
+    register-with-eureka: false
+    # Ne pas récupérer le registre depuis d'autres instances
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  
+  server:
+    # Désactiver la protection en mode standalone
+    enable-self-preservation: true
+    # Intervalle de renouvellement attendu (en secondes)
+    expected-client-renewal-interval-seconds: 30
+    # Seuil de renouvellement
+    renewal-percent-threshold: 0.85
+    # Intervalle d'éviction (en millisecondes)
+    eviction-interval-timer-in-ms: 60000
+    # Temps d'attente initial pour la synchronisation du registre
+    wait-time-in-ms-when-sync-empty: 0
+    # Activer les logs de réplication
+    log-identity-headers: true
+    # Taux limite pour les requêtes
+    rate-limiter-enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+    com.medilinktunisia: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/eureka-service.log

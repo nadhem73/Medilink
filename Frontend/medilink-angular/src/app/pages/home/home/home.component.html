@@ -1,0 +1,254 @@
+<div class="home-page">
+  <!-- Hero Section -->
+  <section class="hero-banner">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          Accédez à vos services<br>
+          médicaux grâce à notre<br>
+          plateforme
+        </h1>
+        
+        <p class="hero-description">
+          Développez vos compétences grâce à nos cours et mentorât du meilleur des professionnels issus d'entreprises de classe mondiale.
+        </p>
+
+        <!-- Rating Badge -->
+        <div class="rating-badge">
+          <div class="avatars-group">
+            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces" alt="Patient tunisien satisfait" class="avatar">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces" alt="Patient tunisien satisfait" class="avatar">
+            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces" alt="Patiente tunisienne satisfaite" class="avatar">
+            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces" alt="Patient tunisien satisfait" class="avatar">
+          </div>
+          <div class="rating-info">
+            <div class="stars-rating">
+              <span class="stars">⭐⭐⭐⭐⭐</span>
+              <span class="rating-value">4.6</span>
+            </div>
+            <p class="rating-text">Noté par 25k sur Google.</p>
+          </div>
+        </div>
+
+        <!-- Search Box -->
+        <div class="search-box">
+          <div class="search-row">
+            <div class="search-field">
+              <label>Ce que je veux trouver</label>
+              <select class="form-select">
+                <option>Consultation</option>
+                <option>Téléconsultation</option>
+                <option>Pharmacie</option>
+                <option>Laboratoire</option>
+                <option>Ambulance</option>
+              </select>
+            </div>
+            <div class="search-field">
+              <label>Spécialité</label>
+              <select class="form-select">
+                <option>Médecine générale</option>
+                <option>Cardiologie</option>
+                <option>Dermatologie</option>
+                <option>Pédiatrie</option>
+                <option>Gynécologie</option>
+              </select>
+            </div>
+            <button class="btn-search">Rechercher</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trusted Partners Section -->
+  <section class="partners-section" id="partenaires">
+    <div class="container">
+      <p class="partners-title">Approuvé par des partenaires de santé tunisiens</p>
+      <div class="partners-slider">
+        <div class="partners-track">
+          <!-- Premier ensemble de logos -->
+          <div class="partner-item">
+            <img src="/assets/images/partners/Ministère de la Santé - Tunisie.png" alt="Ministère de la Santé - Tunisie" class="partner-logo">
+          </div>
+          <div class="partner-item">
+            <img src="/assets/images/partners/CNAM - Caisse Nationale d'Assurance Maladie.jfif" alt="CNAM - Caisse Nationale d'Assurance Maladie" class="partner-logo">
+          </div>
+          <div class="partner-item">
+            <img src="/assets/images/partners/Ordre National des Médecins de Tunisie.png" alt="Ordre National des Médecins de Tunisie" class="partner-logo">
+          </div>
+          <div class="partner-item">
+            <img src="/assets/images/partners/Pharmacie Centrale de Tunisie.jfif" alt="Pharmacie Centrale de Tunisie" class="partner-logo">
+          </div>
+          <div class="partner-item">
+            <img src="/assets/images/partners/Hôpital Charles Nicolle.jfif" alt="Hôpital Charles Nicolle" class="partner-logo">
+          </div>
+          
+          <!-- Duplication pour effet infini -->
+          <div class="partner-item">
+            <img src="/assets/images/partners/Ministère de la Santé - Tunisie.png" alt="Ministère de la Santé - Tunisie" class="partner-logo">
+          </div>
+          <div class="partner-item">
+            <img src="/assets/images/partners/CNAM - Caisse Nationale d'Assurance Maladie.jfif" alt="CNAM - Caisse Nationale d'Assurance Maladie" class="partner-logo">
+          </div>
+          <div class="partner-item">
+            <img src="/assets/images/partners/Ordre National des Médecins de Tunisie.png" alt="Ordre National des Médecins de Tunisie" class="partner-logo">
+          </div>
+          <div class="partner-item">
+            <img src="/assets/images/partners/Pharmacie Centrale de Tunisie.jfif" alt="Pharmacie Centrale de Tunisie" class="partner-logo">
+          </div>
+          <div class="partner-item">
+            <img src="/assets/images/partners/Hôpital Charles Nicolle.jfif" alt="Hôpital Charles Nicolle" class="partner-logo">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Popular Services Section -->
+  <section class="services-section" id="services-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Services populaires</h2>
+        <button class="btn-explore">Explorer les services</button>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="category-tabs">
+        <button 
+          class="category-tab" 
+          [class.active]="selectedCategory === 'teleconsultation'"
+          (click)="selectCategory('teleconsultation')">
+          Téléconsultation
+        </button>
+        <button 
+          class="category-tab"
+          [class.active]="selectedCategory === 'pharmacie'"
+          (click)="selectCategory('pharmacie')">
+          Pharmacie
+        </button>
+        <button 
+          class="category-tab"
+          [class.active]="selectedCategory === 'laboratoire'"
+          (click)="selectCategory('laboratoire')">
+          Laboratoire
+        </button>
+        <button 
+          class="category-tab"
+          [class.active]="selectedCategory === 'urgence'"
+          (click)="selectCategory('urgence')">
+          Urgence
+        </button>
+      </div>
+
+      <!-- Services Cards -->
+      <div class="services-grid">
+        <div class="service-card" *ngFor="let service of filteredServices">
+          <div class="service-image">
+            <img [src]="service.image" [alt]="service.title">
+          </div>
+          <div class="service-content">
+            <div class="service-header">
+              <div class="service-category">{{service.category}}</div>
+              <div class="service-badge">{{service.badge}}</div>
+            </div>
+            <h3 class="service-title">{{service.title}}</h3>
+            <div class="service-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                  <path d="M2 17l10 5 10-5"></path>
+                  <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                {{service.sessions}} Sessions
+              </span>
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                {{service.users}}
+              </span>
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                {{service.rating}}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Doctors/Mentors Section -->
+  <section class="mentors-section" id="medecins">
+    <div class="container">
+      <div class="section-header">
+        <h2>Rencontrez nos médecins</h2>
+        <button class="btn-explore-outline">Découvrez plus de 55 de nos mentors</button>
+      </div>
+
+      <div class="mentors-grid">
+        <div class="mentor-card" *ngFor="let doctor of doctors">
+          <div class="mentor-image">
+            <img [src]="doctor.image" [alt]="doctor.name">
+          </div>
+          <div class="mentor-info">
+            <h3>{{doctor.name}}</h3>
+            <p>{{doctor.specialty}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials-section" id="temoignages">
+    <div class="container">
+      <div class="section-header">
+        <h2>Ce que disent nos patients satisfaits</h2>
+        <button class="btn-explore-outline">Écrire votre avis</button>
+      </div>
+
+      <p class="testimonials-subtitle">
+        Développez vos compétences grâce à nos cours et mentorât du meilleur des professionnels issus d'entreprises de classe mondiale.
+      </p>
+
+      <div class="testimonials-grid">
+        <div class="testimonial-card" *ngFor="let testimonial of testimonials">
+          <div class="testimonial-header">
+            <img [src]="testimonial.avatar" [alt]="testimonial.name" class="testimonial-avatar">
+            <div class="testimonial-user">
+              <h4>{{testimonial.name}}</h4>
+              <p>{{testimonial.role}}</p>
+            </div>
+            <div class="testimonial-rating">
+              <span class="stars">⭐⭐⭐⭐⭐</span>
+            </div>
+          </div>
+          <p class="testimonial-text">{{testimonial.text}}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Newsletter Section -->
+  <section class="newsletter-section" id="contact">
+    <div class="container">
+      <div class="newsletter-content">
+        <div class="newsletter-text">
+          <span class="newsletter-badge">GRATUIT</span>
+          <h2>Inscrivez-vous à notre newsletter</h2>
+          <p>Recevez les dernières actualités médicales et conseils santé</p>
+        </div>
+        <form class="newsletter-form">
+          <input type="email" placeholder="Entrez votre email" class="newsletter-input">
+          <button type="submit" class="newsletter-btn">S'abonner</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>

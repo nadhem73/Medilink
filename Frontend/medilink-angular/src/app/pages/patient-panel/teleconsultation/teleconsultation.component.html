@@ -1,0 +1,48 @@
+<section class="pp-page">
+  <header class="pp-header">
+    <div>
+      <p class="pp-kicker">Panel patient</p>
+      <h1>Teleconsultation</h1>
+      <p class="pp-copy">Consultez vos medecins a distance en visioconference securisee, partagez vos documents et echangez par messagerie.</p>
+    </div>
+    <a routerLink="/dashboard/patient" class="pp-back">Retour au tableau de bord</a>
+  </header>
+
+  <div class="pp-grid">
+    <article class="pp-card">
+      <div class="pp-card-header">
+        <h2>Consultations video a venir</h2>
+        <span class="pp-badge green">En ligne</span>
+      </div>
+      <div class="pp-list">
+        <div class="pp-item" *ngFor="let s of sessions">
+          <div>
+            <h3>{{ s.doctor }}</h3>
+            <p>{{ s.specialty }} - {{ s.date }} a {{ s.hour }}</p>
+          </div>
+          <button type="button" class="pp-btn">Demarrer l'appel</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="pp-card">
+      <h2>Fonctionnalites</h2>
+      <ul class="pp-checklist">
+        <li *ngFor="let f of features">{{ f }}</li>
+      </ul>
+    </article>
+  </div>
+
+  <article class="pp-card">
+    <h2>Historique des teleconsultations</h2>
+    <div class="pp-list">
+      <div class="pp-item" *ngFor="let h of history">
+        <div>
+          <h3>{{ h.doctor }}</h3>
+          <p>{{ h.specialty }} - {{ h.date }}</p>
+        </div>
+        <span class="pp-status">{{ h.status }}</span>
+      </div>
+    </div>
+  </article>
+</section>

@@ -1,0 +1,29 @@
+# Configuration pour l'environnement de production
+server:
+  port: 8888
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://eureka-service:8761/eureka/}
+
+spring:
+  cloud:
+    config:
+      server:
+        git:
+          uri: ${CONFIG_GIT_URI}
+          default-label: main
+          search-paths: '{application}'
+          clone-on-start: true
+          username: ${CONFIG_GIT_USERNAME}
+          password: ${CONFIG_GIT_PASSWORD}
+
+logging:
+  level:
+    root: WARN
+    com.smarthealthtunisia: INFO
+  file:
+    name: /var/log/config-server/application.log
+    max-size: 10MB
+    max-history: 30

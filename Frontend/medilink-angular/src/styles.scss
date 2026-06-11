@@ -1,0 +1,470 @@
+/* Import Google Fonts - Typographie Moderne pour Santé */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Variables globales - Smart Health Tunisia Palette */
+:root {
+  /* Couleurs Primaires */
+  --bleu-mediterranee: #0066A2;
+  --turquoise-tunisie: #00A8B5;
+  --blanc-sante: #FFFFFF;
+  
+  /* Couleurs Secondaires */
+  --or-carthage: #D4A843;
+  --corail-urgence: #E85D4E;
+  --vert-oasis: #2E8B57;
+  
+  /* Couleurs Neutres */
+  --gris-clinique: #5A6A7A;
+  --gris-clair: #F0F4F8;
+  --noir-profond: #1A2B3C;
+  
+  /* Couleurs d'Accent */
+  --sable-tunisien: #E8DCC8;
+  --bleu-nuit: #0F2C4C;
+  --vert-menthe: #3EB489;
+  
+  /* Typographie */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-headings: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  /* Mapping des couleurs pour compatibilité */
+  --primary-color: var(--bleu-mediterranee);
+  --secondary-color: var(--turquoise-tunisie);
+  --success-color: var(--vert-oasis);
+  --danger-color: var(--corail-urgence);
+  --warning-color: var(--or-carthage);
+  --info-color: var(--turquoise-tunisie);
+  --light-color: var(--gris-clair);
+  --dark-color: var(--noir-profond);
+  --white: var(--blanc-sante);
+  --border-radius: 8px;
+  --box-shadow: 0 2px 8px rgba(26, 43, 60, 0.1);
+}
+
+/* Reset & Base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-primary);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--noir-profond);
+  background-color: var(--gris-clair);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typographie - Titres */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headings);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--noir-profond);
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+h4 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+h5 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+h6 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Paragraphes et texte */
+p {
+  font-family: var(--font-primary);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+/* Liens */
+a {
+  font-family: var(--font-primary);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+/* Boutons - typographie */
+button, .btn {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background-color: var(--turquoise-tunisie);
+  color: var(--blanc-sante);
+  
+  &:hover {
+    background-color: #008A96;
+  }
+}
+
+.btn-secondary {
+  background-color: var(--bleu-mediterranee);
+  color: var(--blanc-sante);
+  
+  &:hover {
+    background-color: #005282;
+  }
+}
+
+.btn-logout {
+  background-color: var(--danger-color);
+  color: var(--white);
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 20px;
+  
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--dark-color);
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    transition: border-color 0.3s ease;
+    
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+    
+    &.invalid {
+      border-color: var(--danger-color);
+    }
+  }
+  
+  .error {
+    color: var(--danger-color);
+    font-size: 14px;
+    margin-top: 5px;
+  }
+}
+
+/* Cards */
+.card {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+/* Navbar — le style de la navbar de la home est entierement gere par
+   le composant src/app/shared/navbar/navbar.component.scss (palette officielle). */
+
+
+/* Annule le fond bleu herite du theme Datta (menu-lite.scss applique
+   `.navbar-brand { background: bleu }`, importe globalement via patient-panel.scss).
+   C'est ce fond — et non une selection de texte — qui dessinait le rectangle bleu
+   derriere "MediLink Tunisia" + les logos dans la navbar de la home. */
+.navbar .navbar-brand {
+  background: transparent !important;
+}
+
+/* Supprime le rectangle bleu de sélection/focus sur le logo "MediLink Tunisia" */
+.navbar-brand .brand-link,
+.navbar-brand .brand-link * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.navbar-brand .brand-link:focus,
+.navbar-brand .brand-link:active,
+.navbar-brand .brand-link:focus-visible,
+.navbar-brand .brand-link:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.navbar-brand .brand-link ::selection {
+  background: transparent !important;
+}
+.navbar-brand .brand-link ::-moz-selection {
+  background: transparent !important;
+}
+
+/* Footer */
+.footer {
+  background-color: var(--bleu-nuit);
+  color: var(--blanc-sante);
+  padding: 40px 0 20px;
+  margin-top: 60px;
+  
+  .footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-bottom: 30px;
+  }
+  
+  .footer-section {
+    h4 {
+      margin-bottom: 15px;
+      color: var(--blanc-sante);
+    }
+    
+    ul {
+      list-style: none;
+      
+      li {
+        margin-bottom: 8px;
+        
+        a {
+          color: var(--gris-clair);
+          text-decoration: none;
+          transition: color 0.3s ease;
+          
+          &:hover {
+            color: var(--turquoise-tunisie);
+          }
+        }
+      }
+    }
+  }
+  
+  .footer-bottom {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid var(--bleu-mediterranee);
+    color: var(--gris-clinique);
+  }
+}
+
+/* Layouts */
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  
+  .content {
+    flex: 1;
+    padding: 40px 0;
+  }
+}
+
+.auth-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
+  
+  .auth-container {
+    max-width: 450px;
+    width: 100%;
+    padding: 20px;
+  }
+  
+  .auth-brand {
+    text-align: center;
+    color: var(--white);
+    margin-bottom: 40px;
+    
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+  }
+  
+  .auth-content {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 40px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Login/Register Pages */
+.login-container,
+.register-container {
+  h2 {
+    margin-bottom: 10px;
+    color: var(--dark-color);
+  }
+  
+  p {
+    color: var(--secondary-color);
+    margin-bottom: 30px;
+  }
+  
+  .register-link,
+  .login-link {
+    text-align: center;
+    margin-top: 20px;
+    
+    a {
+      color: var(--primary-color);
+      font-weight: 500;
+      text-decoration: none;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+/* Home Page */
+.home-page {
+  .hero {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
+    color: var(--white);
+    padding: 80px 0;
+    text-align: center;
+    
+    h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    
+    p {
+      font-size: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .cta-buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      
+      .btn {
+        min-width: 150px;
+      }
+    }
+  }
+  
+  .services,
+  .panels {
+    padding: 60px 0;
+    
+    h2 {
+      text-align: center;
+      font-size: 36px;
+      margin-bottom: 40px;
+      color: var(--dark-color);
+    }
+  }
+  
+  .services-grid,
+  .panels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+  }
+  
+  .service-card,
+  .panel-card {
+    background: var(--white);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    text-align: center;
+    transition: transform 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-5px);
+    }
+    
+    h3 {
+      font-size: 24px;
+      margin-bottom: 15px;
+      color: var(--dark-color);
+    }
+    
+    p {
+      color: var(--secondary-color);
+      margin-bottom: 20px;
+    }
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .services-grid,
+  .panels-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hero h1 {
+    font-size: 32px;
+  }
+}

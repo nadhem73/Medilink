@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ambulance-postgres
+    environment:
+      POSTGRES_DB: ambulance_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - ambulance-data:/var/lib/postgresql/data
+    networks:
+      - ambulance-network
+
+  ambulance-service:
+    build: .
+    container_name: ambulance-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ambulance_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    ports:
+      - "8085:8085"
+    depends_on:
+      - postgres
+    networks:
+      - ambulance-network
+
+volumes:
+  ambulance-data:
+
+networks:
+  ambulance-network:
+    driver: bridge

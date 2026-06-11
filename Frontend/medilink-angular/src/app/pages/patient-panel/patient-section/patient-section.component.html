@@ -1,0 +1,124 @@
+<section class="patient-section-page">
+  <header class="page-header">
+    <div>
+      <p class="page-kicker">Panel patient</p>
+      <h1>{{ title }}</h1>
+      <p class="page-copy">
+        Espace adapte depuis ta vraie dashboard pour remplacer le module patient basique.
+      </p>
+    </div>
+    <a routerLink="/dashboard/patient" class="back-link">Retour au dashboard</a>
+  </header>
+
+  <ng-container [ngSwitch]="section">
+    <section *ngSwitchCase="'appointments'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Calendrier des rendez-vous</h2>
+          <span class="badge">3 elements</span>
+        </div>
+        <div class="table-like">
+          <div class="table-row" *ngFor="let appointment of appointments">
+            <div>
+              <strong>{{ appointment.doctor }}</strong>
+              <p>{{ appointment.specialty }}</p>
+            </div>
+            <div>{{ appointment.date }}</div>
+            <div>{{ appointment.hour }}</div>
+            <div>{{ appointment.mode }}</div>
+            <div><span class="status">{{ appointment.status }}</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Preparation avant visite</h2>
+        <ul class="checklist">
+          <li>Ajouter les derniers symptomes avant la consultation.</li>
+          <li>Preparer les documents medicaux ou analyses a montrer.</li>
+          <li>Verifier votre disponibilite pour la teleconsultation ou le deplacement.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section *ngSwitchCase="'prescriptions'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Ordonnances actives</h2>
+          <span class="badge accent-green">Traitements en cours</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let prescription of prescriptions">
+            <div class="mini-card-top">
+              <h3>{{ prescription.medication }}</h3>
+              <span class="status">{{ prescription.status }}</span>
+            </div>
+            <p>{{ prescription.dosage }}</p>
+            <span>Prescripteur: {{ prescription.prescriber }}</span>
+            <strong>{{ prescription.renewal }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Conseils observance</h2>
+        <ul class="checklist">
+          <li>Activer les rappels si un traitement doit etre pris a heure fixe.</li>
+          <li>Contacter votre medecin si un effet secondaire apparait.</li>
+          <li>Anticiper le renouvellement avant rupture du traitement.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section *ngSwitchCase="'labs'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Resultats de laboratoire</h2>
+          <span class="badge accent-orange">Suivi biologique</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let result of labResults">
+            <div class="mini-card-top">
+              <h3>{{ result.exam }}</h3>
+              <span class="status">{{ result.result }}</span>
+            </div>
+            <p>{{ result.lab }}</p>
+            <span>Preleve le {{ result.date }}</span>
+            <strong>{{ result.note }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Actions utiles</h2>
+        <ul class="checklist">
+          <li>Telecharger les resultats PDF pour votre prochain rendez-vous.</li>
+          <li>Partager les analyses importantes avec votre specialiste.</li>
+          <li>Verifier les examens encore en attente de validation.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section *ngSwitchCase="'profile'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Informations personnelles</h2>
+          <span class="badge accent-purple">Profil medical</span>
+        </div>
+        <div class="profile-grid">
+          <article class="profile-item" *ngFor="let item of profileCards">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Checklist dossier</h2>
+        <ul class="checklist">
+          <li *ngFor="let item of profileChecklist">{{ item }}</li>
+        </ul>
+      </article>
+    </section>
+  </ng-container>
+</section>

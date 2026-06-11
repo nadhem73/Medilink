@@ -1,0 +1,384 @@
+<div class="ai-reg" [class.is-final]="!!successMessage">
+
+  <!-- ===== Arrière-plan futuriste : grille + particules ===== -->
+  <div class="ai-bg" aria-hidden="true">
+    <span class="ai-grid"></span>
+    <span class="ai-glow ai-glow--1"></span>
+    <span class="ai-glow ai-glow--2"></span>
+    <i class="ai-particle" *ngFor="let p of [1,2,3,4,5,6,7,8,9,10,11,12,13,14]"></i>
+  </div>
+
+  <!-- Retour accueil -->
+  <a routerLink="/" class="ai-back">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+    <span>Accueil</span>
+  </a>
+
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="ai-stage">
+
+    <!-- ================= CONSOLE (gauche) ================= -->
+    <section class="ai-console">
+
+      <!-- Assistant flottant -->
+      <header class="ai-assistant">
+        <div class="orb" [class.is-thinking]="assistantTyping" [class.is-speaking]="!assistantTyping">
+          <span class="orb-aura"></span>
+          <span class="orb-core">
+            <span class="orb-eye left"></span>
+            <span class="orb-eye right"></span>
+          </span>
+          <span class="orb-ring"></span>
+          <div class="voice-wave"><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+
+        <div class="ai-bubble">
+          <span class="ai-name">Assistant MediLink</span>
+          <div class="ai-typing" *ngIf="assistantTyping"><i></i><i></i><i></i></div>
+          <p class="ai-text" *ngIf="!assistantTyping">{{ step.prompt }}</p>
+        </div>
+      </header>
+
+      <!-- Barre de progression -->
+      <div class="ai-progress" *ngIf="step.key !== 'intro'">
+        <div class="ai-progress-track"><span class="ai-progress-fill" [style.width.%]="progress"></span></div>
+        <span class="ai-progress-label">Étape {{ currentStep }} / {{ totalSteps }}</span>
+      </div>
+
+      <!-- ================= PANNEAUX D'ÉTAPE ================= -->
+      <div class="ai-fields" [ngSwitch]="step.key">
+
+        <!-- INTRO -->
+        <div *ngSwitchCase="'intro'" class="field-block reveal">
+          <ul class="ai-intro-list">
+            <li><span>🧬</span> Profil médical sécurisé</li>
+            <li><span>🛰️</span> Hologramme santé en temps réel</li>
+            <li><span>⚡</span> Inscription guidée en quelques minutes</li>
+          </ul>
+          <button type="button" class="ai-btn primary" (click)="next()">
+            Démarrer l'expérience
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+
+        <!-- IDENTITÉ : NOM -->
+        <div *ngSwitchCase="'name'" class="field-block reveal">
+          <div class="ai-input" [class.ok]="f['firstName'].valid">
+            <label>Prénom</label>
+            <input type="text" formControlName="firstName" placeholder="Votre prénom" autocomplete="given-name" #autofocus>
+          </div>
+          <div class="ai-input" [class.ok]="f['lastName'].valid">
+            <label>Nom</label>
+            <input type="text" formControlName="lastName" placeholder="Votre nom" autocomplete="family-name">
+          </div>
+          <p class="ai-err" *ngIf="(f['firstName'].invalid && f['firstName'].touched) || (f['lastName'].invalid && f['lastName'].touched)">
+            Merci d'indiquer votre nom complet (min. 2 caractères).
+          </p>
+        </div>
+
+        <!-- EMAIL -->
+        <div *ngSwitchCase="'email'" class="field-block reveal">
+          <div class="ai-input" [class.ok]="f['email'].valid">
+            <label>Adresse email</label>
+            <input type="email" formControlName="email" placeholder="exemple@email.tn" autocomplete="email">
+          </div>
+          <p class="ai-err" *ngIf="f['email'].invalid && f['email'].touched">Adresse email invalide.</p>
+        </div>
+
+        <!-- TÉLÉPHONE -->
+        <div *ngSwitchCase="'phone'" class="field-block reveal">
+          <div class="ai-input" [class.ok]="f['phone'].valid">
+            <label>Téléphone</label>
+            <input type="tel" formControlName="phone" placeholder="+216 XX XXX XXX" autocomplete="tel">
+          </div>
+          <p class="ai-err" *ngIf="f['phone'].invalid && f['phone'].touched">Numéro de téléphone requis.</p>
+        </div>
+
+        <!-- DATE DE NAISSANCE -->
+        <div *ngSwitchCase="'birthDate'" class="field-block reveal">
+          <div class="ai-input" [class.ok]="f['birthDate'].valid">
+            <label>Date de naissance</label>
+            <input type="date" formControlName="birthDate">
+          </div>
+          <p class="ai-err" *ngIf="f['birthDate'].invalid && f['birthDate'].touched">Date de naissance requise.</p>
+        </div>
+
+        <!-- CIN -->
+        <div *ngSwitchCase="'cin'" class="field-block reveal">
+          <div class="ai-input" [class.ok]="!!f['cin'].value">
+            <label>Numéro CIN <span class="opt">(optionnel)</span></label>
+            <input type="text" formControlName="cin" placeholder="Numéro CIN ou passeport">
+          </div>
+        </div>
+
+        <!-- ADRESSE -->
+        <div *ngSwitchCase="'address'" class="field-block reveal">
+          <div class="ai-input" [class.ok]="f['address'].valid">
+            <label>Adresse</label>
+            <input type="text" formControlName="address" placeholder="Adresse complète, Ville" autocomplete="street-address">
+          </div>
+          <p class="ai-err" *ngIf="f['address'].invalid && f['address'].touched">Adresse requise.</p>
+        </div>
+
+        <!-- GENRE -->
+        <div *ngSwitchCase="'gender'" class="field-block reveal">
+          <div class="ai-cards two">
+            <button type="button" class="ai-card gender male" [class.selected]="genderValue==='MALE'" (click)="selectGender('MALE')">
+              <span class="card-glyph">♂</span>
+              <span class="card-label">Homme</span>
+              <span class="card-scan"></span>
+            </button>
+            <button type="button" class="ai-card gender female" [class.selected]="genderValue==='FEMALE'" (click)="selectGender('FEMALE')">
+              <span class="card-glyph">♀</span>
+              <span class="card-label">Femme</span>
+              <span class="card-scan"></span>
+            </button>
+          </div>
+          <button type="button" class="ai-link-btn" [class.selected]="genderValue==='OTHER'" (click)="selectGender('OTHER')">Préférer ne pas préciser / Autre</button>
+          <p class="ai-err" *ngIf="f['gender'].invalid && f['gender'].touched">Veuillez sélectionner une option.</p>
+        </div>
+
+        <!-- TAILLE & POIDS -->
+        <div *ngSwitchCase="'metrics'" class="field-block reveal">
+          <div class="ai-row">
+            <div class="ai-input" [class.ok]="!!f['height'].value">
+              <label>Taille (cm)</label>
+              <input type="number" formControlName="height" placeholder="175" min="50" max="250">
+            </div>
+            <div class="ai-input" [class.ok]="!!f['weight'].value">
+              <label>Poids (kg)</label>
+              <input type="number" formControlName="weight" placeholder="70" min="1" max="300">
+            </div>
+          </div>
+          <div class="ai-bmi" *ngIf="bmi !== null" [ngClass]="bmiClass">
+            <div class="bmi-val"><strong>{{ bmi }}</strong><small>IMC</small></div>
+            <div class="bmi-meta">
+              <span class="bmi-tag">{{ bmiLabel }}</span>
+              <div class="bmi-bar"><span></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GROUPE SANGUIN -->
+        <div *ngSwitchCase="'blood'" class="field-block reveal">
+          <div class="ai-cards blood">
+            <button type="button" class="ai-card blood-card" *ngFor="let bg of bloodGroups"
+                    [class.selected]="bloodValue===bg" (click)="selectBlood(bg)">
+              <span class="drop">🩸</span>
+              <span class="bg">{{ bg }}</span>
+            </button>
+          </div>
+          <p class="ai-err" *ngIf="f['bloodGroup'].invalid && f['bloodGroup'].touched">Groupe sanguin requis.</p>
+        </div>
+
+        <!-- ANTÉCÉDENTS MÉDICAUX -->
+        <div *ngSwitchCase="'medical'" class="field-block reveal">
+          <div class="ai-input">
+            <label>Allergies <span class="opt">(optionnel)</span></label>
+            <textarea formControlName="allergies" rows="2" placeholder="Ex : Pénicilline, Pollen, Arachides..."></textarea>
+          </div>
+          <div class="ai-input">
+            <label>Maladies chroniques <span class="opt">(optionnel)</span></label>
+            <textarea formControlName="chronicDiseases" rows="2" placeholder="Ex : Diabète type 2, Hypertension..."></textarea>
+          </div>
+          <div class="ai-input">
+            <label>Traitements en cours <span class="opt">(optionnel)</span></label>
+            <textarea formControlName="currentTreatments" rows="2" placeholder="Ex : Metformine 500mg..."></textarea>
+          </div>
+        </div>
+
+        <!-- CONTACT D'URGENCE -->
+        <div *ngSwitchCase="'emergency'" class="field-block reveal">
+          <div class="ai-input" [class.ok]="f['emergencyContactName'].valid">
+            <label>Nom du contact d'urgence</label>
+            <input type="text" formControlName="emergencyContactName" placeholder="Nom complet">
+          </div>
+          <div class="ai-input" [class.ok]="f['emergencyContactPhone'].valid">
+            <label>Téléphone d'urgence</label>
+            <input type="tel" formControlName="emergencyContactPhone" placeholder="+216 XX XXX XXX">
+          </div>
+          <p class="ai-err" *ngIf="(f['emergencyContactName'].invalid && f['emergencyContactName'].touched) || (f['emergencyContactPhone'].invalid && f['emergencyContactPhone'].touched)">
+            Un contact d'urgence (nom + téléphone) est requis.
+          </p>
+        </div>
+
+        <!-- ASSURANCE -->
+        <div *ngSwitchCase="'insurance'" class="field-block reveal">
+          <div class="ai-input">
+            <label>Compagnie d'assurance <span class="opt">(optionnel)</span></label>
+            <input type="text" formControlName="insuranceCompany" placeholder="CNAM, Assurance privée...">
+          </div>
+          <div class="ai-input">
+            <label>Numéro d'assuré <span class="opt">(optionnel)</span></label>
+            <input type="text" formControlName="insuranceNumber" placeholder="Numéro d'assuré">
+          </div>
+        </div>
+
+        <!-- SÉCURITÉ -->
+        <div *ngSwitchCase="'security'" class="field-block reveal">
+          <div class="ai-input pwd" [class.ok]="f['password'].valid">
+            <label>Mot de passe</label>
+            <div class="pwd-wrap">
+              <input [type]="showPassword ? 'text' : 'password'" formControlName="password" placeholder="••••••••" autocomplete="new-password">
+              <button type="button" class="pwd-toggle" (click)="showPassword = !showPassword" aria-label="Afficher le mot de passe">
+                <svg *ngIf="!showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg *ngIf="showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+            <div class="pwd-strength" *ngIf="f['password'].value">
+              <div class="pwd-meter"><span [class]="passwordStrengthClass" [style.width.%]="passwordStrength"></span></div>
+              <span class="pwd-label" [class]="passwordStrengthClass">{{ passwordStrengthLabel }}</span>
+            </div>
+            <p class="ai-err" *ngIf="f['password'].invalid && f['password'].touched">Minimum 8 caractères.</p>
+          </div>
+
+          <div class="ai-input pwd" [class.ok]="f['confirmPassword'].valid && !f['confirmPassword'].errors">
+            <label>Confirmer le mot de passe</label>
+            <div class="pwd-wrap">
+              <input [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword" placeholder="••••••••" autocomplete="new-password">
+              <button type="button" class="pwd-toggle" (click)="showConfirmPassword = !showConfirmPassword" aria-label="Afficher le mot de passe">
+                <svg *ngIf="!showConfirmPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg *ngIf="showConfirmPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+            <p class="ai-err" *ngIf="f['confirmPassword'].errors?.['passwordMismatch'] && f['confirmPassword'].touched">Les mots de passe ne correspondent pas.</p>
+          </div>
+
+          <label class="ai-check">
+            <input type="checkbox" formControlName="acceptTerms">
+            <span class="box"></span>
+            <span class="txt">J'accepte les <a routerLink="/terms">conditions d'utilisation</a> et la <a routerLink="/privacy">politique de confidentialité</a>.</span>
+          </label>
+          <p class="ai-err" *ngIf="f['acceptTerms'].invalid && f['acceptTerms'].touched">Vous devez accepter les conditions.</p>
+        </div>
+
+      </div>
+
+      <!-- Erreur backend -->
+      <div class="ai-banner error" *ngIf="errorMessage">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Navigation -->
+      <div class="ai-nav" *ngIf="step.key !== 'intro'">
+        <button type="button" class="ai-btn ghost" (click)="back()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Retour
+        </button>
+
+        <button *ngIf="!isLast" type="button" class="ai-btn primary" (click)="next()" [disabled]="!stepValid()">
+          Continuer
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <button *ngIf="isLast" type="submit" class="ai-btn primary submit" [disabled]="loading || registerForm.invalid">
+          <span *ngIf="!loading">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M12 3a9 9 0 1 0 9 9"/></svg>
+            Créer mon profil médical
+          </span>
+          <span *ngIf="loading" class="spin">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Création en cours...
+          </span>
+        </button>
+      </div>
+
+      <p class="ai-foot">Vous avez déjà un compte ? <a routerLink="/auth/login">Se connecter</a></p>
+    </section>
+
+    <!-- ================= STAGE HOLOGRAMME (droite) ================= -->
+    <aside class="ai-holo">
+      <div class="holo-scene">
+        <div class="holo-rings"><span></span><span></span><span></span></div>
+
+        <!-- Hologramme : ton image réelle (homme/femme) teintée + circulation -->
+        <div class="holo-body" [class.show]="!!genderValue" [class.has-blood]="!!bloodValue"
+             [class.male]="genderValue==='MALE'" [class.female]="genderValue==='FEMALE'" [class.other]="genderValue==='OTHER'"
+             [style.transform]="'translateX(-50%) scaleX(' + bodyScaleX + ') scaleY(' + bodyScaleY + ')'">
+          <div class="holo-layer holo-fill"></div>
+          <div class="holo-layer holo-mesh"></div>
+          <div class="holo-layer holo-vessels">
+            <svg viewBox="0 0 240 520" fill="none" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+              <defs>
+                <radialGradient id="holoHeart" cx="50%" cy="45%" r="60%">
+                  <stop offset="0" stop-color="#ff7a8f"/><stop offset="1" stop-color="#e01036"/>
+                </radialGradient>
+              </defs>
+              <g class="artery" stroke-linecap="round" fill="none">
+                <path d="M120 152 V250"/>
+                <path d="M120 152 Q116 112 120 84"/>
+                <path d="M120 152 Q106 110 108 86"/>
+                <path d="M120 152 Q134 110 132 86"/>
+                <path d="M120 162 Q94 154 80 168 L62 226"/>
+                <path d="M120 162 Q146 154 160 168 L178 226"/>
+                <path d="M120 250 Q106 270 102 330 L94 474"/>
+                <path d="M120 250 Q134 270 138 330 L146 474"/>
+              </g>
+              <g class="vein" stroke-linecap="round" fill="none">
+                <path d="M128 154 V248"/>
+                <path d="M128 152 Q142 108 132 84"/>
+                <path d="M126 168 Q150 160 164 176 L182 230"/>
+                <path d="M112 250 Q100 272 96 330 L88 472"/>
+                <path d="M74 226 L58 172 Q72 160 84 174"/>
+              </g>
+              <path class="heart" fill="url(#holoHeart)"
+                    d="M120 138 c-6 -10 -22 -9 -22 5 c0 10 13 18 22 25 c9 -7 22 -15 22 -25 c0 -14 -16 -15 -22 -5 z"/>
+            </svg>
+          </div>
+          <div class="holo-layer holo-scan"></div>
+        </div>
+
+        <div class="holo-placeholder" *ngIf="!genderValue">
+          <span class="holo-dot"></span>
+          <p>Hologramme en attente…<br>sélectionnez votre genre</p>
+        </div>
+
+        <!-- Relevé de signes vitaux (avec la circulation) -->
+        <div class="holo-vitals" *ngIf="bloodValue">
+          <span class="hb"><span class="hb-icon">❤</span> 72 <small>bpm</small></span>
+          <svg class="ecg" viewBox="0 0 120 28" preserveAspectRatio="none">
+            <polyline points="0,14 22,14 28,14 32,4 38,24 44,14 70,14 76,8 82,18 88,14 120,14"/>
+          </svg>
+        </div>
+
+        <div class="holo-floor"></div>
+      </div>
+
+      <!-- Badges contextuels -->
+      <div class="holo-badges">
+        <span class="holo-badge bg" *ngIf="bloodValue">🩸 {{ bloodValue }}</span>
+        <span class="holo-badge bmi" *ngIf="bmi !== null" [ngClass]="bmiClass">IMC {{ bmi }} · {{ bmiLabel }}</span>
+      </div>
+
+      <!-- Dossier médical qui s'assemble (glassmorphism) -->
+      <div class="med-card" *ngIf="medicalCardVisible">
+        <div class="med-head">
+          <span class="med-id">MEDILINK • PROFIL PATIENT</span>
+          <span class="med-live">● LIVE</span>
+        </div>
+        <div class="med-row" *ngIf="f['firstName'].value || f['lastName'].value">
+          <span>Patient</span><strong>{{ f['firstName'].value }} {{ f['lastName'].value }}</strong>
+        </div>
+        <div class="med-row" *ngIf="genderValue"><span>Genre</span><strong>{{ genderValue==='MALE' ? 'Homme' : genderValue==='FEMALE' ? 'Femme' : 'Autre' }}</strong></div>
+        <div class="med-row" *ngIf="bloodValue"><span>Groupe sanguin</span><strong>{{ bloodValue }}</strong></div>
+        <div class="med-row" *ngIf="bmi !== null"><span>IMC</span><strong>{{ bmi }} ({{ bmiLabel }})</strong></div>
+        <div class="med-row" *ngIf="f['allergies'].value"><span>Allergies</span><strong>{{ f['allergies'].value }}</strong></div>
+        <div class="med-row" *ngIf="f['emergencyContactName'].value"><span>Urgence</span><strong>{{ f['emergencyContactName'].value }}</strong></div>
+      </div>
+    </aside>
+
+    <!-- ================= OVERLAY FINAL : SCAN + SUCCÈS ================= -->
+    <div class="ai-final-overlay" *ngIf="successMessage">
+      <div class="final-scan">
+        <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <i class="spark" *ngFor="let s of [1,2,3,4,5,6,7,8,9,10,11,12]"></i>
+      </div>
+      <h2>{{ successMessage }}</h2>
+      <p>Votre profil médical sécurisé est prêt.</p>
+    </div>
+
+  </form>
+</div>

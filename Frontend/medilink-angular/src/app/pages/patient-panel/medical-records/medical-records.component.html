@@ -1,0 +1,70 @@
+<section class="pp-page">
+  <header class="pp-header">
+    <div>
+      <p class="pp-kicker">Panel patient</p>
+      <h1>Dossiers medicaux</h1>
+      <p class="pp-copy">Votre dossier medical numerique centralise : donnees de sante, traitements, vaccinations et documents.</p>
+    </div>
+    <a routerLink="/dashboard/patient" class="pp-back">Retour au tableau de bord</a>
+  </header>
+
+  <article class="pp-card">
+    <div class="pp-card-header">
+      <h2>Informations sanitaires</h2>
+      <span class="pp-badge blue">Donnees centralisees</span>
+    </div>
+    <div class="pp-info-grid">
+      <div class="pp-info" *ngFor="let v of vitals">
+        <span>{{ v.label }}</span>
+        <strong>{{ v.value }}</strong>
+      </div>
+    </div>
+  </article>
+
+  <div class="pp-grid">
+    <article class="pp-card">
+      <div class="pp-card-header">
+        <h2>Traitements en cours</h2>
+        <span class="pp-badge green">Actifs</span>
+      </div>
+      <div class="pp-list">
+        <div class="pp-item" *ngFor="let t of treatments">
+          <div>
+            <h3>{{ t.name }}</h3>
+            <p>{{ t.detail }}</p>
+          </div>
+          <span class="pp-status">{{ t.status }}</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="pp-card">
+      <h2>Vaccinations</h2>
+      <div class="pp-list">
+        <div class="pp-item" *ngFor="let vac of vaccinations">
+          <div>
+            <h3>{{ vac.name }}</h3>
+            <p>{{ vac.detail }}</p>
+          </div>
+          <span class="pp-status">{{ vac.status }}</span>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <article class="pp-card">
+    <div class="pp-card-header">
+      <h2>Documents medicaux</h2>
+      <span class="pp-badge purple">Archives</span>
+    </div>
+    <div class="pp-list">
+      <div class="pp-item" *ngFor="let doc of documents">
+        <div>
+          <h3>{{ doc.name }}</h3>
+          <p>{{ doc.meta }}</p>
+        </div>
+        <button type="button" class="pp-btn ghost">Telecharger</button>
+      </div>
+    </div>
+  </article>
+</section>

@@ -1,0 +1,36 @@
+@import 'scss/themes/font/theme-font';
+
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'scss/settings/custom-variables';
+@import 'scss/settings/theme-variables';
+
+@import 'bootstrap/scss/bootstrap';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+@import 'bootstrap/scss/utilities/api';
+
+@import 'scss/themes/general';
+@import 'scss/themes/generic';
+@import 'scss/themes/minixs/function';
+
+@import 'scss/themes/font/datta-icon';
+@import 'scss/themes/font/feather';
+@import 'scss/themes/font/fontawesome';
+@import 'scss/themes/font/flaticon';
+
+@import 'scss/themes/component/component';
+
+@import 'scss/themes/layouts/pc-footer.scss';
+@import 'scss/themes/layouts/menu-lite';
+@import 'scss/themes/layouts/menu-ng';
+
+@import 'scss/themes/pages/dashboard.scss';
+@import 'scss/themes/pages/authentication';
+
+@import 'scss/themes/chat/chat';
+
+@import 'scss/themes/custom';
+
+// Surcharge moderne MediLink (navbar + sidebar) — palette officielle Smart Health Tunisia
+@import 'scss/themes/medilink-panel';

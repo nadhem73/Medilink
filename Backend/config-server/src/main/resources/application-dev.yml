@@ -1,0 +1,21 @@
+# Configuration pour l'environnement de développement
+server:
+  port: 8888
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+spring:
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: classpath:/configurations/
+
+logging:
+  level:
+    root: INFO
+    com.smarthealthtunisia: DEBUG
+    org.springframework.cloud.config: DEBUG

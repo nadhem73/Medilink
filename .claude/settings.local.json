@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Recurse -File)",
+      "Bash(Select-Object FullName, Length)",
+      "Bash(Sort-Object FullName)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(xargs ls -la)",
+      "Bash(grep -n \"firstName\\\\|lastName\\\\|imageUrl\\\\|interface\\\\|currentUser\\\\b\\\\|currentUser\\\\$\" src/app/core/services/auth.service.ts)",
+      "Bash(timeout 300 npx ng build --configuration development)",
+      "Bash(grep -n 'margin-top\\\\|padding-top\\\\|header-height\\\\|top: $header\\\\|top:$header' src/scss/themes/layouts/_menu-lite.scss)",
+      "Bash(npx ng *)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -s \"https://api.github.com/repos/Khaalilabd/Esprit-PIDEV-4SAE1-2026-JungleInEnglish/git/trees/main?recursive=1\" -o /tmp/tree.json)",
+      "Read(//tmp/**)",
+      "Bash(grep -rn \"theme\\\\|demo\\\\|fack-db\" src/styles*)",
+      "Bash(grep -rn \"theme\\\\|demo\\\\|fack\" angular.json)",
+      "Bash(grep -rln \"theme\\\\|demo\\\\|fack-db\" src/app/shared src/app/layouts src/app/core)",
+      "Bash(powershell -Command \"Compress-Archive -Path 'src\\\\app' -DestinationPath 'src_app_backup_20260610.zip' -Force\")",
+      "Bash(mv features *)",
+      "Bash(mv pages/auth        pages/auth-pages)",
+      "Bash(mv pages/patient     pages/patient-panel)",
+      "Bash(mv pages/doctor      pages/doctor-panel)",
+      "Bash(mv pages/pharmacy    pages/pharmacy-panel)",
+      "Bash(powershell -Command \"Get-Process node,ng -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,Path | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"Get-CimInstance Win32_Process -Filter \\\\\"name='node.exe'\\\\\" -ErrorAction SilentlyContinue | Select-Object ProcessId,CommandLine | Format-List\")",
+      "Bash(npm run *)",
+      "Bash(find . -path '*/node_modules/*' -prune -o -iname \"nav-content*\" -print)",
+      "Bash(find . -path '*/node_modules/*' -prune -o -type d -name theme -print)",
+      "Bash(grep -nA8 -iE \"^\\(html|body|app-root|:root\\)\\\\b|^html,|^body,\" src/styles.scss)",
+      "Bash(grep -nB6 \"overflow-y: auto;\" src/styles.scss)",
+      "Bash(awk '/^\\\\.dashboard-layout \\\\{/{f=1} f{print NR\": \"$0} f&&/^\\\\}/{exit}' src/styles.scss)",
+      "Bash(grep -rni \"overflow\" app/app.component.scss app/layouts)",
+      "Bash(grep -niE \"html|body|app-root|:host\" app/app.component.scss)",
+      "Bash(grep -niE \"overflow|height\" index.html)",
+      "Bash(grep -nA12 '\"assets\"' angular.json)",
+      "Bash(git config *)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}

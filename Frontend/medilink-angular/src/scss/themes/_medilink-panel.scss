@@ -1,0 +1,516 @@
+/* =====================================================================
+   MEDILINK — Patient Panel Sidebar (Premium Healthcare 2026)
+   Palette Smart Health Tunisia
+   Fond : gradient bleu (#004F7A -> #0095D9)
+   ===================================================================== */
+
+// ----- Palette
+$ml-bleu: #0066a2;
+$ml-turquoise: #00a8b5;
+$ml-blanc: #ffffff;
+$ml-or: #d4a843;
+$ml-corail: #e85d4e;
+$ml-gris-clinique: #5a6a7a;
+$ml-gris-clair: #f0f4f8;
+$ml-noir: #1a2b3c;
+$ml-vert-menthe: #3eb489;
+
+// ----- Sidebar (gradient impose)
+$sb-gradient: linear-gradient(180deg, #004f7a 0%, #0066a2 35%, #007abf 70%, #0095d9 100%);
+$sb-text: rgba(255, 255, 255, 0.82);
+$sb-text-soft: rgba(255, 255, 255, 0.6);
+$sb-hover: rgba(255, 255, 255, 0.12);
+$sb-active: rgba(255, 255, 255, 0.2);
+$sb-border: rgba(255, 255, 255, 0.12);
+
+// ----- Easing / duree
+$ease: ease-in-out;
+$ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+$dur: 300ms;
+
+// =====================================================================
+//  ANIMATIONS (douces)
+// =====================================================================
+@keyframes ml-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes ml-fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ml-active-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
+  }
+}
+@keyframes ml-badge-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(232, 93, 78, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(232, 93, 78, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(232, 93, 78, 0);
+  }
+}
+
+// =====================================================================
+//  1. SIDEBAR
+// =====================================================================
+.pcoded-navbar {
+  background: $sb-gradient !important;
+  box-shadow: 4px 0 32px rgba(0, 60, 100, 0.3) !important;
+  font-family: 'Inter', 'Poppins', 'Nunito Sans', sans-serif;
+
+  // header retire -> pleine hauteur
+  margin-top: 0 !important;
+  height: 100vh !important;
+
+  .navbar-brand,
+  .m-header {
+    background: transparent !important;
+  }
+
+  // ---------------------------------------------------------------
+  //  Brand (logo + nom) en haut
+  // ---------------------------------------------------------------
+  .ml-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 16px 16px 13px;
+    margin: 0 6px;
+    text-decoration: none;
+    border-bottom: 1px solid $sb-border;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    animation: ml-fade-down 0.45s $ease-out both;
+
+    .ml-brand-logos {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex: 0 0 auto;
+
+      img {
+        pointer-events: none;
+        -webkit-user-drag: none;
+        transition: transform $dur $ease-out;
+      }
+      .ml-ministry-logo {
+        height: 28px;
+        width: auto;
+        background: #fff;
+        border-radius: 7px;
+        padding: 2px 4px;
+        box-shadow: 0 3px 9px rgba(0, 40, 70, 0.25);
+      }
+      .ml-tunisia-flag {
+        height: 19px;
+        width: 28px;
+        object-fit: cover;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    .ml-brand-text {
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &:hover .ml-brand-logos img {
+      transform: scale(1.06);
+    }
+  }
+
+  // ---------------------------------------------------------------
+  //  Carte profil patient
+  // ---------------------------------------------------------------
+  .ml-patient-card {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin: 16px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid $sb-border;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 8px 22px rgba(0, 50, 85, 0.2);
+    animation: ml-fade-in 0.5s $ease-out both;
+
+    .ml-avatar {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: $ml-bleu;
+      font-weight: 800;
+      font-size: 19px;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(0, 40, 70, 0.3);
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .ml-status-dot {
+        position: absolute;
+        right: -1px;
+        bottom: -1px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: $ml-vert-menthe;
+        border: 2.5px solid #007abf;
+      }
+    }
+
+    .ml-patient-info {
+      min-width: 0;
+      .ml-patient-name {
+        display: block;
+        color: #fff;
+        font-weight: 700;
+        font-size: 14.5px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ml-patient-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 11.5px;
+        font-weight: 500;
+        margin-top: 3px;
+
+        &:before {
+          content: '';
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: $ml-vert-menthe;
+          box-shadow: 0 0 6px rgba(62, 180, 137, 0.8);
+        }
+      }
+    }
+  }
+
+  .navbar-content {
+    // ----- Titre de section
+    .pcoded-menu-caption {
+      color: rgba(255, 255, 255, 0.55) !important;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-size: 10.5px;
+      padding: 22px 28px 10px !important;
+
+      &:after {
+        display: none !important;
+      }
+      > label {
+        margin: 0;
+      }
+    }
+
+    .pcoded-inner-navbar {
+      padding: 4px 0 14px;
+
+      > li {
+        opacity: 0;
+        animation: ml-fade-in 0.4s $ease-out forwards;
+        @for $i from 1 through 14 {
+          &:nth-child(#{$i}) {
+            animation-delay: #{0.04 * $i}s;
+          }
+        }
+
+        > a {
+          position: relative;
+          display: flex;
+          align-items: center;
+          color: $sb-text !important;
+          font-weight: 500;
+          font-size: 14px;
+          border-radius: 16px;
+          margin: 4px 16px;
+          padding: 12px 16px !important;
+          transition: all $dur $ease;
+
+          // indicateur lateral gauche
+          &:before {
+            content: '';
+            position: absolute;
+            left: 2px;
+            top: 50%;
+            transform: translateY(-50%) scaleY(0);
+            width: 4px !important;
+            height: 54%;
+            border-radius: 4px;
+            background: #ffffff !important;
+            transition: transform $dur $ease-out;
+          }
+
+          > .pcoded-micon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid $sb-border;
+            border-radius: 12px !important;
+            width: 38px !important;
+            height: 38px !important;
+            margin-right: 14px !important;
+            flex: 0 0 auto;
+            transition: all $dur $ease;
+
+            i {
+              color: #ffffff !important;
+              font-size: 16px !important;
+              transition: transform $dur $ease;
+            }
+          }
+
+          .pcoded-mtext {
+            color: inherit !important;
+          }
+        }
+
+        // ----- Survol
+        &:hover > a {
+          color: #fff !important;
+          background: $sb-hover !important;
+          transform: translateX(5px);
+
+          > .pcoded-micon {
+            background: rgba(255, 255, 255, 0.2);
+            i {
+              transform: scale(1.12);
+            }
+          }
+        }
+
+        // ----- Actif (carte glass + glow)
+        &.active > a,
+        &.pcoded-trigger > a {
+          color: #fff !important;
+          background: $sb-active !important;
+          font-weight: 600;
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          box-shadow:
+            inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+            0 8px 22px rgba(0, 40, 70, 0.25);
+
+          &:before {
+            transform: translateY(-50%) scaleY(1);
+            animation: ml-active-glow 2.6s $ease infinite;
+          }
+          > .pcoded-micon {
+            background: #ffffff;
+            i {
+              color: $ml-bleu !important;
+            }
+          }
+        }
+      }
+
+      // ----- Chevron
+      .pcoded-hasmenu {
+        > a:after {
+          color: rgba(255, 255, 255, 0.7);
+          transition: transform $dur $ease;
+        }
+        &.pcoded-trigger > a:after {
+          transform: rotate(90deg);
+        }
+      }
+
+      // ----- Sous-menus
+      .pcoded-submenu {
+        position: relative;
+        margin: 2px 18px 8px !important;
+        padding: 4px 0 !important;
+
+        &:before {
+          content: '';
+          position: absolute;
+          left: 28px;
+          top: 6px;
+          bottom: 6px;
+          width: 1px;
+          background: $sb-border;
+        }
+
+        > li {
+          animation: none;
+          opacity: 1;
+
+          > a {
+            color: $sb-text-soft !important;
+            font-size: 13px;
+            padding: 8px 16px 8px 48px !important;
+            margin: 2px 8px !important;
+            border-radius: 12px;
+            transition: all $dur $ease;
+
+            &:before {
+              left: 24px !important;
+              top: 50%;
+              transform: translateY(-50%);
+              width: 7px;
+              height: 7px;
+              border-radius: 50%;
+              background: rgba(255, 255, 255, 0.38) !important;
+              transition: all $dur $ease;
+            }
+          }
+
+          &:hover > a {
+            color: #fff !important;
+            background: $sb-hover !important;
+            padding-left: 52px !important;
+            &:before {
+              background: #fff !important;
+              transform: translateY(-50%) scale(1.3);
+            }
+          }
+          &.active > a {
+            color: #fff !important;
+            background: $sb-active !important;
+            &:before {
+              background: #fff !important;
+              box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+            }
+          }
+        }
+      }
+    }
+
+    // ----- Carte d'aide (glassmorphism)
+    app-card .card {
+      background: rgba(255, 255, 255, 0.1) !important;
+      border: 1px solid $sb-border !important;
+      border-radius: 20px !important;
+      margin: 16px !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: transform $dur $ease, box-shadow $dur $ease;
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 18px 34px rgba(0, 50, 85, 0.3);
+      }
+      i.icon-sunset {
+        color: #fff !important;
+      }
+      h6 {
+        color: #fff !important;
+      }
+      p {
+        color: rgba(255, 255, 255, 0.75) !important;
+        font-size: 12px;
+      }
+      .btn-primary {
+        background: #fff !important;
+        border-color: #fff !important;
+        color: $ml-bleu !important;
+        font-weight: 700;
+        border-radius: 12px;
+        box-shadow: 0 6px 16px rgba(0, 40, 70, 0.22);
+        transition: transform $dur $ease, box-shadow $dur $ease;
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 22px rgba(0, 40, 70, 0.32);
+        }
+      }
+    }
+  }
+}
+
+// =====================================================================
+//  2. HEADER (conserve si reactive ailleurs ; sans effet ici)
+// =====================================================================
+.pcoded-header {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  box-shadow: 0 1px 0 rgba(26, 43, 60, 0.06), 0 6px 20px rgba(26, 43, 60, 0.05) !important;
+  color: $ml-noir !important;
+
+  .navbar-nav > li {
+    > a,
+    .dropdown-toggle {
+      color: $ml-gris-clinique !important;
+      i {
+        color: $ml-gris-clinique !important;
+        transition: color $dur $ease, transform $dur $ease;
+      }
+      &:hover {
+        color: $ml-turquoise !important;
+        i {
+          color: $ml-turquoise !important;
+          transform: translateY(-2px) scale(1.08);
+        }
+      }
+    }
+    .badge.bg-danger {
+      background: $ml-corail !important;
+      border: 2px solid #fff;
+      animation: ml-badge-pulse 2.2s ease-out infinite;
+    }
+    .badge.bg-success {
+      background: $ml-vert-menthe !important;
+      border: 2px solid #fff;
+    }
+  }
+}
+
+// =====================================================================
+//  3. Fond du contenu
+// =====================================================================
+.pcoded-main-container {
+  background: $ml-gris-clair !important;
+
+  &.no-header {
+    padding-top: 0 !important;
+    min-height: 100vh;
+  }
+}

@@ -1,0 +1,142 @@
+spring:
+  application:
+    name: api-gateway
+  profiles:
+    active: ${SPRING_PROFILE:dev}
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      
+      # Configuration globale des filtres
+      default-filters:
+        - AddResponseHeader=X-Response-Time, "#{T(System).currentTimeMillis()}"
+
+      # Timeout global
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 30s
+        pool:
+          type: elastic
+          max-connections: 500
+          acquire-timeout: 45000
+
+  # Redis Configuration (pour rate limiting)
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+
+# Configuration Eureka
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    instance-id: ${spring.application.name}:${server.port}
+
+# Configuration JWT
+jwt:
+  secret: ${JWT_SECRET:c21hcnRoZWFsdGh0dW5pc2lhLXN1cGVyLXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9uLXZlcnktbG9uZy1hbmQtc2VjdXJl}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 heures en millisecondes
+
+# Configuration du serveur
+server:
+  port: ${SERVER_PORT:8765}
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+# Actuator pour monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+    gateway:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  health:
+    redis:
+      enabled: true
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.medilinktunisia: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.security: DEBUG
+    reactor.netty.http.client: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/api-gateway.log
+
+# Resilience4j Circuit Breaker
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        permitted-number-of-calls-in-half-open-state: 3
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10000
+        register-health-indicator: true
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      authServiceCircuitBreaker:
+        base-config: default
+      patientServiceCircuitBreaker:
+        base-config: default
+      doctorServiceCircuitBreaker:
+        base-config: default
+      appointmentServiceCircuitBreaker:
+        base-config: default
+      paymentServiceCircuitBreaker:
+        base-config: default
+
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+
+# Info pour l'endpoint actuator/info
+info:
+  app:
+    name: Smart Health Tunisia API Gateway
+    description: Central entry point for all microservices
+    version: 1.0.0
+    author: Smart Health Tunisia Team

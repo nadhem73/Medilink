@@ -1,0 +1,41 @@
+﻿# Configuration pour l'environnement de production
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://eureka-service:8761/eureka/}
+
+# Redis en production
+spring.data.redis:
+  host: ${REDIS_HOST:redis-service}
+  port: ${REDIS_PORT:6379}
+  password: ${REDIS_PASSWORD}
+  ssl: true
+
+# JWT Configuration pour production (via variables d'environnement)
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# Logging optimisé pour production
+logging:
+  level:
+    root: WARN
+    com.medilinktunisia: INFO
+    org.springframework.cloud.gateway: INFO
+  file:
+    name: /var/log/api-gateway/application.log
+    max-size: 10MB
+    max-history: 30
+
+# Actuator sécurisé en production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never

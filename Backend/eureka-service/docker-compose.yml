@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  eureka-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart-health-eureka-service
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_USERNAME=admin
+      - EUREKA_PASSWORD=changeme
+      - EUREKA_HOSTNAME=eureka-service
+    networks:
+      - smart-health-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - ./logs:/app/logs
+
+networks:
+  smart-health-network:
+    driver: bridge

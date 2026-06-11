@@ -1,0 +1,20 @@
+﻿spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+
+logging:
+  level:
+    com.medilinktunisia.pharmacyservice: INFO
+    org.springframework.web: WARN
+    org.hibernate: WARN
+  file:
+    name: logs/pharmacy-service-prod.log
+
+server:
+  port: 8085

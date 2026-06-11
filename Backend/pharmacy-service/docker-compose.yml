@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: medilink-pharmacy-db
+    environment:
+      POSTGRES_DB: medilink_pharmacy
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - pharmacy_data:/var/lib/postgresql/data
+    networks:
+      - pharmacy-network
+
+volumes:
+  pharmacy_data:
+
+networks:
+  pharmacy-network:
+    driver: bridge

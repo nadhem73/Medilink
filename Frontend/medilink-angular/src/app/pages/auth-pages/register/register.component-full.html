@@ -1,0 +1,125 @@
+<div class="auth-layout">
+  <!-- Back to Home Button -->
+  <a routerLink="/" class="back-home-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+    <span>Retour à l'accueil</span>
+  </a>
+
+  <div class="auth-container">
+    <!-- Left side - Form -->
+    <div class="auth-form-section">
+      <div class="auth-form-content">
+        <!-- Logo and Brand -->
+        <div class="auth-brand">
+          <img src="/assets/images/partners/Ministère de la Santé - Tunisie.png" alt="MediLink Tunisia" class="brand-logo">
+          <span class="brand-name">MediLink Tunisia</span>
+        </div>
+
+        <!-- Title -->
+        <div class="auth-header">
+          <h1>Créer un compte</h1>
+          <p>Rejoignez notre plateforme de santé numérique.</p>
+        </div>
+
+        <!-- Role Selection -->
+        <div class="role-selection">
+          <label class="role-label">Je suis un(e) *</label>
+          <div class="role-cards">
+            <div *ngFor="let role of roles" 
+                 class="role-card" 
+                 [class.selected]="selectedRole === role.value"
+                 (click)="registerForm.patchValue({role: role.value})">
+              <div class="role-icon">{{role.icon}}</div>
+              <div class="role-info">
+                <div class="role-name">{{role.label}}</div>
+                <div class="role-desc">{{role.description}}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider">
+          <span>INFORMATIONS PERSONNELLES</span>
+        </div>
+
+        <!-- Register Form -->
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+          
+          <!-- Common Fields -->
+          <div class="form-section">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstName">Prénom *</label>
+                <input type="text" id="firstName" formControlName="firstName" class="form-control" placeholder="Votre prénom">
+                <div class="error" *ngIf="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched">
+                  <span *ngIf="registerForm.get('firstName')?.errors?.['required']">Prénom requis</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="lastName">Nom *</label>
+                <input type="text" id="lastName" formControlName="lastName" class="form-control" placeholder="Votre nom">
+                <div class="error" *ngIf="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched">
+                  <span *ngIf="registerForm.get('lastName')?.errors?.['required']">Nom requis</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" formControlName="email" class="form-control" placeholder="exemple@medilink.tn">
+                <div class="error" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+                  <span *ngIf="registerForm.get('email')?.errors?.['email']">Email invalide</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="phone">Téléphone *</label>
+                <input type="tel" id="phone" formControlName="phone" class="form-control" placeholder="+216 XX XXX XXX">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="birthDate">Date de naissance *</label>
+                <input type="date" id="birthDate" formControlName="birthDate" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="gender">Sexe *</label>
+                <select id="gender" formControlName="gender" class="form-control">
+                  <option value="">Sélectionner</option>
+                  <option *ngFor="let g of genders" [value]="g.value">{{g.label}}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="address">Adresse *</label>
+              <input type="text" id="address" formControlName="address" class="form-control" placeholder="Votre adresse complète">
+            </div>
+
+            <div class="form-group">
+              <label for="cin">Numéro CIN</label>
+              <input type="text" id="cin" formControlName="cin" class="form-control" placeholder="Numéro CIN ou passeport">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="password">Mot de passe *</label>
+                <input type="password" id="password" formControlName="password" class="form-control" placeholder="••••••••">
+                <div class="error" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+                  <span *ngIf="registerForm.get('password')?.errors?.['minlength']">Minimum 8 caractères</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="confirmPassword">Confirmer *</label>
+                <input type="password" id="confirmPassword" formControlName="confirmPassword" class="form-control" placeholder="••••••••">
+                <div class="error" *ngIf="registerForm.get('confirmPassword')?.errors?.['passwordMismatch'] && registerForm.get('confirmPassword')?.touched">
+                  <span>Mots de passe différents</span>
+                </div>
+              </div>
+            </div>
+          </div>

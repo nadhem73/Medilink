@@ -1,0 +1,359 @@
+/* =====================================================================
+   NAVBAR HOME — Smart Health Tunisia
+   Style conforme a la palette officielle (PDF, section 2 "Barre de navigation")
+   - Fond navbar      : Blanc Sante  #FFFFFF (ombre subtile)
+   - Logo / Brand     : Bleu Mediterranee #0066A2
+   - Liens menu       : Noir Profond #1A2B3C
+   - Lien actif       : Turquoise Tunisie #00A8B5 (soulignement)
+   - Bouton Connexion : fond Turquoise #00A8B5, texte blanc
+   - Bouton Inscription: fond Bleu #0066A2, texte blanc
+   ===================================================================== */
+
+.navbar {
+  background-color: var(--blanc-sante);
+  box-shadow: 0 2px 12px rgba(26, 43, 60, 0.06);
+  border-bottom: 1px solid rgba(26, 43, 60, 0.06);
+  padding: 14px 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: saturate(180%) blur(6px);
+
+  .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 32px;
+
+    @media (max-width: 1024px) {
+      flex-wrap: wrap;
+    }
+  }
+
+  /* -------------------------------------------------- Brand / Logo */
+  .navbar-brand {
+    // Annule le fond bleu herite du theme Datta (.navbar-brand { background } dans menu-lite.scss,
+    // importe globalement via patient-panel.scss). C'est ce fond qui dessinait le rectangle bleu.
+    background: transparent !important;
+    padding: 0;
+    border-radius: 0;
+
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      font-family: var(--font-headings);
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      color: var(--bleu-mediterranee); // Bleu Mediterranee
+      transition: color 0.25s ease;
+
+      // Aucune surbrillance / rectangle bleu de selection sur le bloc brand
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      outline: none !important;
+      box-shadow: none !important;
+
+      *,
+      .ministry-logo,
+      .tunisia-flag,
+      .brand-text {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+
+      ::selection { background: transparent; }
+      ::-moz-selection { background: transparent; }
+
+      &:focus,
+      &:active,
+      &:focus-visible,
+      &:focus-within {
+        outline: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+      }
+
+      &:hover {
+        color: var(--turquoise-tunisie); // Turquoise Tunisie
+
+        .ministry-logo,
+        .tunisia-flag {
+          transform: scale(1.05);
+        }
+      }
+
+      .ministry-logo {
+        height: 42px;
+        width: auto;
+        object-fit: contain;
+        transition: transform 0.25s ease;
+        -webkit-user-drag: none;
+        pointer-events: none;
+      }
+
+      .tunisia-flag {
+        height: 28px;
+        width: 42px;
+        object-fit: cover;
+        border-radius: 4px;
+        box-shadow: 0 1px 4px rgba(26, 43, 60, 0.2);
+        transition: transform 0.25s ease;
+        -webkit-user-drag: none;
+        pointer-events: none;
+      }
+
+      .brand-text {
+        line-height: 1;
+
+        @media (max-width: 640px) {
+          display: none;
+        }
+      }
+    }
+  }
+
+  /* -------------------------------------------------- Menu central */
+  .navbar-menu {
+    display: flex;
+    gap: 28px;
+    flex: 1;
+    justify-content: center;
+
+    @media (max-width: 1024px) {
+      display: none;
+    }
+
+    .nav-link {
+      position: relative;
+      text-decoration: none;
+      color: var(--noir-profond); // Noir Profond
+      font-size: 0.9375rem;
+      font-weight: 500;
+      padding: 6px 2px;
+      transition: color 0.2s ease;
+
+      // soulignement turquoise anime
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -2px;
+        height: 2px;
+        width: 100%;
+        background-color: var(--turquoise-tunisie);
+        border-radius: 2px;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.25s ease;
+      }
+
+      &:hover {
+        color: var(--turquoise-tunisie); // Turquoise Tunisie
+
+        &::after {
+          transform: scaleX(1);
+        }
+      }
+
+      &.active {
+        color: var(--turquoise-tunisie); // Turquoise Tunisie
+        font-weight: 600;
+
+        &::after {
+          transform: scaleX(1);
+        }
+      }
+    }
+  }
+
+  /* -------------------------------------------------- Actions / Boutons */
+  .navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    // Bouton Connexion : fond Turquoise Tunisie, texte blanc (CTA)
+    .btn-login {
+      padding: 9px 22px;
+      background-color: var(--turquoise-tunisie);
+      color: var(--blanc-sante);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      border-radius: 8px;
+      border: 2px solid var(--turquoise-tunisie);
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: #008a96; // Turquoise Tunisie - assombri
+        border-color: #008a96;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(0, 168, 181, 0.28);
+      }
+    }
+
+    // Bouton Inscription : fond Bleu Mediterranee, texte blanc
+    .btn-register {
+      padding: 9px 22px;
+      background-color: var(--bleu-mediterranee);
+      color: var(--blanc-sante);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      border-radius: 8px;
+      border: 2px solid var(--bleu-mediterranee);
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: #005282; // Bleu Mediterranee - assombri
+        border-color: #005282;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(0, 102, 162, 0.28);
+      }
+    }
+
+    .user-menu {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+  }
+}
+
+/* =====================================================================
+   Menu utilisateur connecte
+   ===================================================================== */
+.user-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(0, 168, 181, 0.10);
+  }
+}
+
+.user-trigger-name {
+  font-weight: 700;
+  color: var(--noir-profond);
+  font-size: 0.9375rem;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @media (max-width: 640px) {
+    display: none;
+  }
+}
+
+.user-trigger-caret {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--gris-clinique);
+
+  @media (max-width: 640px) {
+    display: none;
+  }
+}
+
+.user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 2px solid var(--turquoise-tunisie);
+  background: var(--gris-clair);
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-fallback {
+  font-weight: 800;
+  color: var(--bleu-mediterranee);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 248px;
+  background: var(--blanc-sante);
+  border: 1px solid rgba(26, 43, 60, 0.10);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(26, 43, 60, 0.14);
+  padding: 10px;
+  z-index: 1100;
+}
+
+.user-dropdown-header {
+  padding: 8px 10px 12px;
+  border-bottom: 1px solid rgba(26, 43, 60, 0.08);
+  margin-bottom: 8px;
+}
+
+.user-dropdown-name {
+  font-weight: 800;
+  color: var(--noir-profond);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-dropdown-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--noir-profond);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.user-dropdown-item:hover {
+  background-color: rgba(0, 168, 181, 0.10);
+  color: var(--turquoise-tunisie);
+}
+
+.user-dropdown-item.danger {
+  color: var(--corail-urgence);
+}
+
+.user-dropdown-item.danger:hover {
+  background-color: rgba(232, 93, 78, 0.12);
+  color: var(--corail-urgence);
+}

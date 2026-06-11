@@ -1,0 +1,23 @@
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f4f6fb;
+}
+
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dashboard-content {
+  flex: 1;
+  /* Espace logique entre la sidebar et la page */
+  padding: 24px;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .dashboard-layout { flex-direction: column; }
+}

@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  config-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart-health-config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - EUREKA_URI=http://eureka-service:8761/eureka/
+      - CONFIG_SERVER_USERNAME=configadmin
+      - CONFIG_SERVER_PASSWORD=configadmin123
+    networks:
+      - smart-health-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+
+networks:
+  smart-health-network:
+    driver: bridge

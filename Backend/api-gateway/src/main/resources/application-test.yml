@@ -1,0 +1,25 @@
+﻿# Configuration pour l'environnement de test
+server:
+  port: 8080
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+# Redis embarqué pour les tests
+spring.data.redis:
+  host: localhost
+  port: 6379
+  password: ""
+
+# JWT Configuration pour les tests
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3Rpbmctb25seS12ZXJ5LWxvbmctYW5kLXNlY3VyZQ==
+  expiration: 3600000 # 1 heure
+
+logging:
+  level:
+    root: WARN
+    com.medilinktunisia: DEBUG

@@ -1,0 +1,22 @@
+# Configuration pour utiliser Git comme backend
+spring:
+  profiles:
+    active: git
+  
+  cloud:
+    config:
+      server:
+        git:
+          uri: ${CONFIG_GIT_URI:https://github.com/your-org/smart-health-configs}
+          default-label: main
+          search-paths: '{application}'
+          clone-on-start: true
+          username: ${CONFIG_GIT_USERNAME:}
+          password: ${CONFIG_GIT_PASSWORD:}
+          timeout: 10
+          refresh-rate: 30
+          force-pull: true
+
+logging:
+  level:
+    org.springframework.cloud.config.server.environment: DEBUG

@@ -1,0 +1,120 @@
+// =======================================
+//     List of variables for layout
+// =======================================
+$header-height: 56px;
+$Menu-width: 235px;
+$Menu-collapsed-width: 70px;
+$soft-bg-level: -80%;
+
+// color list for build layouts
+$primary-color: #0066a2;
+$warning-color: #d4a843;
+$danger-color: #e85d4e;
+$success-color: #2e8b57;
+$purple-color: #0f2c4c;
+$info-color: #00a8b5;
+$secondary-color: #5a6a7a;
+$default-color: #e8dcc8;
+$light-color: #f0f4f8;
+$dark-color: #1a2b3c;
+$inverse-color: $dark-color;
+$theme-border: $default-color;
+
+// header
+$header-dark-background: #3b4650;
+$header-dark-text-color: #fff;
+$header-light-background: #fff;
+$header-light-text-color: #3b4650;
+
+// Menu
+$menu-dark-background: #3b4650;
+$menu-dark-text-color: #b9c7d4;
+
+$menu-light-background: #fff;
+$menu-light-text-color: #666;
+$menu-active-color: $primary-color;
+
+$dark-layout: darken(#3b4650, 8%);
+$dark-layout-font: #adb7be;
+
+// Menu icon
+$menu-icon-color: $primary-color, $danger-color, $info-color, $purple-color, $success-color, $warning-color;
+// Header background
+$color-header-name: blue, red, purple, info, dark, orange, green, yellow, orchidGreen, indigoGreen, darkGreen, darkblue;
+$color-header-color:
+  $primary-color,
+  $danger-color,
+  $purple-color,
+  $info-color,
+  $dark-color,
+  $warning-color,
+  $success-color,
+  $default-color,
+  #3eb489,
+  $purple-color,
+  $dark-color,
+  $primary-color;
+$color-header-color2:
+  lighten($primary-color, 14%),
+  lighten($danger-color, 14%),
+  lighten($purple-color, 10%),
+  lighten($info-color, 10%),
+  lighten($dark-color, 10%),
+  lighten($warning-color, 10%),
+  lighten($success-color, 10%),
+  lighten($default-color, 6%),
+  lighten(#3eb489, 6%),
+  lighten($purple-color, 16%),
+  lighten($dark-color, 16%),
+  darken($primary-color, 6%);
+
+// Menu background
+$color-menu-name: blue, red, purple, info, dark;
+$color-menu-color: $primary-color, $danger-color, $purple-color, $info-color, $dark-color;
+
+// Menu background gradient
+$color-menu-gradient-name: blue, red, purple, info, dark;
+$color-menu-gradient-color:
+  linear-gradient(to bottom, $purple-color 0%, $primary-color 100%),
+  linear-gradient(to bottom, $danger-color 0%, lighten($danger-color, 18%) 100%),
+  linear-gradient(to top, $primary-color 0%, lighten($primary-color, 14%) 100%),
+  linear-gradient(to bottom, $info-color 0%, lighten($info-color, 12%) 100%),
+  linear-gradient(to bottom, $dark-color 0%, lighten($dark-color, 10%) 100%);
+
+// Active background color
+$color-active-name: blue, red, purple, info, dark;
+$color-active-color: $primary-color, $danger-color, $purple-color, $info-color, $dark-color;
+// Menu title color
+$color-title-name: blue, red, purple, info, dark;
+$color-title-color: $primary-color, $danger-color, $purple-color, $info-color, $dark-color;
+
+$theme-font-family: 'Poppins', sans-serif;
+$theme-font-size: 14px;
+$theme-background: $light-color;
+$theme-font-color: $dark-color;
+$theme-heading-color: $dark-color;
+
+$color-name: c-blue, c-red, c-green, c-yellow, c-purple;
+$color-color: $primary-color, $danger-color, $success-color, $warning-color, $purple-color;
+$color-bt-name: primary, danger, success, warning, info, purple;
+$color-bt-color: $primary-color, $danger-color, $success-color, $warning-color, $info-color, $purple-color;
+
+// form-control variables
+$form-bg: #f0f3f6;
+
+// =====================================================================
+// ==================   Bootstrap Extra Variable  ======================
+// =====================================================================
+
+// Color contrast
+$yiq-contrasted-threshold: 200 !default;
+$yiq-dark-color: #37474f;
+$yiq-light-color: #fff;
+$theme-color-interval: 8%;
+$alert-bg-level: -10;
+$alert-border-level: -9;
+$alert-color-level: 6;
+
+// card block css
+$card-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
+$card-header-border: 0px solid #e2e5e8;

@@ -1,0 +1,27 @@
+<section class="pp-page">
+  <header class="pp-header">
+    <div>
+      <p class="pp-kicker">Panel patient</p>
+      <h1>Notifications</h1>
+      <p class="pp-copy">Rappels et alertes personnalises envoyes par email, SMS et notifications push.</p>
+    </div>
+    <a routerLink="/dashboard/patient" class="pp-back">Retour au tableau de bord</a>
+  </header>
+
+  <article class="pp-card">
+    <div class="pp-card-header">
+      <h2>Toutes les notifications</h2>
+      <span class="pp-badge orange">2 non lues</span>
+    </div>
+    <div class="pp-list">
+      <div class="pp-item" *ngFor="let n of notifications">
+        <div>
+          <h3>{{ n.title }} <span class="pp-status" *ngIf="n.unread" style="margin-left:6px;">Nouveau</span></h3>
+          <p>{{ n.detail }}</p>
+          <p style="margin-top:4px; font-size:12px;">Canal : {{ n.channel }}</p>
+        </div>
+        <span style="font-size:12px; color:var(--gris-clinique, #5b6b85); white-space:nowrap;">{{ n.time }}</span>
+      </div>
+    </div>
+  </article>
+</section>

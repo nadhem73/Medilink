@@ -1,0 +1,49 @@
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-brand">
+      <a routerLink="/" class="brand-link">
+        <img src="/assets/images/partners/Ministère de la Santé - Tunisie.png" alt="Ministère de la Santé" class="ministry-logo">
+        <img src="/assets/images/tn.png" alt="Drapeau Tunisien" class="tunisia-flag">
+        <span class="brand-text">MediLink Tunisia</span>
+      </a>
+    </div>
+    
+    <div class="navbar-menu">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">Accueil</a>
+      <a routerLink="/" fragment="services-section" class="nav-link">Services</a>
+      <a routerLink="/" fragment="medecins" class="nav-link">Nos médecins</a>
+      <a routerLink="/" fragment="temoignages" class="nav-link">Témoignages</a>
+      <a routerLink="/" fragment="partenaires" class="nav-link">Partenaires</a>
+      <a routerLink="/" fragment="contact" class="nav-link">Contact</a>
+    </div>
+
+    <div class="navbar-actions">
+      <a routerLink="/auth/login" class="btn-login" *ngIf="!isAuthenticated">Se connecter</a>
+      <a routerLink="/auth/register" class="btn-register" *ngIf="!isAuthenticated">S'inscrire</a>
+      
+      <div class="user-menu" *ngIf="isAuthenticated">
+        <button class="user-trigger" type="button" (click)="toggleUserMenu($event)">
+          <span class="user-avatar">
+            <ng-container *ngIf="avatarUrl && !avatarError; else avatarFallback">
+              <img [src]="avatarUrl" alt="User" (error)="onAvatarError()" />
+            </ng-container>
+            <ng-template #avatarFallback>
+              <span class="avatar-fallback">{{ avatarInitial }}</span>
+            </ng-template>
+          </span>
+          <span class="user-trigger-name">{{ displayName }}</span>
+          <i class="user-trigger-caret"></i>
+        </button>
+
+        <div class="user-dropdown" *ngIf="isUserMenuOpen" (click)="$event.stopPropagation()">
+          <div class="user-dropdown-header">
+            <div class="user-dropdown-name">{{ displayName }}</div>
+          </div>
+          <button class="user-dropdown-item" type="button" (click)="goToPanel()">{{ panelLabel }}</button>
+          <button class="user-dropdown-item" type="button" (click)="goToSettings()">Paramètre</button>
+          <button class="user-dropdown-item danger" type="button" (click)="logout()">Log out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
