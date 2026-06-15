@@ -1,0 +1,29 @@
+<section class="pp-page">
+  <header class="pp-header">
+    <div>
+      <p class="pp-kicker">Panel pharmacie</p>
+      <h1>Messages</h1>
+      <p class="pp-copy">Messagerie securisee avec les medecins, les patients et vos fournisseurs.</p>
+    </div>
+    <a routerLink="/dashboard/pharmacy" class="pp-back">Retour au tableau de bord</a>
+  </header>
+
+  <article class="pp-card">
+    <div class="pp-card-header">
+      <h2>Conversations</h2>
+      <span class="pp-badge">3 non lus</span>
+    </div>
+    <div class="pp-list">
+      <div class="pp-item" *ngFor="let c of conversations">
+        <div>
+          <h3>{{ c.contact }}</h3>
+          <p>{{ c.role }} - {{ c.preview }}</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:12px; color:var(--gris-clinique, #5b6b85);">{{ c.time }}</span>
+          <span class="pp-status" *ngIf="c.unread">{{ c.unread }}</span>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>

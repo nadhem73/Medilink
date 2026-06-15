@@ -1,0 +1,130 @@
+<section class="pharmacy-section-page">
+  <header class="page-header">
+    <div>
+      <p class="page-kicker">Panel pharmacie</p>
+      <h1>{{ title }}</h1>
+      <p class="page-copy">
+        Espace de gestion de l officine connectee, conforme aux modules pharmacie du cahier des charges.
+      </p>
+    </div>
+    <a routerLink="/dashboard/pharmacy" class="back-link">Retour au dashboard</a>
+  </header>
+
+  <ng-container [ngSwitch]="section">
+    <section *ngSwitchCase="'prescriptions'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Ordonnances electroniques recues</h2>
+          <span class="badge">3 elements</span>
+        </div>
+        <div class="table-like">
+          <div class="table-row" *ngFor="let prescription of prescriptions">
+            <div>
+              <strong>{{ prescription.patient }}</strong>
+              <p>{{ prescription.doctor }}</p>
+            </div>
+            <div>{{ prescription.date }}</div>
+            <div>{{ prescription.items }}</div>
+            <div><span class="status">{{ prescription.status }}</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Traitement des ordonnances</h2>
+        <ul class="checklist">
+          <li>Verifier la disponibilite des medicaments prescrits en stock.</li>
+          <li>Controler la posologie et les interactions avant dispensation.</li>
+          <li>Historiser chaque dispensation dans le registre des ventes.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section *ngSwitchCase="'stock'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Stock des medicaments</h2>
+          <span class="badge accent-green">Gestion centralisee</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let item of stock">
+            <div class="mini-card-top">
+              <h3>{{ item.medication }}</h3>
+              <span class="status">{{ item.status }}</span>
+            </div>
+            <p>{{ item.category }}</p>
+            <span>{{ item.threshold }}</span>
+            <strong>En stock : {{ item.quantity }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Gestion du stock</h2>
+        <ul class="checklist">
+          <li>Definir des seuils d alerte pour chaque reference.</li>
+          <li>Recevoir une alerte automatique en cas de rupture imminente.</li>
+          <li>Verifier les dates de peremption regulierement.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section *ngSwitchCase="'orders'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Commandes fournisseurs</h2>
+          <span class="badge accent-orange">Reapprovisionnement</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let order of orders">
+            <div class="mini-card-top">
+              <h3>{{ order.reference }}</h3>
+              <span class="status">{{ order.status }}</span>
+            </div>
+            <p>{{ order.supplier }}</p>
+            <span>{{ order.date }}</span>
+            <strong>{{ order.items }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Suivi des commandes</h2>
+        <ul class="checklist">
+          <li>Passer commande aupres des fournisseurs partenaires.</li>
+          <li>Suivre l etat des livraisons en temps reel.</li>
+          <li>Reconcilier les receptions avec le stock central.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section *ngSwitchCase="'sales'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Ventes et dispensation</h2>
+          <span class="badge accent-purple">Registre</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let sale of sales">
+            <div class="mini-card-top">
+              <h3>{{ sale.reference }}</h3>
+              <span class="status">{{ sale.status }}</span>
+            </div>
+            <p>{{ sale.detail }}</p>
+            <span>{{ sale.date }}</span>
+            <strong>Montant : {{ sale.amount }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Historique des ventes</h2>
+        <ul class="checklist">
+          <li>Consulter l historique complet des ventes et dispensations.</li>
+          <li>Exporter le registre pour la tracabilite reglementaire.</li>
+          <li>Analyser les tendances de consommation des medicaments.</li>
+        </ul>
+      </article>
+    </section>
+  </ng-container>
+</section>

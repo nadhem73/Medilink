@@ -1,0 +1,48 @@
+<section class="dp-page">
+  <header class="dp-header">
+    <div>
+      <p class="dp-kicker">Panel medecin</p>
+      <h1>Teleconsultation</h1>
+      <p class="dp-copy">Consultez vos patients a distance en visioconference securisee, partagez vos documents et redigez vos ordonnances en direct.</p>
+    </div>
+    <a routerLink="/dashboard/doctor" class="dp-back">Retour au tableau de bord</a>
+  </header>
+
+  <div class="dp-grid">
+    <article class="dp-card">
+      <div class="dp-card-header">
+        <h2>Consultations video a venir</h2>
+        <span class="dp-badge green">En ligne</span>
+      </div>
+      <div class="dp-list">
+        <div class="dp-item" *ngFor="let s of sessions">
+          <div>
+            <h3>{{ s.patient }}</h3>
+            <p>{{ s.reason }} - {{ s.date }} a {{ s.hour }}</p>
+          </div>
+          <button type="button" class="dp-btn">Demarrer l'appel</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="dp-card">
+      <h2>Fonctionnalites</h2>
+      <ul class="dp-checklist">
+        <li *ngFor="let f of features">{{ f }}</li>
+      </ul>
+    </article>
+  </div>
+
+  <article class="dp-card">
+    <h2>Historique des teleconsultations</h2>
+    <div class="dp-list">
+      <div class="dp-item" *ngFor="let h of history">
+        <div>
+          <h3>{{ h.patient }}</h3>
+          <p>{{ h.reason }} - {{ h.date }}</p>
+        </div>
+        <span class="dp-status">{{ h.status }}</span>
+      </div>
+    </div>
+  </article>
+</section>

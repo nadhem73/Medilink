@@ -1,0 +1,70 @@
+<section class="dp-page">
+  <header class="dp-header">
+    <div>
+      <p class="dp-kicker">Panel medecin</p>
+      <h1>Dossiers medicaux</h1>
+      <p class="dp-copy">Acces centralise aux dossiers de vos patients : antecedents, suivis en cours, resultats a valider et documents.</p>
+    </div>
+    <a routerLink="/dashboard/doctor" class="dp-back">Retour au tableau de bord</a>
+  </header>
+
+  <article class="dp-card">
+    <div class="dp-card-header">
+      <h2>Patients suivis</h2>
+      <span class="dp-badge blue">Donnees centralisees</span>
+    </div>
+    <div class="dp-info-grid">
+      <div class="dp-info" *ngFor="let p of patients">
+        <span>{{ p.label }}</span>
+        <strong>{{ p.value }}</strong>
+      </div>
+    </div>
+  </article>
+
+  <div class="dp-grid">
+    <article class="dp-card">
+      <div class="dp-card-header">
+        <h2>Cas en cours</h2>
+        <span class="dp-badge green">Actifs</span>
+      </div>
+      <div class="dp-list">
+        <div class="dp-item" *ngFor="let c of ongoingCases">
+          <div>
+            <h3>{{ c.name }}</h3>
+            <p>{{ c.detail }}</p>
+          </div>
+          <span class="dp-status">{{ c.status }}</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="dp-card">
+      <h2>Resultats a valider</h2>
+      <div class="dp-list">
+        <div class="dp-item" *ngFor="let r of results">
+          <div>
+            <h3>{{ r.name }}</h3>
+            <p>{{ r.detail }}</p>
+          </div>
+          <span class="dp-status">{{ r.status }}</span>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <article class="dp-card">
+    <div class="dp-card-header">
+      <h2>Documents medicaux</h2>
+      <span class="dp-badge purple">Archives</span>
+    </div>
+    <div class="dp-list">
+      <div class="dp-item" *ngFor="let doc of documents">
+        <div>
+          <h3>{{ doc.name }}</h3>
+          <p>{{ doc.meta }}</p>
+        </div>
+        <button type="button" class="dp-btn ghost">Telecharger</button>
+      </div>
+    </div>
+  </article>
+</section>

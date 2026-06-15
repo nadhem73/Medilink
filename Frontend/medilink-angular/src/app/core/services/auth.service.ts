@@ -4,22 +4,61 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { StorageService } from './storage.service';
 
-export interface LoginRequest {
+export interface PatientListDto {
+  id: number;
+  firstName: string;
+  lastName: string;
   email: string;
+  phone: string;
+}
+
+export interface LoginRequest {
+  email?: string;
+  cin?: string;
+  licenseNumber?: string;
   password: string;
 }
 
 export interface RegisterRequest {
+  // Identité
   email: string;
   password: string;
   firstName: string;
   lastName: string;
+  phone?: string;
+  birthDate?: string;
+  gender?: string;
+  address?: string;
+  cin?: string;
   role: string;
+
+  // Données médicales (transmises au patient-service)
+  bloodGroup?: string;
+  height?: number | null;
+  weight?: number | null;
+  allergies?: string;
+  chronicDiseases?: string;
+  currentTreatments?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  insuranceCompany?: string;
+  insuranceNumber?: string;
 }
 
 export interface MessageResponse {
   message: string;
   success: boolean;
+}
+
+export interface ForgotPasswordRequest {
+  role: string;            // 'patient' | 'doctor'
+  email?: string;          // patient : email du compte
+  licenseNumber?: string;  // médecin : numéro d'ordre
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
 }
 
 export interface AuthResponse {
@@ -68,6 +107,41 @@ export class AuthService {
   register(data: RegisterRequest): Observable<MessageResponse> {
     return this.http.post<MessageResponse>(`${this.API_URL}/register`, data);
   }
+
+  forgotPassword(data: ForgotPasswordRequest): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${this.API_URL}/forgot-password`, data);
+  }
+
+  resetPassword(data: ResetPasswordRequest): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${this.API_URL}/reset-password`, data);
+  }
+
+  requestEmailVerification(): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${this.API_URL}/verify-email/request`, {});
+  }
+
+  verifyEmailOtp(code: string): Observable<any> {
+    return this.http.post<any>(`${this.API_URL}/verify-email/verify`, { code }).pipe(
+      tap(user => {
+        this.storage.setItem('user', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+      })
+    );
+  }
+
+  refreshCurrentUser(): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/me`).pipe(
+      tap(user => {
+        this.storage.setItem('user', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+      })
+    );
+  }
+
+  getAllPatients(): Observable<PatientListDto[]> {
+    return this.http.get<PatientListDto[]>(`${this.API_URL}/patients`);
+  }
+
 
   logout(): void {
     this.storage.removeToken();

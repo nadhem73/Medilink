@@ -1,147 +1,131 @@
 package com.medilinktunisia.patientservice.service;
 
-import com.medilinktunisia.patientservice.exception.AppointmentNotFoundException;
-import com.medilinktunisia.patientservice.exception.PatientNotFoundException;
-import com.medilinktunisia.patientservice.model.dto.AppointmentCreateRequest;
-import com.medilinktunisia.patientservice.model.dto.AppointmentDto;
-import com.medilinktunisia.patientservice.model.entity.Patient;
-import com.medilinktunisia.patientservice.model.entity.PatientAppointment;
-import com.medilinktunisia.patientservice.model.enums.AppointmentStatus;
-import com.medilinktunisia.patientservice.repository.PatientAppointmentRepository;
-import com.medilinktunisia.patientservice.repository.PatientRepository;
+import com.medilinktunisia.patientservice.dto.AppointmentDto;
+import com.medilinktunisia.patientservice.dto.AppointmentRequest;
+import com.medilinktunisia.patientservice.model.Appointment;
+import com.medilinktunisia.patientservice.model.AppointmentMode;
+import com.medilinktunisia.patientservice.model.AppointmentStatus;
+import com.medilinktunisia.patientservice.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AppointmentService {
 
-    private final PatientAppointmentRepository appointmentRepository;
-    private final PatientRepository patientRepository;
+    private final AppointmentRepository repository;
 
     /**
-     * Créer un rendez-vous
+     * Crée un nouveau rendez-vous pour le patient.
      */
-    @Transactional
-    public AppointmentDto createAppointment(Long patientId, AppointmentCreateRequest request) {
-        Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new PatientNotFoundException(patientId));
+    public AppointmentDto createAppointment(Long patientId, AppointmentRequest request) {
+        Appointment appointment = new Appointment();
+        appointment.setPatientId(patientId);
+        appointment.setDoctorId(request.getDoctorId());
+        appointment.setDateTime(request.getDateTime());
+        appointment.setNotes(request.getNotes());
 
-        PatientAppointment appointment = PatientAppointment.builder()
-                .patient(patient)
-                .doctorId(request.getDoctorId())
-                .appointmentDate(request.getAppointmentDate())
-                .appointmentTime(request.getAppointmentTime())
-                .estimatedDurationMinutes(request.getEstimatedDurationMinutes() != null ? 
-                        request.getEstimatedDurationMinutes() : 30)
-                .appointmentType(request.getAppointmentType())
-                .appointmentReason(request.getAppointmentReason())
-                .appointmentStatus(AppointmentStatus.SCHEDULED)
+        try {
+            appointment.setMode(AppointmentMode.valueOf(request.getMode().toUpperCase()));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Mode de consultation invalide. Valeurs possibles: PRESENTIEL, TELECONSULTATION");
+        }
+
+        appointment.setStatus(AppointmentStatus.PENDING);
+
+        return toDto(repository.save(appointment));
+    }
+
+    /**
+     * Liste tous les rendez-vous d'un patient donné, triés par date décroissante.
+     */
+    public List<AppointmentDto> getPatientAppointments(Long patientId) {
+        return repository.findByPatientIdOrderByDateTimeDesc(patientId).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    /**
+     * Liste tous les rendez-vous d'un médecin donné, triés par date décroissante.
+     */
+    public List<AppointmentDto> getDoctorAppointments(Long doctorId) {
+        return repository.findByDoctorIdOrderByDateTimeDesc(doctorId).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    /**
+     * Liste les rendez-vous d'un médecin dans une plage de dates (vue calendrier).
+     */
+    public List<AppointmentDto> getDoctorAppointmentsForRange(Long doctorId, LocalDateTime start, LocalDateTime end) {
+        return repository.findByDoctorIdAndDateTimeBetweenOrderByDateTimeAsc(doctorId, start, end).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    /**
+     * Annule un rendez-vous si le patient en est le propriétaire.
+     */
+    public AppointmentDto cancelAppointment(Long patientId, Long appointmentId) {
+        Appointment appointment = repository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Rendez-vous introuvable"));
+
+        if (!appointment.getPatientId().equals(patientId)) {
+            throw new IllegalStateException("Vous n'êtes pas autorisé à annuler ce rendez-vous");
+        }
+
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        return toDto(repository.save(appointment));
+    }
+
+    /**
+     * Confirme un rendez-vous si le médecin en est le destinataire.
+     */
+    public AppointmentDto confirmAppointment(Long doctorId, Long appointmentId) {
+        Appointment appointment = repository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Rendez-vous introuvable"));
+
+        if (!appointment.getDoctorId().equals(doctorId)) {
+            throw new IllegalStateException("Vous n'êtes pas autorisé à confirmer ce rendez-vous");
+        }
+
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new IllegalStateException("Impossible de confirmer un rendez-vous annulé");
+        }
+
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
+        return toDto(repository.save(appointment));
+    }
+
+    /**
+     * Annule un rendez-vous par le médecin (depuis le panel médecin).
+     */
+    public AppointmentDto cancelAppointmentByDoctor(Long doctorId, Long appointmentId) {
+        Appointment appointment = repository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Rendez-vous introuvable"));
+
+        if (!appointment.getDoctorId().equals(doctorId)) {
+            throw new IllegalStateException("Vous n'êtes pas autorisé à annuler ce rendez-vous");
+        }
+
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        return toDto(repository.save(appointment));
+    }
+
+    private AppointmentDto toDto(Appointment a) {
+        return AppointmentDto.builder()
+                .id(a.getId())
+                .patientId(a.getPatientId())
+                .doctorId(a.getDoctorId())
+                .dateTime(a.getDateTime())
+                .status(a.getStatus().name())
+                .mode(a.getMode().name())
+                .notes(a.getNotes())
+                .createdAt(a.getCreatedAt())
+                .updatedAt(a.getUpdatedAt())
                 .build();
-
-        PatientAppointment savedAppointment = appointmentRepository.save(appointment);
-        log.info("Rendez-vous créé pour le patient: {}", patientId);
-
-        return AppointmentDto.fromEntity(savedAppointment);
-    }
-
-    /**
-     * Récupérer tous les rendez-vous d'un patient
-     */
-    @Transactional(readOnly = true)
-    public List<AppointmentDto> getAppointmentsByPatientId(Long patientId) {
-        return appointmentRepository.findByPatientIdOrderByDateDesc(patientId).stream()
-                .map(AppointmentDto::fromEntity)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Récupérer les rendez-vous à venir
-     */
-    @Transactional(readOnly = true)
-    public List<AppointmentDto> getUpcomingAppointments(Long patientId) {
-        return appointmentRepository.findUpcomingAppointments(patientId, LocalDate.now()).stream()
-                .map(AppointmentDto::fromEntity)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Récupérer l'historique des rendez-vous
-     */
-    @Transactional(readOnly = true)
-    public List<AppointmentDto> getPastAppointments(Long patientId) {
-        return appointmentRepository.findPastAppointments(patientId, LocalDate.now()).stream()
-                .map(AppointmentDto::fromEntity)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Récupérer un rendez-vous par ID
-     */
-    @Transactional(readOnly = true)
-    public AppointmentDto getAppointmentById(Long appointmentId) {
-        PatientAppointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
-        return AppointmentDto.fromEntity(appointment);
-    }
-
-    /**
-     * Annuler un rendez-vous
-     */
-    @Transactional
-    public AppointmentDto cancelAppointment(Long appointmentId, String cancellationReason, String cancelledBy) {
-        PatientAppointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
-
-        appointment.setAppointmentStatus(AppointmentStatus.CANCELLED);
-        appointment.setCancellationReason(cancellationReason);
-        appointment.setCancelledBy(cancelledBy);
-        appointment.setCancelledAt(LocalDateTime.now());
-
-        PatientAppointment updatedAppointment = appointmentRepository.save(appointment);
-        log.info("Rendez-vous annulé: {}", appointmentId);
-
-        return AppointmentDto.fromEntity(updatedAppointment);
-    }
-
-    /**
-     * Confirmer un rendez-vous
-     */
-    @Transactional
-    public AppointmentDto confirmAppointment(Long appointmentId) {
-        PatientAppointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
-
-        appointment.setAppointmentStatus(AppointmentStatus.CONFIRMED);
-        appointment.setConfirmationSentAt(LocalDateTime.now());
-
-        PatientAppointment updatedAppointment = appointmentRepository.save(appointment);
-        log.info("Rendez-vous confirmé: {}", appointmentId);
-
-        return AppointmentDto.fromEntity(updatedAppointment);
-    }
-
-    /**
-     * Marquer un rendez-vous comme terminé
-     */
-    @Transactional
-    public AppointmentDto completeAppointment(Long appointmentId) {
-        PatientAppointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
-
-        appointment.setAppointmentStatus(AppointmentStatus.COMPLETED);
-
-        PatientAppointment updatedAppointment = appointmentRepository.save(appointment);
-        log.info("Rendez-vous terminé: {}", appointmentId);
-
-        return AppointmentDto.fromEntity(updatedAppointment);
     }
 }

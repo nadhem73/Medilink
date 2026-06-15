@@ -1,1 +1,123 @@
-<p>pharmacy-dashboard works!</p>
+<section class="pharmacy-panel">
+  <div class="panel-hero">
+    <div>
+      <p class="eyebrow">Espace pharmacie</p>
+      <h1>Bienvenue {{ currentUser?.firstName || 'dans votre officine connectee' }}</h1>
+      <p class="hero-copy">
+        Pilotez la reception des ordonnances electroniques, la gestion du stock, les commandes fournisseurs
+        et les alertes de rupture depuis un tableau de bord centralise.
+      </p>
+    </div>
+    <div class="hero-card">
+      <span class="hero-label">Etat de l officine</span>
+      <strong>Officine active</strong>
+      <p>5 alertes de stock necessitent une action et 8 ordonnances sont en attente.</p>
+      <a routerLink="/dashboard/pharmacy/alerts" class="hero-link">Voir les alertes de stock</a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <article class="stat-card" *ngFor="let card of summaryCards" [attr.data-accent]="card.accent">
+      <p class="stat-title">{{ card.title }}</p>
+      <div class="stat-value">{{ card.value }}</div>
+      <p class="stat-detail">{{ card.detail }}</p>
+    </article>
+  </div>
+
+  <div class="content-grid">
+    <section class="panel-card spotlight">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Actions rapides</p>
+          <h2>Votre tableau de bord pharmacie</h2>
+        </div>
+      </div>
+      <div class="actions-grid">
+        <article class="action-card" *ngFor="let action of quickActions">
+          <h3>{{ action.title }}</h3>
+          <p>{{ action.description }}</p>
+          <a [routerLink]="action.route">{{ action.cta }}</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Reseau</p>
+          <h2>Fournisseurs partenaires</h2>
+        </div>
+      </div>
+      <ul class="team-list">
+        <li *ngFor="let supplier of suppliers">
+          <span class="team-avatar">{{ supplier.name.charAt(0) }}</span>
+          <div>
+            <strong>{{ supplier.name }}</strong>
+            <p>{{ supplier.role }}</p>
+          </div>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="content-grid two-columns">
+    <section class="panel-card">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">A traiter</p>
+          <h2>Ordonnances en attente</h2>
+        </div>
+        <a routerLink="/dashboard/pharmacy/prescriptions" class="text-link">Tout voir</a>
+      </div>
+      <div class="list-stack">
+        <article class="info-item" *ngFor="let prescription of pendingPrescriptions">
+          <div>
+            <h3>{{ prescription.patient }}</h3>
+            <p>{{ prescription.doctor }}</p>
+            <span>{{ prescription.date }} - {{ prescription.items }}</span>
+          </div>
+          <span class="status-pill">{{ prescription.status }}</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Stock</p>
+          <h2>Alertes de rupture</h2>
+        </div>
+        <a routerLink="/dashboard/pharmacy/stock" class="text-link">Gerer le stock</a>
+      </div>
+      <div class="list-stack">
+        <article class="info-item compact" *ngFor="let alert of stockAlerts">
+          <div>
+            <h3>{{ alert.name }}</h3>
+            <p>{{ alert.instruction }}</p>
+          </div>
+          <span>{{ alert.nextDose }}</span>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel-card timeline-card">
+    <div class="section-heading">
+      <div>
+        <p class="section-kicker">Activite recente</p>
+        <h2>Dispensations et reapprovisionnements</h2>
+      </div>
+      <a routerLink="/dashboard/pharmacy/sales" class="text-link">Voir les ventes</a>
+    </div>
+    <div class="timeline">
+      <article class="timeline-item" *ngFor="let item of activityTimeline">
+        <span class="timeline-dot"></span>
+        <div>
+          <h3>{{ item.title }}</h3>
+          <p class="timeline-meta">{{ item.meta }}</p>
+          <p>{{ item.description }}</p>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

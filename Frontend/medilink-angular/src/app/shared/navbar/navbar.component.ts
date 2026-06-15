@@ -71,8 +71,9 @@ export class NavbarComponent implements OnInit {
     const roles: string[] = this.currentUser?.roles || [];
     const normalized = roles.map(r => String(r).toUpperCase());
 
+    if (normalized.includes('ROLE_ADMIN') || normalized.includes('ADMIN')) return '/dashboard/admin';
     if (normalized.includes('ROLE_DOCTOR') || normalized.includes('DOCTOR')) return '/dashboard/doctor';
-    if (normalized.includes('ROLE_PHARMACY') || normalized.includes('PHARMACY')) return '/dashboard/pharmacy';
+    if (normalized.some(r => r.includes('PHARMAC'))) return '/dashboard/pharmacy';
     if (normalized.includes('ROLE_LABORATORY') || normalized.includes('LABORATORY')) return '/dashboard/laboratory';
     if (normalized.includes('ROLE_AMBULANCE') || normalized.includes('AMBULANCE')) return '/dashboard/ambulance';
     return '/dashboard/patient';
@@ -82,8 +83,9 @@ export class NavbarComponent implements OnInit {
     const roles: string[] = this.currentUser?.roles || [];
     const normalized = roles.map(r => String(r).toUpperCase());
 
+    if (normalized.includes('ROLE_ADMIN') || normalized.includes('ADMIN')) return 'Admin panel';
     if (normalized.includes('ROLE_DOCTOR') || normalized.includes('DOCTOR')) return 'Doctor panel';
-    if (normalized.includes('ROLE_PHARMACY') || normalized.includes('PHARMACY')) return 'Pharmacy panel';
+    if (normalized.some(r => r.includes('PHARMAC'))) return 'Pharmacy panel';
     if (normalized.includes('ROLE_LABORATORY') || normalized.includes('LABORATORY')) return 'Laboratory panel';
     if (normalized.includes('ROLE_AMBULANCE') || normalized.includes('AMBULANCE')) return 'Ambulance panel';
     return 'Patient panel';

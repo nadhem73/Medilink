@@ -1,145 +1,83 @@
 package com.medilinktunisia.authservice.model.entity;
 
+import com.medilinktunisia.authservice.model.enums.Role;
+import com.medilinktunisia.authservice.model.enums.UserStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
+/**
+ * Utilisateur (classe abstraite du diagramme de classe).
+ * Contient les attributs communs à tous les types d'utilisateurs.
+ * <p>
+ * Stratégie d'héritage JOINED : une table {@code users} pour les champs communs
+ * et une table par sous-type (ex. {@code patients}) reliées par la clé primaire.
+ */
 @Entity
 @Table(name = "users", indexes = {
-    @Index(name = "idx_email", columnList = "email"),
-    @Index(name = "idx_status", columnList = "status")
+        @Index(name = "idx_users_email", columnList = "email", unique = true),
+        @Index(name = "idx_users_phone", columnList = "phone", unique = true),
+        @Index(name = "idx_users_status", columnList = "status")
 })
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@lombok.EqualsAndHashCode(exclude = {"roles"})
-@lombok.ToString(exclude = {"roles"})
-public class User {
+@Inheritance(strategy = InheritanceType.JOINED)
+@Getter
+@Setter
+public abstract class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String firstName;
-
-    @Column(nullable = false, length = 100)
-    private String lastName;
-
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, unique = true, length = 150)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    /** Mot de passe haché (BCrypt) — correspond à passwordHash du diagramme. */
+    @Column(name = "password_hash", nullable = false)
     private String password;
 
-    @Column(nullable = false, length = 20)
+    /** prenom dans le diagramme. */
+    @Column(name = "first_name", nullable = false, length = 100)
+    private String firstName;
+
+    /** nom dans le diagramme. */
+    @Column(name = "last_name", nullable = false, length = 100)
+    private String lastName;
+
+    /** telephone dans le diagramme. */
+    @Column(length = 20, unique = true)
     private String phone;
 
-    @Column(nullable = false, length = 255)
-    private String address;
-
-    @Column(nullable = false)
-    private LocalDate birthDate;
-
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
-    private Gender gender;
-
-    @Column(length = 20)
-    private String cin;
-
-    @Column(length = 500)
-    private String profileImage;
+    @Column(nullable = false, length = 20)
+    private Role role;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    @Builder.Default
-    private UserStatus status = UserStatus.PENDING;
+    private UserStatus status;
 
     @Column(name = "is_email_verified", nullable = false)
-    @Builder.Default
-    private Boolean isEmailVerified = false;
+    private boolean emailVerified = false;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    @Builder.Default
-    private Set<Role> roles = new HashSet<>();
-
-    @CreationTimestamp
+    /** dateInscription dans le diagramme. */
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Enums
-    public enum Gender {
-        MALE("Homme"),
-        FEMALE("Femme"),
-        OTHER("Autre");
-
-        private final String label;
-
-        Gender(String label) {
-            this.label = label;
-        }
-
-        public String getLabel() {
-            return label;
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
+        if (this.status == null) {
+            this.status = UserStatus.PENDING;
         }
     }
 
-    public enum UserStatus {
-        ACTIVE("Actif"),
-        INACTIVE("Inactif"),
-        PENDING("En attente"),
-        BLOCKED("Bloqué");
-
-        private final String label;
-
-        UserStatus(String label) {
-            this.label = label;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-    }
-
-    // Méthodes utilitaires
-    public void addRole(Role role) {
-        this.roles.add(role);
-        role.getUsers().add(this);
-    }
-
-    public void removeRole(Role role) {
-        this.roles.remove(role);
-        role.getUsers().remove(this);
-    }
-
-    public boolean isActive() {
-        return this.status == UserStatus.ACTIVE;
-    }
-
-    public Role.RoleName getPrimaryRole() {
-        return roles.stream()
-                .findFirst()
-                .map(Role::getName)
-                .orElse(null);
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

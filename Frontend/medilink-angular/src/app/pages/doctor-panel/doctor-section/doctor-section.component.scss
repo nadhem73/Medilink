@@ -1,0 +1,594 @@
+// ── Variables locales ────────────────────────────────────────────────────────
+$green:   var(--vert-oasis, #2e8b57);
+$blue:    var(--bleu-nuit, #0f2c4c);
+$med:     var(--bleu-mediterranee, #0066a2);
+$gold:    var(--or-carthage, #d4a843);
+$grey:    var(--gris-clinique, #5a6a7a);
+$light:   var(--gris-clair, #f0f4f8);
+$white:   var(--blanc-sante, #fff);
+$shadow:  var(--box-shadow, 0 8px 24px rgba(26,43,60,.08));
+
+// ── Structure de page ────────────────────────────────────────────────────────
+.doctor-section-page {
+  display: grid;
+  gap: 24px;
+  color: var(--noir-profond, #1a2b3c);
+}
+
+// ── En-tête ──────────────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 24px;
+  background: $white;
+  border: 1px solid $light;
+  border-radius: 20px;
+  box-shadow: $shadow;
+}
+
+.page-kicker {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: 12px;
+  font-weight: 700;
+  color: $green;
+}
+
+.page-header h1 { margin: 0; color: $blue; }
+
+.page-copy {
+  max-width: 760px;
+  margin: 12px 0 0;
+  color: $grey;
+  font-size: 15px;
+}
+
+.back-link {
+  white-space: nowrap;
+  color: $green;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, $green 10%, $white);
+  border: 1px solid color-mix(in srgb, $green 18%, $light);
+  transition: background .15s, box-shadow .15s;
+
+  &:hover {
+    background: color-mix(in srgb, $green 16%, $white);
+    box-shadow: 0 4px 12px rgba(46,139,87,.15);
+  }
+}
+
+// ── Grille générique (patients, consultations, etc.) ─────────────────────────
+.section-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+// ── Carte de base ─────────────────────────────────────────────────────────────
+.card {
+  background: $white;
+  border: 1px solid $light;
+  border-radius: 20px;
+  box-shadow: $shadow;
+  padding: 24px;
+  min-width: 0;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+
+  h2 { margin: 0; color: $blue; font-size: 20px; }
+}
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: $light;
+  color: $grey;
+  border: 1px solid color-mix(in srgb, #1a2b3c 10%, $light);
+
+  &.accent-green  { background: color-mix(in srgb, $green 12%, $white); color: $green; border-color: color-mix(in srgb, $green 20%, $light); }
+  &.accent-orange { background: color-mix(in srgb, $gold 15%, $white);  color: $gold;  border-color: color-mix(in srgb, $gold 22%, $light); }
+  &.accent-purple { background: color-mix(in srgb, $blue 10%, $white);  color: $blue;  border-color: color-mix(in srgb, $blue 18%, $light); }
+}
+
+// ── Statut badges ─────────────────────────────────────────────────────────────
+.status {
+  display: inline-flex;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+
+  &.status-confirmed {
+    background: color-mix(in srgb, $green 12%, $white);
+    color: $green;
+    border: 1px solid color-mix(in srgb, $green 20%, $light);
+  }
+  &.status-pending {
+    background: color-mix(in srgb, $gold 15%, $white);
+    color: darken(#d4a843, 10%);
+    border: 1px solid color-mix(in srgb, $gold 22%, $light);
+  }
+  &.status-cancelled {
+    background: #fee2e2;
+    color: #ef4444;
+    border: 1px solid #fca5a5;
+  }
+}
+
+// ── Mini-cartes (patients, consultations…) ────────────────────────────────────
+.list-cards  { display: grid; gap: 12px; }
+
+.mini-card {
+  padding: 16px;
+  border-radius: 16px;
+  background: $light;
+  border: 1px solid color-mix(in srgb, #1a2b3c 8%, $light);
+  transition: box-shadow .15s;
+
+  &:hover { box-shadow: 0 4px 16px rgba(26,43,60,.1); }
+
+  h3     { margin: 0; color: $blue; font-size: 15px; }
+  p      { margin: 4px 0 8px; color: $grey; font-size: 14px; }
+  span   { color: $grey; font-size: 13px; }
+  strong { display: block; margin-top: 8px; color: $med; font-size: 13px; }
+}
+
+.mini-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+// ── Profil ────────────────────────────────────────────────────────────────────
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profile-item {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: $light;
+  border: 1px solid color-mix(in srgb, #1a2b3c 8%, $light);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  span   { color: $grey; font-size: 12px; }
+  strong { color: $blue; font-size: 15px; }
+}
+
+// ── Checklist ─────────────────────────────────────────────────────────────────
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: grid;
+  gap: 10px;
+  color: $grey;
+
+  li {
+    position: relative;
+    padding-left: 18px;
+    font-size: 14px;
+    line-height: 1.5;
+
+    &::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: $green;
+      position: absolute;
+      left: 0;
+      top: .55em;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AGENDA — Layout principal
+// ═══════════════════════════════════════════════════════════════════════════════
+
+.agenda-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-rows: auto 1fr auto;
+}
+
+// ── Stats bar ─────────────────────────────────────────────────────────────────
+.agenda-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: $white;
+  border: 2px solid $light;
+  box-shadow: $shadow;
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s, transform .15s;
+
+  &:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(26,43,60,.12); }
+
+  &.active {
+    border-color: color-mix(in srgb, $green 50%, $light);
+    background: color-mix(in srgb, $green 6%, $white);
+  }
+
+  .stat-icon { font-size: 28px; flex-shrink: 0; }
+
+  > div {
+    display: flex;
+    flex-direction: column;
+
+    strong { font-size: 24px; font-weight: 800; color: $blue; line-height: 1; }
+    span   { font-size: 12px; color: $grey; margin-top: 2px; }
+  }
+
+  &.stat-pending.active  { border-color: color-mix(in srgb, $gold 50%, $light); background: color-mix(in srgb, $gold 6%, $white); }
+  &.stat-confirmed.active { border-color: color-mix(in srgb, $green 50%, $light); background: color-mix(in srgb, $green 6%, $white); }
+  &.stat-cancelled.active { border-color: #fca5a5; background: #fff8f8; }
+}
+
+// ── Corps (calendrier + liste) ────────────────────────────────────────────────
+.agenda-body {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+// ── Calendrier ────────────────────────────────────────────────────────────────
+.calendar-card {
+  padding: 20px;
+  position: sticky;
+  top: 80px;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cal-month-label {
+  font-weight: 700;
+  font-size: 16px;
+  color: $blue;
+}
+
+.cal-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid $light;
+  background: $light;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $blue;
+  transition: background .15s;
+
+  &:hover { background: color-mix(in srgb, $green 15%, $white); }
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: $grey;
+  padding: 4px 0;
+  text-transform: uppercase;
+}
+
+.cal-day {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--noir-profond);
+
+  &:hover:not(.cal-day-empty) {
+    background: color-mix(in srgb, $green 12%, $white);
+  }
+
+  &.cal-day-empty { cursor: default; }
+
+  &.cal-day-today .cal-day-num {
+    background: $blue;
+    color: #fff;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  &.cal-day-selected {
+    background: color-mix(in srgb, $green 14%, $white);
+    box-shadow: 0 0 0 2px $green;
+  }
+
+  &.cal-day-has-appt { font-weight: 700; }
+}
+
+.cal-day-num {
+  line-height: 1;
+  font-size: 13px;
+}
+
+.cal-dots {
+  display: flex;
+  gap: 2px;
+  margin-top: 3px;
+}
+
+.cal-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-confirmed, i.dot-confirmed { background: #2e8b57; }
+.dot-pending,   i.dot-pending   { background: #d4a843; }
+
+// Légende
+.calendar-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid $light;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: $grey;
+  }
+
+  i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+}
+
+.clear-date-btn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 8px;
+  border: 1px dashed color-mix(in srgb, $green 40%, $light);
+  border-radius: 10px;
+  background: none;
+  color: $green;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background .15s;
+
+  &:hover { background: color-mix(in srgb, $green 8%, $white); }
+}
+
+// ── Carte liste des RDV ───────────────────────────────────────────────────────
+.appointments-card {
+  min-height: 400px;
+}
+
+.appt-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: $grey;
+}
+
+.appt-list {
+  display: grid;
+  gap: 12px;
+}
+
+.appt-card {
+  display: grid;
+  grid-template-columns: 70px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid $light;
+  background: $white;
+  transition: border-color .15s, box-shadow .15s;
+
+  &:hover {
+    border-color: color-mix(in srgb, $green 30%, $light);
+    box-shadow: 0 4px 16px rgba(46,139,87,.08);
+  }
+}
+
+.appt-time-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.appt-hour {
+  font-size: 18px;
+  font-weight: 800;
+  color: $blue;
+}
+
+.appt-mode-icon { font-size: 18px; }
+
+.appt-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.appt-patient   { font-size: 15px; font-weight: 700; color: $blue; }
+.appt-reason    { font-size: 13px; color: $grey; }
+.appt-mode-label { font-size: 12px; color: $grey; margin-top: 2px; }
+
+.appt-action-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.appt-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.appt-btn {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: transform .1s, box-shadow .15s, opacity .15s;
+  min-width: 110px;
+
+  &:disabled { opacity: .6; cursor: not-allowed; transform: none !important; }
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+
+  &.btn-confirm {
+    background: color-mix(in srgb, $green 14%, $white);
+    color: $green;
+    border-color: color-mix(in srgb, $green 30%, $light);
+
+    &:hover:not(:disabled) { background: $green; color: #fff; box-shadow: 0 6px 16px rgba(46,139,87,.25); }
+  }
+
+  &.btn-cancel {
+    background: #fff8f8;
+    color: #ef4444;
+    border-color: #fca5a5;
+
+    &:hover:not(:disabled) { background: #ef4444; color: #fff; box-shadow: 0 6px 16px rgba(239,68,68,.2); }
+  }
+}
+
+// ── Spinner bouton ────────────────────────────────────────────────────────────
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+
+// ── Conseil agenda ────────────────────────────────────────────────────────────
+.agenda-tips-card {
+  > h2 { margin: 0 0 4px; color: $blue; font-size: 18px; }
+}
+
+// ── Loading & Empty states ────────────────────────────────────────────────────
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: $grey;
+
+  .spinner {
+    width: 34px;
+    height: 34px;
+    border: 3px solid $light;
+    border-top-color: $green;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin-bottom: 12px;
+  }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: $grey;
+
+  .empty-icon { font-size: 48px; display: block; margin-bottom: 16px; }
+  h3 { color: $blue; margin: 0 0 8px; }
+  p  { max-width: 420px; margin: 0 auto; font-size: 14px; }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@media (max-width: 1200px) {
+  .section-grid        { grid-template-columns: 1fr; }
+  .profile-grid        { grid-template-columns: 1fr 1fr; }
+  .agenda-body         { grid-template-columns: 1fr; }
+  .calendar-card       { position: static; }
+  .page-header         { flex-direction: column; align-items: flex-start; }
+  .agenda-stats        { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .agenda-stats  { grid-template-columns: 1fr 1fr; }
+  .profile-grid  { grid-template-columns: 1fr; }
+  .appt-card     { grid-template-columns: 60px 1fr; }
+  .appt-action-col { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; }
+}

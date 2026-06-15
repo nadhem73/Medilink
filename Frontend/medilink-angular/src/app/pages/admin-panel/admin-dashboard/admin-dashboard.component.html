@@ -1,0 +1,123 @@
+<section class="admin-panel">
+  <div class="panel-hero">
+    <div>
+      <p class="eyebrow">Espace administrateur</p>
+      <h1>Bonjour {{ currentUser?.firstName || 'Administrateur' }}</h1>
+      <p class="hero-copy">
+        Supervisez l ensemble de la plateforme Medilink : utilisateurs, validation des comptes professionnels,
+        statistiques globales et securite, depuis un poste de pilotage unique.
+      </p>
+    </div>
+    <div class="hero-card">
+      <span class="hero-label">Etat de la plateforme</span>
+      <strong>Operationnel</strong>
+      <p>4 comptes professionnels attendent votre validation.</p>
+      <a routerLink="/dashboard/admin/approvals" class="hero-link">Traiter les validations</a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <article class="stat-card" *ngFor="let card of summaryCards" [attr.data-accent]="card.accent">
+      <p class="stat-title">{{ card.title }}</p>
+      <div class="stat-value">{{ card.value }}</div>
+      <p class="stat-detail">{{ card.detail }}</p>
+    </article>
+  </div>
+
+  <div class="content-grid">
+    <section class="panel-card spotlight">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Actions rapides</p>
+          <h2>Pilotage de la plateforme</h2>
+        </div>
+      </div>
+      <div class="actions-grid">
+        <article class="action-card" *ngFor="let action of quickActions">
+          <h3>{{ action.title }}</h3>
+          <p>{{ action.description }}</p>
+          <a [routerLink]="action.route">{{ action.cta }}</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Organisation</p>
+          <h2>Equipe d administration</h2>
+        </div>
+      </div>
+      <ul class="team-list">
+        <li *ngFor="let member of team">
+          <span class="team-avatar">{{ member.name.charAt(0) }}</span>
+          <div>
+            <strong>{{ member.name }}</strong>
+            <p>{{ member.role }}</p>
+          </div>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="content-grid two-columns">
+    <section class="panel-card">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">A traiter</p>
+          <h2>Comptes professionnels en attente</h2>
+        </div>
+        <a routerLink="/dashboard/admin/approvals" class="text-link">Tout voir</a>
+      </div>
+      <div class="list-stack">
+        <article class="info-item" *ngFor="let approval of pendingApprovals">
+          <div>
+            <h3>{{ approval.name }}</h3>
+            <p>{{ approval.type }}</p>
+            <span>{{ approval.submitted }}</span>
+          </div>
+          <span class="status-pill">{{ approval.status }}</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Infrastructure</p>
+          <h2>Etat des services</h2>
+        </div>
+        <a routerLink="/dashboard/admin/logs" class="text-link">Voir les logs</a>
+      </div>
+      <div class="list-stack">
+        <article class="info-item compact" *ngFor="let service of systemHealth">
+          <div>
+            <h3>{{ service.name }}</h3>
+            <p>{{ service.instruction }}</p>
+          </div>
+          <span>{{ service.nextDose }}</span>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel-card timeline-card">
+    <div class="section-heading">
+      <div>
+        <p class="section-kicker">Activite recente</p>
+        <h2>Journal d administration</h2>
+      </div>
+      <a routerLink="/dashboard/admin/logs" class="text-link">Audit complet</a>
+    </div>
+    <div class="timeline">
+      <article class="timeline-item" *ngFor="let item of activityTimeline">
+        <span class="timeline-dot"></span>
+        <div>
+          <h3>{{ item.title }}</h3>
+          <p class="timeline-meta">{{ item.meta }}</p>
+          <p>{{ item.description }}</p>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

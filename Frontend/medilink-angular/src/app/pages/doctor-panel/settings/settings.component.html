@@ -1,0 +1,36 @@
+<section class="dp-page">
+  <header class="dp-header">
+    <div>
+      <p class="dp-kicker">Panel medecin</p>
+      <h1>Parametres</h1>
+      <p class="dp-copy">Gerez vos informations professionnelles, vos preferences de notification et la securite de votre compte.</p>
+    </div>
+    <a routerLink="/dashboard/doctor" class="dp-back">Retour au tableau de bord</a>
+  </header>
+
+  <div class="dp-grid">
+    <article class="dp-card">
+      <div class="dp-card-header">
+        <h2>Informations professionnelles</h2>
+        <span class="dp-badge purple">Profil</span>
+      </div>
+      <div class="dp-info-grid">
+        <div class="dp-info" *ngFor="let item of profileCards">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+        </div>
+      </div>
+      <div style="margin-top:18px;">
+        <button type="button" class="dp-btn">Modifier le profil</button>
+      </div>
+    </article>
+
+    <article class="dp-card">
+      <h2>Preferences</h2>
+      <div class="dp-toggle" *ngFor="let p of preferences">
+        <span>{{ p.label }}</span>
+        <span class="switch" [class.on]="p.enabled" (click)="toggle(p)"></span>
+      </div>
+    </article>
+  </div>
+</section>

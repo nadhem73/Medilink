@@ -1,0 +1,317 @@
+.pharmacy-panel {
+  // Theme pharmacie : accent Violet (#6D28D9), cahier des charges / palette
+  --bleu-mediterranee: #6d28d9; // accent principal -> Violet
+  --turquoise-tunisie: #8b5cf6; // liens / elements interactifs -> Violet clair
+  --bleu-nuit: #4c1d95;         // titres / dégradés -> violet profond
+  --vert-oasis: #6d28d9;        // accent secondaire -> Violet
+
+  display: grid;
+  gap: 24px;
+  color: var(--noir-profond);
+}
+
+.panel-hero {
+  display: grid;
+  grid-template-columns: 2fr minmax(280px, 360px);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.eyebrow,
+.section-kicker {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--turquoise-tunisie);
+}
+
+.panel-hero h1,
+.section-heading h2 {
+  margin: 0;
+  color: var(--bleu-nuit);
+}
+
+.hero-copy {
+  max-width: 760px;
+  margin: 16px 0 0;
+  color: var(--gris-clinique);
+  font-size: 15px;
+}
+
+.hero-card,
+.panel-card,
+.stat-card,
+.action-card {
+  background: var(--blanc-sante);
+  border: 1px solid var(--gris-clair);
+  border-radius: 20px;
+  box-shadow: var(--box-shadow);
+}
+
+.hero-card {
+  padding: 24px;
+  background: linear-gradient(160deg, var(--bleu-nuit) 0%, var(--bleu-mediterranee) 100%);
+  color: var(--blanc-sante);
+}
+
+.hero-card strong {
+  display: block;
+  margin: 10px 0 8px;
+  font-size: 28px;
+}
+
+.hero-card p {
+  margin: 0 0 16px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.hero-label {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hero-link,
+.text-link,
+.action-card a {
+  color: var(--turquoise-tunisie);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.hero-link {
+  color: #ffffff;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.stat-card {
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  border-radius: 20px 0 0 20px;
+  background: var(--bleu-mediterranee);
+}
+
+.stat-card[data-accent='green']::before {
+  background: var(--vert-oasis);
+}
+
+.stat-card[data-accent='orange']::before {
+  background: var(--or-carthage);
+}
+
+.stat-card[data-accent='purple']::before {
+  background: var(--bleu-nuit);
+}
+
+.stat-title {
+  margin: 0;
+  color: var(--gris-clinique);
+  font-size: 14px;
+}
+
+.stat-value {
+  margin: 12px 0 6px;
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--bleu-nuit);
+}
+
+.stat-detail {
+  margin: 0;
+  color: var(--gris-clinique);
+  font-size: 13px;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.content-grid.two-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel-card {
+  padding: 24px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.action-card {
+  padding: 20px;
+  background: linear-gradient(180deg, var(--gris-clair) 0%, var(--blanc-sante) 100%);
+}
+
+.action-card h3,
+.info-item h3,
+.timeline-item h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: var(--bleu-nuit);
+}
+
+.action-card p,
+.info-item p,
+.timeline-item p {
+  margin: 0;
+  color: var(--gris-clinique);
+}
+
+.action-card a {
+  display: inline-block;
+  margin-top: 16px;
+}
+
+.team-list,
+.list-stack,
+.timeline {
+  display: grid;
+  gap: 14px;
+}
+
+.team-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.team-list li,
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--gris-clair);
+  border: 1px solid color-mix(in srgb, var(--noir-profond) 10%, var(--gris-clair));
+}
+
+.team-avatar {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bleu-mediterranee) 15%, var(--blanc-sante));
+  color: var(--bleu-mediterranee);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.team-list li div {
+  flex: 1;
+}
+
+.team-list li p {
+  margin: 4px 0 0;
+  color: var(--gris-clinique);
+}
+
+.info-item span {
+  color: var(--gris-clinique);
+  font-size: 13px;
+}
+
+.info-item.compact {
+  align-items: flex-start;
+}
+
+.status-pill {
+  white-space: nowrap;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--turquoise-tunisie) 12%, var(--blanc-sante));
+  color: var(--vert-oasis);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 14px;
+}
+
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--turquoise-tunisie);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--turquoise-tunisie) 22%, transparent);
+}
+
+.timeline-meta {
+  margin-bottom: 8px !important;
+  font-size: 13px;
+  color: var(--gris-clinique) !important;
+}
+
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .content-grid,
+  .content-grid.two-columns,
+  .panel-hero,
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-card,
+  .hero-card,
+  .stat-card {
+    padding: 18px;
+  }
+
+  .team-list li,
+  .info-item,
+  .section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .status-pill {
+    align-self: flex-start;
+  }
+}

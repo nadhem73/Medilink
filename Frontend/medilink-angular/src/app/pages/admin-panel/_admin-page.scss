@@ -1,0 +1,183 @@
+// Styles partages par les pages de section du panel admin (palette anthracite + or).
+$admin-ink: #1a1a2e;
+$admin-gold: #c9962f;
+$admin-gold-bright: #f5c451;
+$admin-muted: #5b6b85;
+$admin-line: #e6eaf2;
+$admin-surface: #ffffff;
+$admin-soft: #f7f8fb;
+
+.pp-page {
+  display: grid;
+  gap: 24px;
+  color: $admin-ink;
+}
+
+.pp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 24px;
+  background: $admin-surface;
+  border: 1px solid $admin-line;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(20, 20, 46, 0.06);
+
+  h1 { margin: 0; color: $admin-ink; font-size: 26px; }
+}
+
+.pp-kicker {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  font-weight: 700;
+  color: $admin-gold;
+}
+
+.pp-copy {
+  max-width: 720px;
+  margin: 12px 0 0;
+  color: $admin-muted;
+  font-size: 15px;
+}
+
+.pp-back {
+  white-space: nowrap;
+  color: $admin-gold;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(245, 196, 81, 0.14);
+  border: 1px solid rgba(201, 150, 47, 0.25);
+}
+
+.pp-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.pp-card {
+  background: $admin-surface;
+  border: 1px solid $admin-line;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(20, 20, 46, 0.06);
+  padding: 22px;
+
+  > h2 { margin: 0 0 16px; font-size: 18px; color: $admin-ink; }
+}
+
+.pp-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  h2 { margin: 0; font-size: 18px; color: $admin-ink; }
+}
+
+.pp-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(245, 196, 81, 0.16);
+  color: $admin-gold;
+
+  &.green { background: rgba(34, 197, 94, 0.14); color: #15803d; }
+  &.orange { background: rgba(249, 115, 22, 0.14); color: #c2410c; }
+  &.purple { background: rgba(139, 92, 246, 0.14); color: #6d28d9; }
+  &.blue { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+  &.gold { background: rgba(245, 196, 81, 0.16); color: $admin-gold; }
+}
+
+.pp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pp-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid $admin-line;
+  border-radius: 14px;
+  transition: border-color 0.15s ease;
+
+  &:hover { border-color: rgba(201, 150, 47, 0.4); }
+
+  h3 { margin: 0 0 2px; font-size: 15px; color: $admin-ink; }
+  p { margin: 0; font-size: 13px; color: $admin-muted; }
+}
+
+.pp-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.pp-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: $admin-soft;
+  border: 1px solid $admin-line;
+
+  span { font-size: 12px; color: $admin-muted; }
+  strong { font-size: 15px; color: $admin-ink; }
+}
+
+.pp-checklist {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 10px;
+  color: $admin-muted;
+  font-size: 14px;
+}
+
+.pp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  background: linear-gradient(135deg, $admin-gold-bright, $admin-gold);
+  color: $admin-ink;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+
+  &:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(201, 150, 47, 0.3); }
+  &.ghost { background: #fff; color: $admin-gold; border: 1px solid $admin-line; }
+}
+
+.pp-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid $admin-line;
+  &:last-child { border-bottom: none; }
+
+  span { font-size: 14px; color: $admin-ink; }
+  .switch { width: 42px; height: 24px; border-radius: 999px; background: #cbd5e1; position: relative; cursor: pointer; transition: background 0.15s ease; }
+  .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left 0.15s ease; }
+  .switch.on { background: $admin-gold; }
+  .switch.on::after { left: 21px; }
+}
+
+@media (max-width: 900px) {
+  .pp-grid { grid-template-columns: 1fr; }
+  .pp-header { flex-direction: column; align-items: flex-start; }
+}
