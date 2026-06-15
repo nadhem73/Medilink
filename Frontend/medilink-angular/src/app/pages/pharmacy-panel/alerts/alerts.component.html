@@ -1,0 +1,66 @@
+<section class="pp-page">
+  <header class="pp-header">
+    <div>
+      <p class="pp-kicker">Panel pharmacie</p>
+      <h1>Alertes de stock</h1>
+      <p class="pp-copy">Alertes automatiques en cas de rupture, seuils critiques atteints et medicaments proches de la peremption.</p>
+    </div>
+    <a routerLink="/dashboard/pharmacy" class="pp-back">Retour au tableau de bord</a>
+  </header>
+
+  <article class="pp-card">
+    <div class="pp-info-grid">
+      <div class="pp-info" *ngFor="let s of summary">
+        <span>{{ s.label }}</span>
+        <strong>{{ s.value }}</strong>
+      </div>
+    </div>
+  </article>
+
+  <div class="pp-grid">
+    <article class="pp-card">
+      <div class="pp-card-header">
+        <h2>Ruptures critiques</h2>
+        <span class="pp-badge orange">Action requise</span>
+      </div>
+      <div class="pp-list">
+        <div class="pp-item" *ngFor="let r of ruptures">
+          <div>
+            <h3>{{ r.name }}</h3>
+            <p>{{ r.detail }}</p>
+          </div>
+          <span class="pp-status">{{ r.status }}</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="pp-card">
+      <h2>Sous le seuil d alerte</h2>
+      <div class="pp-list">
+        <div class="pp-item" *ngFor="let t of thresholds">
+          <div>
+            <h3>{{ t.name }}</h3>
+            <p>{{ t.detail }}</p>
+          </div>
+          <span class="pp-status">{{ t.status }}</span>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <article class="pp-card">
+    <div class="pp-card-header">
+      <h2>Peremptions proches</h2>
+      <span class="pp-badge purple">A controler</span>
+    </div>
+    <div class="pp-list">
+      <div class="pp-item" *ngFor="let e of expirations">
+        <div>
+          <h3>{{ e.name }}</h3>
+          <p>{{ e.meta }}</p>
+        </div>
+        <button type="button" class="pp-btn ghost">Commander</button>
+      </div>
+    </div>
+  </article>
+</section>

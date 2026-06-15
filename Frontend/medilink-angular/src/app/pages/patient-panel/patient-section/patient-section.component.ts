@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { DoctorService, DoctorWithProfile } from '../../../core/services/doctor.service';
+import { AppointmentService, AppointmentDto, AppointmentRequest } from '../../../core/services/appointment.service';
 
 type PatientSectionKey = 'appointments' | 'prescriptions' | 'labs' | 'profile';
 
@@ -14,33 +16,31 @@ export class PatientSectionComponent implements OnInit {
   title = '';
   currentUser: any;
 
-  appointments = [
-    {
-      doctor: 'Dr. Yasmine Ben Salem',
-      specialty: 'Cardiologie',
-      date: 'Lundi 10 juin 2026',
-      hour: '09:30',
-      mode: 'Presentiel',
-      status: 'Confirme'
-    },
-    {
-      doctor: 'Dr. Ines Gharbi',
-      specialty: 'Medecine generale',
-      date: 'Vendredi 14 juin 2026',
-      hour: '11:00',
-      mode: 'Teleconsultation',
-      status: 'En ligne'
-    },
-    {
-      doctor: 'Dr. Mehdi Trabelsi',
-      specialty: 'Dermatologie',
-      date: 'Mardi 18 juin 2026',
-      hour: '14:15',
-      mode: 'Presentiel',
-      status: 'A confirmer'
-    }
-  ];
+  // Dynamic Data
+  appointments: AppointmentDto[] = [];
+  doctors: DoctorWithProfile[] = [];
+  filteredDoctors: DoctorWithProfile[] = [];
+  specialties: string[] = [];
+  selectedSpecialty: string = '';
 
+  // UI state
+  activeTab: 'list' | 'book' = 'list';
+  selectedDoctor: DoctorWithProfile | null = null;
+  loadingAppointments = false;
+  loadingDoctors = false;
+  submitting = false;
+
+  // Booking form model
+  bookingDate: string = '';
+  bookingTime: string = '';
+  bookingMode: string = 'PRESENTIEL';
+  bookingNotes: string = '';
+
+  // Notifications
+  successMessage: string = '';
+  errorMessage: string = '';
+
+  // Pre-existing mock data for other tabs
   prescriptions = [
     {
       medication: 'Amlodipine 5 mg',
@@ -99,7 +99,9 @@ export class PatientSectionComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private authService: AuthService
+    private authService: AuthService,
+    private doctorService: DoctorService,
+    private appointmentService: AppointmentService
   ) {
     this.currentUser = this.authService.getCurrentUser();
     this.profileCards = [
@@ -116,6 +118,177 @@ export class PatientSectionComponent implements OnInit {
     this.route.data.subscribe(data => {
       this.section = data['section'] as PatientSectionKey;
       this.title = data['title'] as string;
+      
+      if (this.section === 'appointments') {
+        this.loadAppointments();
+        this.loadDoctors();
+      }
     });
+  }
+
+  // Load appointments from backend
+  loadAppointments(): void {
+    this.loadingAppointments = true;
+    this.appointmentService.getMyAppointments().subscribe({
+      next: (data) => {
+        this.appointments = data;
+        this.loadingAppointments = false;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des rendez-vous', err);
+        this.loadingAppointments = false;
+      }
+    });
+  }
+
+  // Load doctors from backend
+  loadDoctors(): void {
+    this.loadingDoctors = true;
+    this.doctorService.getDoctorsWithProfiles().subscribe({
+      next: (data) => {
+        this.doctors = data;
+        this.filteredDoctors = data;
+        
+        // Extract unique specialties for filtering
+        const specs = data.map(d => d.specialty).filter(s => !!s);
+        this.specialties = Array.from(new Set(specs));
+        
+        this.loadingDoctors = false;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des medecins', err);
+        this.loadingDoctors = false;
+      }
+    });
+  }
+
+  // Filter doctors list
+  onSpecialtyChange(): void {
+    if (!this.selectedSpecialty) {
+      this.filteredDoctors = this.doctors;
+    } else {
+      this.filteredDoctors = this.doctors.filter(
+        d => d.specialty === this.selectedSpecialty
+      );
+    }
+  }
+
+  // Switch tabs
+  switchTab(tab: 'list' | 'book'): void {
+    this.activeTab = tab;
+    this.successMessage = '';
+    this.errorMessage = '';
+    if (tab === 'list') {
+      this.selectedDoctor = null;
+      this.loadAppointments();
+    }
+  }
+
+  // Choose a doctor for booking
+  selectDoctor(doctor: DoctorWithProfile): void {
+    this.selectedDoctor = doctor;
+    // Set default values for booking
+    this.bookingDate = '';
+    this.bookingTime = '';
+    this.bookingMode = 'PRESENTIEL';
+    this.bookingNotes = '';
+    this.successMessage = '';
+    this.errorMessage = '';
+  }
+
+  // Cancel booking form
+  cancelBooking(): void {
+    this.selectedDoctor = null;
+  }
+
+  // Book appointment
+  bookAppointment(): void {
+    if (!this.selectedDoctor) return;
+    if (!this.bookingDate || !this.bookingTime) {
+      this.errorMessage = 'Veuillez selectionner une date et une heure.';
+      return;
+    }
+
+    this.submitting = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    // Create LocalDateTime ISO string format: YYYY-MM-DDTHH:mm:ss
+    const dateTimeStr = `${this.bookingDate}T${this.bookingTime}:00`;
+
+    const request: AppointmentRequest = {
+      doctorId: this.selectedDoctor.id,
+      dateTime: dateTimeStr,
+      mode: this.bookingMode,
+      notes: this.bookingNotes
+    };
+
+    this.appointmentService.createAppointment(request).subscribe({
+      next: () => {
+        this.successMessage = `Rendez-vous reserve avec succes chez le Dr. ${this.selectedDoctor?.firstName} ${this.selectedDoctor?.lastName}!`;
+        this.submitting = false;
+        setTimeout(() => {
+          this.switchTab('list');
+        }, 3000);
+      },
+      error: (err) => {
+        console.error('Erreur lors de la reservation', err);
+        this.errorMessage = 'Une erreur est survenue lors de la reservation du rendez-vous. Veuillez reessayer.';
+        this.submitting = false;
+      }
+    });
+  }
+
+  // Cancel an existing appointment
+  cancelAppointment(id: number): void {
+    if (confirm('Etes-vous sur de vouloir annuler ce rendez-vous ?')) {
+      this.appointmentService.cancelAppointment(id).subscribe({
+        next: () => {
+          this.loadAppointments();
+        },
+        error: (err) => {
+          console.error('Erreur lors de lannulation', err);
+          alert('Impossible d\'annuler ce rendez-vous.');
+        }
+      });
+    }
+  }
+
+  // Helper method to resolve doctor details in appointments list
+  getDoctorDetails(doctorId: number): { name: string; specialty: string } {
+    const doc = this.doctors.find(d => d.id === doctorId);
+    if (doc) {
+      return {
+        name: `Dr. ${doc.firstName} ${doc.lastName}`,
+        specialty: doc.specialty || 'Medecin'
+      };
+    }
+    return { name: `Medecin #${doctorId}`, specialty: 'General' };
+  }
+
+  // Formatter for status badge styling
+  getStatusClass(status: string): string {
+    switch (status.toUpperCase()) {
+      case 'CONFIRMED':
+        return 'status-confirmed';
+      case 'CANCELLED':
+        return 'status-cancelled';
+      case 'PENDING':
+      default:
+        return 'status-pending';
+    }
+  }
+
+  // Formatter for status text translation
+  getStatusLabel(status: string): string {
+    switch (status.toUpperCase()) {
+      case 'CONFIRMED':
+        return 'Confirme';
+      case 'CANCELLED':
+        return 'Annule';
+      case 'PENDING':
+      default:
+        return 'En attente';
+    }
   }
 }

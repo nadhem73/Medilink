@@ -1,0 +1,346 @@
+<section class="doctor-section-page">
+
+  <!-- ── En-tête ─────────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <div>
+      <p class="page-kicker">Panel médecin</p>
+      <h1>{{ title }}</h1>
+      <p class="page-copy">
+        Espace de travail du médecin : suivez vos patients, votre agenda, vos consultations et vos ordonnances.
+      </p>
+    </div>
+    <a routerLink="/dashboard/doctor" class="back-link">← Retour au dashboard</a>
+  </header>
+
+  <ng-container [ngSwitch]="section">
+
+    <!-- ════════════════════════════════════════════════════════════════
+         PATIENTS
+    ════════════════════════════════════════════════════════════════ -->
+    <section *ngSwitchCase="'patients'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Liste des patients</h2>
+          <span class="badge accent-green">Patients suivis</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let patient of patients">
+            <div class="mini-card-top">
+              <h3>{{ patient.name }}</h3>
+              <span class="status">{{ patient.status }}</span>
+            </div>
+            <p>{{ patient.reason }}</p>
+            <span>{{ patient.age }} — Dernière visite : {{ patient.lastVisit }}</span>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Suivi des patients</h2>
+        <ul class="checklist">
+          <li>Vérifier les antécédents avant chaque consultation.</li>
+          <li>Mettre à jour le dossier après chaque visite.</li>
+          <li>Programmer les rappels de suivi nécessaires.</li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         AGENDA
+    ════════════════════════════════════════════════════════════════ -->
+    <section *ngSwitchCase="'appointments'" class="agenda-layout">
+
+      <!-- ── Stats bar ─────────────────────────────────────────────── -->
+      <div class="agenda-stats">
+        <div class="stat-card stat-total" (click)="setStatusFilter('ALL')" [class.active]="statusFilter === 'ALL'">
+          <span class="stat-icon">📅</span>
+          <div>
+            <strong>{{ countTotal }}</strong>
+            <span>Total</span>
+          </div>
+        </div>
+        <div class="stat-card stat-pending" (click)="setStatusFilter('PENDING')" [class.active]="statusFilter === 'PENDING'">
+          <span class="stat-icon">⏳</span>
+          <div>
+            <strong>{{ countPending }}</strong>
+            <span>En attente</span>
+          </div>
+        </div>
+        <div class="stat-card stat-confirmed" (click)="setStatusFilter('CONFIRMED')" [class.active]="statusFilter === 'CONFIRMED'">
+          <span class="stat-icon">✅</span>
+          <div>
+            <strong>{{ countConfirmed }}</strong>
+            <span>Confirmés</span>
+          </div>
+        </div>
+        <div class="stat-card stat-cancelled" (click)="setStatusFilter('CANCELLED')" [class.active]="statusFilter === 'CANCELLED'">
+          <span class="stat-icon">❌</span>
+          <div>
+            <strong>{{ countCancelled }}</strong>
+            <span>Annulés</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Corps de l'agenda ─────────────────────────────────────── -->
+      <div class="agenda-body">
+
+        <!-- Calendrier -->
+        <article class="card calendar-card">
+          <div class="calendar-nav">
+            <button class="cal-nav-btn" (click)="prevMonth()" id="btn-prev-month">‹</button>
+            <span class="cal-month-label">{{ calendarMonthLabel }}</span>
+            <button class="cal-nav-btn" (click)="nextMonth()" id="btn-next-month">›</button>
+          </div>
+
+          <div class="calendar-grid">
+            <div class="cal-weekday" *ngFor="let wd of calendarWeekdays">{{ wd }}</div>
+
+            <div
+              class="cal-day"
+              *ngFor="let d of calendarDays"
+              [class.cal-day-empty]="!d.day"
+              [class.cal-day-today]="d.isToday"
+              [class.cal-day-selected]="d.isSelected"
+              [class.cal-day-has-appt]="d.appointmentCount > 0"
+              (click)="selectDay(d)"
+              [attr.id]="d.day ? 'cal-day-' + d.day : null"
+            >
+              <span class="cal-day-num" *ngIf="d.day">{{ d.day }}</span>
+              <div class="cal-dots" *ngIf="d.appointmentCount > 0">
+                <span class="cal-dot dot-pending" *ngIf="d.hasPending"></span>
+                <span class="cal-dot dot-confirmed" *ngIf="d.hasConfirmed"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Légende -->
+          <div class="calendar-legend">
+            <span><i class="dot-confirmed"></i> Confirmé</span>
+            <span><i class="dot-pending"></i> En attente</span>
+          </div>
+
+          <!-- Effacer filtre date -->
+          <button class="clear-date-btn" *ngIf="selectedDate" (click)="clearDateFilter()" id="btn-clear-date">
+            Afficher tous les mois
+          </button>
+        </article>
+
+        <!-- Liste des RDV du jour sélectionné -->
+        <article class="card appointments-card">
+          <div class="card-header">
+            <div>
+              <h2>{{ selectedDate ? selectedDateLabel : 'Tous les rendez-vous' }}</h2>
+              <p class="appt-subtitle" *ngIf="!loadingAppointments">
+                {{ filteredAppointments.length }} rendez-vous
+                <ng-container *ngIf="statusFilter !== 'ALL'">
+                  · filtre actif
+                </ng-container>
+              </p>
+            </div>
+          </div>
+
+          <!-- Spinner -->
+          <div *ngIf="loadingAppointments" class="loading-state">
+            <div class="spinner"></div>
+            <p>Chargement de l'agenda...</p>
+          </div>
+
+          <!-- Vide -->
+          <div *ngIf="!loadingAppointments && filteredAppointments.length === 0" class="empty-state">
+            <span class="empty-icon">📋</span>
+            <h3>Aucun rendez-vous</h3>
+            <p *ngIf="selectedDate">Pas de consultation programmée pour cette date.</p>
+            <p *ngIf="!selectedDate">Votre agenda est vide pour le moment.</p>
+          </div>
+
+          <!-- Liste -->
+          <div *ngIf="!loadingAppointments && filteredAppointments.length > 0" class="appt-list">
+            <div class="appt-card" *ngFor="let appt of filteredAppointments">
+
+              <!-- Heure + mode -->
+              <div class="appt-time-col">
+                <span class="appt-hour">{{ appt.hour }}</span>
+                <span class="appt-mode-icon" [title]="appt.mode">{{ appt.modeIcon }}</span>
+              </div>
+
+              <!-- Infos patient -->
+              <div class="appt-info-col">
+                <strong class="appt-patient">{{ appt.patient }}</strong>
+                <span class="appt-reason">{{ appt.reason }}</span>
+                <span class="appt-mode-label">{{ appt.mode }}</span>
+              </div>
+
+              <!-- Statut + actions -->
+              <div class="appt-action-col">
+                <span class="status" [class]="appt.statusClass">{{ appt.status }}</span>
+
+                <div class="appt-btns" *ngIf="appt.statusClass !== 'status-cancelled'">
+                  <!-- Confirmer (si en attente) -->
+                  <button
+                    *ngIf="appt.statusClass === 'status-pending'"
+                    class="appt-btn btn-confirm"
+                    [disabled]="actionLoading[appt.id]"
+                    (click)="confirmAppointment(appt)"
+                    [id]="'btn-confirm-' + appt.id"
+                    title="Confirmer ce rendez-vous"
+                  >
+                    <span *ngIf="!actionLoading[appt.id]">✓ Confirmer</span>
+                    <span *ngIf="actionLoading[appt.id]" class="btn-spinner"></span>
+                  </button>
+
+                  <!-- Annuler -->
+                  <button
+                    class="appt-btn btn-cancel"
+                    [disabled]="actionLoading[appt.id]"
+                    (click)="cancelAppointment(appt)"
+                    [id]="'btn-cancel-' + appt.id"
+                    title="Annuler ce rendez-vous"
+                  >
+                    <span *ngIf="!actionLoading[appt.id]">✕ Annuler</span>
+                    <span *ngIf="actionLoading[appt.id]" class="btn-spinner"></span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- Conseil latéral -->
+      <article class="card agenda-tips-card">
+        <h2>Organisation de la journée</h2>
+        <ul class="checklist">
+          <li>Confirmez les rendez-vous du lendemain avant 18h.</li>
+          <li>Bloquez les créneaux indisponibles à l'avance.</li>
+          <li>Anticipez les téléconsultations à préparer.</li>
+          <li>Vérifiez les dossiers des patients avant la consultation.</li>
+        </ul>
+      </article>
+
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         CONSULTATIONS
+    ════════════════════════════════════════════════════════════════ -->
+    <section *ngSwitchCase="'consultations'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Consultations récentes</h2>
+          <span class="badge accent-purple">Comptes rendus</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let consultation of consultations">
+            <div class="mini-card-top">
+              <h3>{{ consultation.patient }}</h3>
+              <span class="status">{{ consultation.status }}</span>
+            </div>
+            <p>{{ consultation.summary }}</p>
+            <span>{{ consultation.doctor }}</span>
+            <strong>{{ consultation.date }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Bonnes pratiques</h2>
+        <ul class="checklist">
+          <li>Finaliser le compte rendu juste après la consultation.</li>
+          <li>Joindre les prescriptions et examens demandés.</li>
+          <li>Planifier le prochain rendez-vous de suivi.</li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         PRESCRIPTIONS
+    ════════════════════════════════════════════════════════════════ -->
+    <section *ngSwitchCase="'prescriptions'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Ordonnances</h2>
+          <span class="badge accent-green">Traitements prescrits</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let prescription of prescriptions">
+            <div class="mini-card-top">
+              <h3>{{ prescription.medication }}</h3>
+              <span class="status">{{ prescription.status }}</span>
+            </div>
+            <p>{{ prescription.dosage }}</p>
+            <span>Patient : {{ prescription.patient }}</span>
+            <strong>{{ prescription.renewal }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Aide à la prescription</h2>
+        <ul class="checklist">
+          <li>Vérifier les interactions et allergies du patient.</li>
+          <li>Signer les ordonnances en attente.</li>
+          <li>Anticiper les renouvellements de traitement.</li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         LABS
+    ════════════════════════════════════════════════════════════════ -->
+    <section *ngSwitchCase="'labs'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Résultats de laboratoire</h2>
+          <span class="badge accent-orange">À valider</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let result of labResults">
+            <div class="mini-card-top">
+              <h3>{{ result.exam }}</h3>
+              <span class="status">{{ result.result }}</span>
+            </div>
+            <p>{{ result.lab }}</p>
+            <span>Prélevé le {{ result.date }}</span>
+            <strong>{{ result.note }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Actions utiles</h2>
+        <ul class="checklist">
+          <li>Valider les résultats disponibles.</li>
+          <li>Contacter le patient en cas de valeur anormale.</li>
+          <li>Annoter les examens avant archivage au dossier.</li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         PROFIL
+    ════════════════════════════════════════════════════════════════ -->
+    <section *ngSwitchCase="'profile'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Informations professionnelles</h2>
+          <span class="badge accent-purple">Profil médecin</span>
+        </div>
+        <div class="profile-grid">
+          <article class="profile-item" *ngFor="let item of profileCards">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Checklist profil</h2>
+        <ul class="checklist">
+          <li *ngFor="let item of profileChecklist">{{ item }}</li>
+        </ul>
+      </article>
+    </section>
+
+  </ng-container>
+</section>

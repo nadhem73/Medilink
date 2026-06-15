@@ -1,0 +1,40 @@
+<section class="pp-page">
+  <header class="pp-header">
+    <div>
+      <p class="pp-kicker">Panel administrateur</p>
+      <h1>Notifications</h1>
+      <p class="pp-copy">Alertes de securite, demandes de validation et evenements importants de la plateforme.</p>
+    </div>
+    <a routerLink="/dashboard/admin" class="pp-back">Retour au tableau de bord</a>
+  </header>
+
+  <div class="pp-grid">
+    <article class="pp-card">
+      <div class="pp-card-header">
+        <h2>Toutes les notifications</h2>
+        <span class="pp-badge gold">{{ notifications.length }}</span>
+      </div>
+      <div class="pp-list">
+        <div class="pp-item" *ngFor="let n of notifications">
+          <div>
+            <h3>{{ n.title }}</h3>
+            <p>{{ n.detail }}</p>
+          </div>
+          <span class="pp-badge" [class.gold]="n.unread">{{ n.unread ? 'Non lu' : n.time }}</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="pp-card">
+      <h2>Filtres</h2>
+      <ul class="pp-checklist">
+        <li>Alertes de securite prioritaires.</li>
+        <li>Demandes de validation en attente.</li>
+        <li>Etat des services et infrastructure.</li>
+      </ul>
+      <div style="margin-top:18px;">
+        <button type="button" class="pp-btn ghost">Tout marquer comme lu</button>
+      </div>
+    </article>
+  </div>
+</section>

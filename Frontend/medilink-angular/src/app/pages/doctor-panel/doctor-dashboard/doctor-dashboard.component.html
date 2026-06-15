@@ -1,1 +1,123 @@
-<p>doctor-dashboard works!</p>
+<section class="doctor-panel">
+  <div class="panel-hero">
+    <div>
+      <p class="eyebrow">Espace medecin</p>
+      <h1>Bonjour Dr {{ currentUser?.lastName || 'bienvenue dans votre espace' }}</h1>
+      <p class="hero-copy">
+        Pilotez votre activite medicale : agenda du jour, dossiers patients, ordonnances et resultats a valider,
+        reunis dans un tableau de bord clair.
+      </p>
+    </div>
+    <div class="hero-card">
+      <span class="hero-label">Activite du jour</span>
+      <strong>8 patients</strong>
+      <p>Prochaine consultation a 09:30 avec Mohamed Aloui.</p>
+      <a routerLink="/dashboard/doctor/appointments" class="hero-link">Voir mon agenda</a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <article class="stat-card" *ngFor="let card of summaryCards" [attr.data-accent]="card.accent">
+      <p class="stat-title">{{ card.title }}</p>
+      <div class="stat-value">{{ card.value }}</div>
+      <p class="stat-detail">{{ card.detail }}</p>
+    </article>
+  </div>
+
+  <div class="content-grid">
+    <section class="panel-card spotlight">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Actions rapides</p>
+          <h2>Votre dashboard medecin</h2>
+        </div>
+      </div>
+      <div class="actions-grid">
+        <article class="action-card" *ngFor="let action of quickActions">
+          <h3>{{ action.title }}</h3>
+          <p>{{ action.description }}</p>
+          <a [routerLink]="action.route">{{ action.cta }}</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Reseau de soins</p>
+          <h2>Equipe medicale</h2>
+        </div>
+      </div>
+      <ul class="team-list">
+        <li *ngFor="let member of careTeam">
+          <span class="team-avatar">{{ member.name.charAt(0) }}</span>
+          <div>
+            <strong>{{ member.name }}</strong>
+            <p>{{ member.role }}</p>
+          </div>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="content-grid two-columns">
+    <section class="panel-card">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Agenda</p>
+          <h2>Rendez-vous du jour</h2>
+        </div>
+        <a routerLink="/dashboard/doctor/appointments" class="text-link">Tout voir</a>
+      </div>
+      <div class="list-stack">
+        <article class="info-item" *ngFor="let appointment of todayAppointments">
+          <div>
+            <h3>{{ appointment.patient }}</h3>
+            <p>{{ appointment.reason }}</p>
+            <span>{{ appointment.date }} - {{ appointment.location }}</span>
+          </div>
+          <span class="status-pill">{{ appointment.status }}</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel-card">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">A traiter</p>
+          <h2>Taches en attente</h2>
+        </div>
+        <a routerLink="/dashboard/doctor/prescriptions" class="text-link">Les ordonnances</a>
+      </div>
+      <div class="list-stack">
+        <article class="info-item compact" *ngFor="let task of pendingTasks">
+          <div>
+            <h3>{{ task.name }}</h3>
+            <p>{{ task.instruction }}</p>
+          </div>
+          <span>{{ task.nextDose }}</span>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel-card timeline-card">
+    <div class="section-heading">
+      <div>
+        <p class="section-kicker">Activite recente</p>
+        <h2>Suivi de votre activite</h2>
+      </div>
+      <a routerLink="/dashboard/doctor/labs" class="text-link">Voir les analyses</a>
+    </div>
+    <div class="timeline">
+      <article class="timeline-item" *ngFor="let item of activityTimeline">
+        <span class="timeline-dot"></span>
+        <div>
+          <h3>{{ item.title }}</h3>
+          <p class="timeline-meta">{{ item.meta }}</p>
+          <p>{{ item.description }}</p>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

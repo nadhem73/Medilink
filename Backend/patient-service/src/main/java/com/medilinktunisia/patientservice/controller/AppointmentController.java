@@ -1,8 +1,9 @@
 package com.medilinktunisia.patientservice.controller;
 
-import com.medilinktunisia.patientservice.model.dto.AppointmentCreateRequest;
-import com.medilinktunisia.patientservice.model.dto.AppointmentDto;
+import com.medilinktunisia.patientservice.dto.AppointmentDto;
+import com.medilinktunisia.patientservice.dto.AppointmentRequest;
 import com.medilinktunisia.patientservice.service.AppointmentService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,63 +13,72 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/appointments")
+@RequestMapping("/api/patients/appointments")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AppointmentController {
 
-    private final AppointmentService appointmentService;
+    private final AppointmentService service;
 
-    @PostMapping("/patient/{patientId}")
+    /**
+     * Crée un nouveau rendez-vous pour le patient connecté.
+     */
+    @PostMapping
     public ResponseEntity<AppointmentDto> createAppointment(
-            @PathVariable Long patientId,
-            @Valid @RequestBody AppointmentCreateRequest request) {
-        AppointmentDto appointment = appointmentService.createAppointment(patientId, request);
-        return new ResponseEntity<>(appointment, HttpStatus.CREATED);
+            HttpServletRequest request,
+            @Valid @RequestBody AppointmentRequest body) {
+        Long patientId = (Long) request.getAttribute("userId");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.createAppointment(patientId, body));
     }
 
-    @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<AppointmentDto>> getPatientAppointments(@PathVariable Long patientId) {
-        List<AppointmentDto> appointments = appointmentService.getAppointmentsByPatientId(patientId);
-        return ResponseEntity.ok(appointments);
+    /**
+     * Liste tous les rendez-vous du patient connecté.
+     */
+    @GetMapping
+    public ResponseEntity<List<AppointmentDto>> getMyAppointments(HttpServletRequest request) {
+        Long patientId = (Long) request.getAttribute("userId");
+        return ResponseEntity.ok(service.getPatientAppointments(patientId));
     }
 
-    @GetMapping("/patient/{patientId}/upcoming")
-    public ResponseEntity<List<AppointmentDto>> getUpcomingAppointments(@PathVariable Long patientId) {
-        List<AppointmentDto> appointments = appointmentService.getUpcomingAppointments(patientId);
-        return ResponseEntity.ok(appointments);
+    /**
+     * Liste tous les rendez-vous du médecin connecté.
+     */
+    @GetMapping("/doctor")
+    public ResponseEntity<List<AppointmentDto>> getMyDoctorAppointments(HttpServletRequest request) {
+        Long doctorId = (Long) request.getAttribute("userId");
+        return ResponseEntity.ok(service.getDoctorAppointments(doctorId));
     }
 
-    @GetMapping("/patient/{patientId}/history")
-    public ResponseEntity<List<AppointmentDto>> getPastAppointments(@PathVariable Long patientId) {
-        List<AppointmentDto> appointments = appointmentService.getPastAppointments(patientId);
-        return ResponseEntity.ok(appointments);
-    }
-
-    @GetMapping("/{appointmentId}")
-    public ResponseEntity<AppointmentDto> getAppointmentById(@PathVariable Long appointmentId) {
-        AppointmentDto appointment = appointmentService.getAppointmentById(appointmentId);
-        return ResponseEntity.ok(appointment);
-    }
-
-    @PutMapping("/{appointmentId}/cancel")
+    /**
+     * Annule un rendez-vous du patient connecté.
+     */
+    @PutMapping("/{id}/cancel")
     public ResponseEntity<AppointmentDto> cancelAppointment(
-            @PathVariable Long appointmentId,
-            @RequestParam String reason,
-            @RequestParam(defaultValue = "PATIENT") String cancelledBy) {
-        AppointmentDto appointment = appointmentService.cancelAppointment(appointmentId, reason, cancelledBy);
-        return ResponseEntity.ok(appointment);
+            HttpServletRequest request,
+            @PathVariable Long id) {
+        Long patientId = (Long) request.getAttribute("userId");
+        return ResponseEntity.ok(service.cancelAppointment(patientId, id));
     }
 
-    @PutMapping("/{appointmentId}/confirm")
-    public ResponseEntity<AppointmentDto> confirmAppointment(@PathVariable Long appointmentId) {
-        AppointmentDto appointment = appointmentService.confirmAppointment(appointmentId);
-        return ResponseEntity.ok(appointment);
+    /**
+     * Confirme un rendez-vous (action médecin).
+     */
+    @PutMapping("/{id}/confirm")
+    public ResponseEntity<AppointmentDto> confirmAppointment(
+            HttpServletRequest request,
+            @PathVariable Long id) {
+        Long doctorId = (Long) request.getAttribute("userId");
+        return ResponseEntity.ok(service.confirmAppointment(doctorId, id));
     }
 
-    @PutMapping("/{appointmentId}/complete")
-    public ResponseEntity<AppointmentDto> completeAppointment(@PathVariable Long appointmentId) {
-        AppointmentDto appointment = appointmentService.completeAppointment(appointmentId);
-        return ResponseEntity.ok(appointment);
+    /**
+     * Annule un rendez-vous depuis le panel médecin.
+     */
+    @PutMapping("/{id}/doctor-cancel")
+    public ResponseEntity<AppointmentDto> cancelAppointmentByDoctor(
+            HttpServletRequest request,
+            @PathVariable Long id) {
+        Long doctorId = (Long) request.getAttribute("userId");
+        return ResponseEntity.ok(service.cancelAppointmentByDoctor(doctorId, id));
     }
 }

@@ -1,0 +1,29 @@
+<section class="dp-page">
+  <header class="dp-header">
+    <div>
+      <p class="dp-kicker">Panel medecin</p>
+      <h1>Messages</h1>
+      <p class="dp-copy">Messagerie securisee et chiffree avec vos patients, laboratoires et le secretariat.</p>
+    </div>
+    <a routerLink="/dashboard/doctor" class="dp-back">Retour au tableau de bord</a>
+  </header>
+
+  <article class="dp-card">
+    <div class="dp-card-header">
+      <h2>Conversations</h2>
+      <span class="dp-badge">3 non lus</span>
+    </div>
+    <div class="dp-list">
+      <div class="dp-item" *ngFor="let c of conversations">
+        <div>
+          <h3>{{ c.contact }}</h3>
+          <p>{{ c.role }} - {{ c.preview }}</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:12px; color:var(--gris-clinique, #5a6a7a);">{{ c.time }}</span>
+          <span class="dp-status" *ngIf="c.unread">{{ c.unread }}</span>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>

@@ -1,0 +1,40 @@
+<section class="dp-page">
+  <header class="dp-header">
+    <div>
+      <p class="dp-kicker">Panel medecin</p>
+      <h1>Centre d'aide</h1>
+      <p class="dp-copy">Trouvez des reponses a vos questions ou discutez avec l'assistant medical intelligent.</p>
+    </div>
+    <a routerLink="/dashboard/doctor" class="dp-back">Retour au tableau de bord</a>
+  </header>
+
+  <div class="dp-grid">
+    <article class="dp-card">
+      <div class="dp-card-header">
+        <h2>Questions frequentes</h2>
+        <span class="dp-badge blue">FAQ</span>
+      </div>
+      <div class="dp-list">
+        <div class="dp-item" *ngFor="let f of faqs" style="flex-direction:column; align-items:flex-start; gap:6px;">
+          <h3>{{ f.q }}</h3>
+          <p>{{ f.a }}</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="dp-card">
+      <h2>Assistant medical IA</h2>
+      <p style="color:var(--gris-clinique, #5a6a7a); font-size:14px; margin:0 0 16px;">
+        Interrogez l'assistant pour une aide a la decision, des references medicales ou des questions sur la plateforme.
+      </p>
+      <button type="button" class="dp-btn">Ouvrir le chatbot</button>
+
+      <h2 style="margin-top:24px;">Nous contacter</h2>
+      <ul class="dp-checklist">
+        <li>Support : support&#64;medilink.tn</li>
+        <li>Telephone : +216 70 000 000</li>
+        <li>Urgences : composez le 190</li>
+      </ul>
+    </article>
+  </div>
+</section>

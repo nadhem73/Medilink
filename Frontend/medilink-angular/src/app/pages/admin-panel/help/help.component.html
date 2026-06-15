@@ -1,0 +1,40 @@
+<section class="pp-page">
+  <header class="pp-header">
+    <div>
+      <p class="pp-kicker">Panel administrateur</p>
+      <h1>Centre d'aide</h1>
+      <p class="pp-copy">Documentation, questions frequentes et contacts pour l administration de la plateforme.</p>
+    </div>
+    <a routerLink="/dashboard/admin" class="pp-back">Retour au tableau de bord</a>
+  </header>
+
+  <div class="pp-grid">
+    <article class="pp-card">
+      <div class="pp-card-header">
+        <h2>Questions frequentes</h2>
+        <span class="pp-badge gold">FAQ</span>
+      </div>
+      <div class="pp-list">
+        <div class="pp-item" *ngFor="let f of faqs" style="flex-direction:column; align-items:flex-start; gap:6px;">
+          <h3>{{ f.q }}</h3>
+          <p>{{ f.a }}</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="pp-card">
+      <h2>Support technique</h2>
+      <p style="color:#5b6b85; font-size:14px; margin:0 0 16px;">
+        Contactez l equipe technique pour toute question liee a l administration ou a la securite de la plateforme.
+      </p>
+      <button type="button" class="pp-btn">Contacter le support</button>
+
+      <h2 style="margin-top:24px;">Contacts</h2>
+      <ul class="pp-checklist">
+        <li>Support technique : admin-support&#64;medilink.tn</li>
+        <li>Securite : security&#64;medilink.tn</li>
+        <li>Astreinte : +216 70 000 000</li>
+      </ul>
+    </article>
+  </div>
+</section>

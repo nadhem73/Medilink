@@ -27,8 +27,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME:your-email@gmail.com}
-    password: ${MAIL_PASSWORD:your-password}
+    username: ${MAIL_USERNAME:medilink.tunisia@gmail.com}
+    password: ${MAIL_PASSWORD:vbetczremlrszfsa}
     properties:
       mail:
         smtp:
@@ -48,6 +48,11 @@ jwt:
   secret: ${JWT_SECRET:medilinktunisia2025SecretKeyForJWTTokenGenerationAndValidation}
   expiration: 900000  # 15 minutes (en millisecondes)
   refresh-expiration: 604800000  # 7 jours (en millisecondes)
+
+# Réinitialisation de mot de passe
+app:
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:4200}
+  reset-token-expiration-minutes: 60
 
 # Eureka Client - Service Discovery
 eureka:

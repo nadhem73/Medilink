@@ -1,0 +1,40 @@
+<section class="pp-page">
+  <header class="pp-header">
+    <div>
+      <p class="pp-kicker">Panel pharmacie</p>
+      <h1>Centre d'aide</h1>
+      <p class="pp-copy">Trouvez des reponses a vos questions ou discutez avec l'assistant intelligent.</p>
+    </div>
+    <a routerLink="/dashboard/pharmacy" class="pp-back">Retour au tableau de bord</a>
+  </header>
+
+  <div class="pp-grid">
+    <article class="pp-card">
+      <div class="pp-card-header">
+        <h2>Questions frequentes</h2>
+        <span class="pp-badge blue">FAQ</span>
+      </div>
+      <div class="pp-list">
+        <div class="pp-item" *ngFor="let f of faqs" style="flex-direction:column; align-items:flex-start; gap:6px;">
+          <h3>{{ f.q }}</h3>
+          <p>{{ f.a }}</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="pp-card">
+      <h2>Assistant intelligent</h2>
+      <p style="color:var(--gris-clinique, #5b6b85); font-size:14px; margin:0 0 16px;">
+        Posez vos questions sur la gestion du stock, les ordonnances ou la plateforme.
+      </p>
+      <button type="button" class="pp-btn">Ouvrir le chatbot</button>
+
+      <h2 style="margin-top:24px;">Nous contacter</h2>
+      <ul class="pp-checklist">
+        <li>Support : support&#64;medilink.tn</li>
+        <li>Telephone : +216 70 000 000</li>
+        <li>Urgences : composez le 190</li>
+      </ul>
+    </article>
+  </div>
+</section>

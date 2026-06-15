@@ -1,11 +1,104 @@
 <div class="ai-reg" [class.is-final]="!!successMessage">
 
-  <!-- ===== Arrière-plan futuriste : grille + particules ===== -->
+  <!-- ===== Arrière-plan médical : molécules + ADN + bokeh + ECG ===== -->
   <div class="ai-bg" aria-hidden="true">
-    <span class="ai-grid"></span>
-    <span class="ai-glow ai-glow--1"></span>
-    <span class="ai-glow ai-glow--2"></span>
-    <i class="ai-particle" *ngFor="let p of [1,2,3,4,5,6,7,8,9,10,11,12,13,14]"></i>
+
+    <!-- Dégradés brillants réutilisables -->
+    <svg class="ai-defs" aria-hidden="true">
+      <defs>
+        <radialGradient id="atomGlossy" cx="35%" cy="28%" r="75%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="30%" stop-color="#8fd0ef"/>
+          <stop offset="70%" stop-color="#1f86c4"/>
+          <stop offset="100%" stop-color="#0a5a92"/>
+        </radialGradient>
+        <radialGradient id="atomSoft" cx="35%" cy="30%" r="75%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+          <stop offset="60%" stop-color="#cfe7f6" stop-opacity="0.45"/>
+          <stop offset="100%" stop-color="#bcd9ec" stop-opacity="0.10"/>
+        </radialGradient>
+      </defs>
+    </svg>
+
+    <!-- Bokeh lumineux -->
+    <i class="ai-bokeh" *ngFor="let b of bgBokeh"></i>
+
+    <!-- Hélice ADN translucide (bas de page) -->
+    <svg class="ai-dna" viewBox="0 0 1200 220" preserveAspectRatio="none">
+      <line class="dna-rung" *ngFor="let r of dnaRungs"
+            [attr.x1]="r.x" [attr.y1]="r.y1" [attr.x2]="r.x" [attr.y2]="r.y2"
+            [attr.opacity]="r.op"></line>
+      <polyline class="dna-strand a" [attr.points]="dnaStrandA"></polyline>
+      <polyline class="dna-strand b" [attr.points]="dnaStrandB"></polyline>
+    </svg>
+
+    <!-- Molécule haut-droite -->
+    <svg class="ai-mol ai-mol--tr" viewBox="0 0 220 180">
+      <g class="mol-spin">
+        <line class="mol-bond" x1="162" y1="85" x2="136" y2="130"/>
+        <line class="mol-bond" x1="136" y1="130" x2="84" y2="130"/>
+        <line class="mol-bond" x1="84" y1="130" x2="58" y2="85"/>
+        <line class="mol-bond" x1="58" y1="85" x2="84" y2="40"/>
+        <line class="mol-bond" x1="84" y1="40" x2="136" y2="40"/>
+        <line class="mol-bond" x1="136" y1="40" x2="162" y2="85"/>
+        <line class="mol-bond" x1="162" y1="85" x2="198" y2="66"/>
+        <line class="mol-bond" x1="136" y1="40" x2="150" y2="12"/>
+        <line class="mol-bond" x1="84" y1="130" x2="66" y2="166"/>
+        <line class="mol-bond" x1="58" y1="85" x2="24" y2="98"/>
+        <circle class="mol-atom-soft" cx="186" cy="120" r="17" fill="url(#atomSoft)"/>
+        <circle class="mol-atom-soft" cx="40" cy="140" r="14" fill="url(#atomSoft)"/>
+        <circle class="mol-atom-soft" cx="120" cy="166" r="12" fill="url(#atomSoft)"/>
+        <circle cx="162" cy="85" r="12" fill="url(#atomGlossy)"/>
+        <circle cx="136" cy="130" r="12" fill="url(#atomGlossy)"/>
+        <circle cx="84" cy="130" r="12" fill="url(#atomGlossy)"/>
+        <circle cx="58" cy="85" r="12" fill="url(#atomGlossy)"/>
+        <circle cx="84" cy="40" r="12" fill="url(#atomGlossy)"/>
+        <circle cx="136" cy="40" r="12" fill="url(#atomGlossy)"/>
+        <circle cx="198" cy="66" r="7" fill="url(#atomGlossy)"/>
+        <circle cx="150" cy="12" r="7" fill="url(#atomGlossy)"/>
+        <circle cx="66" cy="166" r="7" fill="url(#atomGlossy)"/>
+        <circle cx="24" cy="98" r="7" fill="url(#atomGlossy)"/>
+      </g>
+    </svg>
+
+    <!-- Molécule bas-gauche -->
+    <svg class="ai-mol ai-mol--bl" viewBox="0 0 200 160">
+      <g class="mol-spin">
+        <line class="mol-bond" x1="110" y1="90" x2="92" y2="128"/>
+        <line class="mol-bond" x1="92" y1="128" x2="50" y2="128"/>
+        <line class="mol-bond" x1="50" y1="128" x2="30" y2="90"/>
+        <line class="mol-bond" x1="30" y1="90" x2="50" y2="52"/>
+        <line class="mol-bond" x1="50" y1="52" x2="92" y2="52"/>
+        <line class="mol-bond" x1="92" y1="52" x2="110" y2="90"/>
+        <line class="mol-bond" x1="110" y1="90" x2="150" y2="76"/>
+        <line class="mol-bond" x1="50" y1="128" x2="34" y2="156"/>
+        <circle class="mol-atom-soft" cx="150" cy="120" r="16" fill="url(#atomSoft)"/>
+        <circle class="mol-atom-soft" cx="20" cy="118" r="12" fill="url(#atomSoft)"/>
+        <circle cx="110" cy="90" r="10" fill="url(#atomGlossy)"/>
+        <circle cx="92" cy="128" r="10" fill="url(#atomGlossy)"/>
+        <circle cx="50" cy="128" r="10" fill="url(#atomGlossy)"/>
+        <circle cx="30" cy="90" r="10" fill="url(#atomGlossy)"/>
+        <circle cx="50" cy="52" r="10" fill="url(#atomGlossy)"/>
+        <circle cx="92" cy="52" r="10" fill="url(#atomGlossy)"/>
+        <circle cx="150" cy="76" r="6" fill="url(#atomGlossy)"/>
+        <circle cx="34" cy="156" r="6" fill="url(#atomGlossy)"/>
+      </g>
+    </svg>
+
+    <!-- Lignes ECG (battements) -->
+    <svg class="ai-ecg ai-ecg--l" viewBox="0 0 240 44" preserveAspectRatio="none">
+      <polyline points="0,22 60,22 72,22 80,6 92,40 104,22 150,22 162,14 172,30 182,22 240,22"/>
+    </svg>
+    <svg class="ai-ecg ai-ecg--r" viewBox="0 0 240 44" preserveAspectRatio="none">
+      <polyline points="0,22 60,22 72,22 80,6 92,40 104,22 150,22 162,14 172,30 182,22 240,22"/>
+    </svg>
+
+    <!-- Croix médicale -->
+    <span class="ai-cross">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+        <line x1="12" y1="6" x2="12" y2="18"/><line x1="6" y1="12" x2="18" y2="12"/>
+      </svg>
+    </span>
   </div>
 
   <!-- Retour accueil -->
@@ -16,7 +109,7 @@
     <span>Accueil</span>
   </a>
 
-  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="ai-stage">
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="ai-stage" [class.holo-on]="showHologram">
 
     <!-- ================= CONSOLE (gauche) ================= -->
     <section class="ai-console">
@@ -106,10 +199,11 @@
 
         <!-- CIN -->
         <div *ngSwitchCase="'cin'" class="field-block reveal">
-          <div class="ai-input" [class.ok]="!!f['cin'].value">
-            <label>Numéro CIN <span class="opt">(optionnel)</span></label>
-            <input type="text" formControlName="cin" placeholder="Numéro CIN ou passeport">
+          <div class="ai-input" [class.ok]="f['cin'].valid">
+            <label>Numéro CIN</label>
+            <input type="text" formControlName="cin" placeholder="Numéro de carte d'identité nationale">
           </div>
+          <p class="ai-err" *ngIf="f['cin'].invalid && f['cin'].touched">Numéro CIN requis (il vous servira à vous connecter).</p>
         </div>
 
         <!-- ADRESSE -->
@@ -158,6 +252,7 @@
               <div class="bmi-bar"><span></span></div>
             </div>
           </div>
+          <button type="button" class="ai-link-btn skip" (click)="dontKnow()">Je ne sais pas</button>
         </div>
 
         <!-- GROUPE SANGUIN -->
@@ -170,6 +265,7 @@
             </button>
           </div>
           <p class="ai-err" *ngIf="f['bloodGroup'].invalid && f['bloodGroup'].touched">Groupe sanguin requis.</p>
+          <button type="button" class="ai-link-btn skip" (click)="dontKnow()">Je ne sais pas</button>
         </div>
 
         <!-- ANTÉCÉDENTS MÉDICAUX -->
@@ -186,6 +282,7 @@
             <label>Traitements en cours <span class="opt">(optionnel)</span></label>
             <textarea formControlName="currentTreatments" rows="2" placeholder="Ex : Metformine 500mg..."></textarea>
           </div>
+          <button type="button" class="ai-link-btn skip" (click)="dontKnow()">Je ne sais pas</button>
         </div>
 
         <!-- CONTACT D'URGENCE -->
@@ -289,61 +386,42 @@
     </section>
 
     <!-- ================= STAGE HOLOGRAMME (droite) ================= -->
-    <aside class="ai-holo">
-      <div class="holo-scene">
-        <div class="holo-rings"><span></span><span></span><span></span></div>
+    <aside class="ai-holo" *ngIf="showHologram">
+      <div class="holo-head">
+        <span class="holo-id">HOLOGRAMME MÉDICAL</span>
+        <span class="holo-live" *ngIf="genderValue">● LIVE</span>
+      </div>
 
-        <!-- Hologramme : ton image réelle (homme/femme) teintée + circulation -->
-        <div class="holo-body" [class.show]="!!genderValue" [class.has-blood]="!!bloodValue"
-             [class.male]="genderValue==='MALE'" [class.female]="genderValue==='FEMALE'" [class.other]="genderValue==='OTHER'"
-             [style.transform]="'translateX(-50%) scaleX(' + bodyScaleX + ') scaleY(' + bodyScaleY + ')'">
-          <div class="holo-layer holo-fill"></div>
-          <div class="holo-layer holo-mesh"></div>
-          <div class="holo-layer holo-vessels">
-            <svg viewBox="0 0 240 520" fill="none" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-              <defs>
-                <radialGradient id="holoHeart" cx="50%" cy="45%" r="60%">
-                  <stop offset="0" stop-color="#ff7a8f"/><stop offset="1" stop-color="#e01036"/>
-                </radialGradient>
-              </defs>
-              <g class="artery" stroke-linecap="round" fill="none">
-                <path d="M120 152 V250"/>
-                <path d="M120 152 Q116 112 120 84"/>
-                <path d="M120 152 Q106 110 108 86"/>
-                <path d="M120 152 Q134 110 132 86"/>
-                <path d="M120 162 Q94 154 80 168 L62 226"/>
-                <path d="M120 162 Q146 154 160 168 L178 226"/>
-                <path d="M120 250 Q106 270 102 330 L94 474"/>
-                <path d="M120 250 Q134 270 138 330 L146 474"/>
-              </g>
-              <g class="vein" stroke-linecap="round" fill="none">
-                <path d="M128 154 V248"/>
-                <path d="M128 152 Q142 108 132 84"/>
-                <path d="M126 168 Q150 160 164 176 L182 230"/>
-                <path d="M112 250 Q100 272 96 330 L88 472"/>
-                <path d="M74 226 L58 172 Q72 160 84 174"/>
-              </g>
-              <path class="heart" fill="url(#holoHeart)"
-                    d="M120 138 c-6 -10 -22 -9 -22 5 c0 10 13 18 22 25 c9 -7 22 -15 22 -25 c0 -14 -16 -15 -22 -5 z"/>
+      <div class="holo-scene" [class.is-scanning]="scanning">
+        <div class="holo-screen">
+          <div class="holo-rings"><span></span><span></span><span></span></div>
+
+          <!-- Hologramme médical 3D temps réel (Three.js + GSAP) -->
+          <app-medical-hologram
+            class="holo-canvas"
+            [class.show]="!!genderValue"
+            [gender]="genderValue"
+            [heightCm]="f['height'].value"
+            [weightKg]="f['weight'].value"
+            [bloodGroup]="bloodValue"
+            [scanning]="scanning">
+          </app-medical-hologram>
+
+          <div class="holo-placeholder" *ngIf="!genderValue">
+            <span class="holo-dot"></span>
+            <p>Hologramme en attente…<br>sélectionnez votre genre</p>
+          </div>
+
+          <!-- Relevé de signes vitaux (avec la circulation) -->
+          <div class="holo-vitals" *ngIf="bloodValue">
+            <span class="hb"><span class="hb-icon">❤</span> 72 <small>bpm</small></span>
+            <svg class="ecg" viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,14 22,14 28,14 32,4 38,24 44,14 70,14 76,8 82,18 88,14 120,14"/>
             </svg>
           </div>
-          <div class="holo-layer holo-scan"></div>
-        </div>
 
-        <div class="holo-placeholder" *ngIf="!genderValue">
-          <span class="holo-dot"></span>
-          <p>Hologramme en attente…<br>sélectionnez votre genre</p>
+          <div class="holo-floor"></div>
         </div>
-
-        <!-- Relevé de signes vitaux (avec la circulation) -->
-        <div class="holo-vitals" *ngIf="bloodValue">
-          <span class="hb"><span class="hb-icon">❤</span> 72 <small>bpm</small></span>
-          <svg class="ecg" viewBox="0 0 120 28" preserveAspectRatio="none">
-            <polyline points="0,14 22,14 28,14 32,4 38,24 44,14 70,14 76,8 82,18 88,14 120,14"/>
-          </svg>
-        </div>
-
-        <div class="holo-floor"></div>
       </div>
 
       <!-- Badges contextuels -->

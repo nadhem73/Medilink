@@ -1,0 +1,36 @@
+<section class="pp-page">
+  <header class="pp-header">
+    <div>
+      <p class="pp-kicker">Panel administrateur</p>
+      <h1>Parametres</h1>
+      <p class="pp-copy">Gerez votre profil administrateur, les preferences de notification et la securite du compte.</p>
+    </div>
+    <a routerLink="/dashboard/admin" class="pp-back">Retour au tableau de bord</a>
+  </header>
+
+  <div class="pp-grid">
+    <article class="pp-card">
+      <div class="pp-card-header">
+        <h2>Profil administrateur</h2>
+        <span class="pp-badge gold">Acces complet</span>
+      </div>
+      <div class="pp-info-grid">
+        <div class="pp-info" *ngFor="let item of profileCards">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+        </div>
+      </div>
+      <div style="margin-top:18px;">
+        <button type="button" class="pp-btn">Modifier le profil</button>
+      </div>
+    </article>
+
+    <article class="pp-card">
+      <h2>Preferences &amp; securite</h2>
+      <div class="pp-toggle" *ngFor="let p of preferences">
+        <span>{{ p.label }}</span>
+        <span class="switch" [class.on]="p.enabled" (click)="toggle(p)"></span>
+      </div>
+    </article>
+  </div>
+</section>

@@ -1,47 +1,53 @@
 package com.medilinktunisia.authservice.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Jeton de réinitialisation de mot de passe.
+ * Généré lors d'une demande « mot de passe oublié », envoyé par email,
+ * à usage unique et avec une durée de validité limitée.
+ */
 @Entity
 @Table(name = "password_reset_tokens", indexes = {
-    @Index(name = "idx_token", columnList = "token")
+        @Index(name = "idx_password_reset_token", columnList = "token", unique = true)
 })
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter
+@Setter
 public class PasswordResetToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 255)
+    /** Jeton opaque (UUID) transmis dans le lien de réinitialisation. */
+    @Column(nullable = false, unique = true, length = 100)
     private String token;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    /** Utilisateur (User) concerné par la réinitialisation. */
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    @Column(name = "expiry_date", nullable = false)
-    private LocalDateTime expiryDate;
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
 
+    /** Vrai une fois le jeton consommé : empêche toute réutilisation. */
     @Column(nullable = false)
-    @Builder.Default
-    private Boolean used = false;
+    private boolean used = false;
 
-    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public boolean isExpired() {
-        return LocalDateTime.now().isAfter(this.expiryDate);
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
+
+    /** Le jeton est exploitable s'il n'a pas été utilisé et n'est pas expiré. */
+    public boolean isUsable() {
+        return !used && expiresAt.isAfter(LocalDateTime.now());
     }
 }

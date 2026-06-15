@@ -29,6 +29,11 @@ export class RegisterComponent implements OnInit {
 
   bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
+  /** True pendant la séquence de scan final — intensifie l'hologramme 3D. */
+  get scanning(): boolean {
+    return !!this.successMessage || this.loading;
+  }
+
   genders = [
     { value: 'MALE', label: 'Homme' },
     { value: 'FEMALE', label: 'Femme' },
@@ -51,10 +56,10 @@ export class RegisterComponent implements OnInit {
       birthDate:    ['', [Validators.required]],
       gender:       ['', [Validators.required]],
       address:      ['', [Validators.required, Validators.maxLength(255)]],
-      cin:          ['', [Validators.maxLength(20)]],
+      cin:          ['', [Validators.required, Validators.maxLength(20)]],
 
       // Patient-specific fields
-      bloodGroup:             ['', [Validators.required]],
+      bloodGroup:             [''],
       height:                 [null],
       weight:                 [null],
       allergies:              [''],
@@ -180,17 +185,23 @@ export class RegisterComponent implements OnInit {
   assistantTyping = false;
   private typingTimer: any;
 
+  // ---- Décor d'arrière-plan médical (présentation pure, calculé une fois) ----
+  readonly bgBokeh = Array.from({ length: 12 }, (_, i) => i);
+  readonly dnaStrandA = RegisterComponent.dnaPoints(1);
+  readonly dnaStrandB = RegisterComponent.dnaPoints(-1);
+  readonly dnaRungs = RegisterComponent.dnaRungList();
+
   steps: WizardStep[] = [
     { key: 'intro',     prompt: "Bonjour, bienvenue chez MediLink Tunisia. Je suis votre assistant santé. Je vais vous guider pour créer votre profil médical.", controls: [] },
     { key: 'name',      prompt: "Pour commencer, quel est votre nom complet ?", controls: ['firstName', 'lastName'] },
     { key: 'email',     prompt: "Enchanté. Quelle est votre adresse email ?", controls: ['email'] },
     { key: 'phone',     prompt: "Parfait. Et votre numéro de téléphone ?", controls: ['phone'] },
     { key: 'birthDate', prompt: "Quelle est votre date de naissance ?", controls: ['birthDate'] },
-    { key: 'cin',       prompt: "Avez-vous un numéro CIN ? (optionnel)", controls: [] },
+    { key: 'cin',       prompt: "Quel est votre numéro CIN ? Il vous servira à vous connecter.", controls: ['cin'] },
     { key: 'address',   prompt: "Où résidez-vous actuellement ?", controls: ['address'] },
     { key: 'gender',    prompt: "Quel est votre genre ? Je vais initialiser votre hologramme médical.", controls: ['gender'] },
     { key: 'metrics',   prompt: "Indiquez votre taille et votre poids — je calcule votre indice de santé en temps réel.", controls: [] },
-    { key: 'blood',     prompt: "Quel est votre groupe sanguin ?", controls: ['bloodGroup'] },
+    { key: 'blood',     prompt: "Quel est votre groupe sanguin ? (optionnel)", controls: [] },
     { key: 'medical',   prompt: "Parlons de vos antécédents médicaux. Je génère votre dossier au fur et à mesure.", controls: [] },
     { key: 'emergency', prompt: "Qui devons-nous contacter en cas d'urgence ?", controls: ['emergencyContactName', 'emergencyContactPhone'] },
     { key: 'insurance', prompt: "Disposez-vous d'une assurance santé ? (optionnel)", controls: [] },
@@ -234,6 +245,32 @@ export class RegisterComponent implements OnInit {
   back(): void {
     if (this.currentStep > 0) {
       this.currentStep--;
+      this.scheduleTyping();
+    }
+  }
+
+  /** Champs concernés par l'option « Je ne sais pas », par étape. */
+  private readonly medicalFieldsByStep: { [key: string]: string[] } = {
+    metrics: ['height', 'weight'],
+    blood:   ['bloodGroup'],
+    medical: ['allergies', 'chronicDiseases', 'currentTreatments']
+  };
+
+  /** L'étape courante propose-t-elle l'option « Je ne sais pas » ? */
+  get canSkipMedical(): boolean {
+    return this.step.key in this.medicalFieldsByStep;
+  }
+
+  /** Le patient déclare ne pas connaître ces informations : on vide les champs et on avance. */
+  dontKnow(): void {
+    const fields = this.medicalFieldsByStep[this.step.key] || [];
+    fields.forEach(c => {
+      const ctrl = this.registerForm.get(c);
+      ctrl?.setValue(c === 'height' || c === 'weight' ? null : '');
+      ctrl?.markAsUntouched();
+    });
+    if (this.currentStep < this.steps.length - 1) {
+      this.currentStep++;
       this.scheduleTyping();
     }
   }
@@ -306,5 +343,37 @@ export class RegisterComponent implements OnInit {
   /** Le dossier médical commence à s'assembler à partir du groupe sanguin. */
   get medicalCardVisible(): boolean {
     return this.currentStep >= this.steps.findIndex(s => s.key === 'blood');
+  }
+
+  /** L'hologramme n'apparaît qu'à partir de l'étape du choix du genre. */
+  get showHologram(): boolean {
+    return this.currentStep >= this.steps.findIndex(s => s.key === 'gender');
+  }
+
+  // ----- Génération de l'hélice ADN décorative (viewBox 0 0 1200 220) -----
+  private static dnaPoints(dir: 1 | -1): string {
+    const pts: string[] = [];
+    for (let i = 0; i <= 120; i++) {
+      const x = i / 120;
+      const y = 110 + dir * Math.sin(x * Math.PI * 4) * 70;
+      pts.push(`${(x * 1200).toFixed(1)},${y.toFixed(1)}`);
+    }
+    return pts.join(' ');
+  }
+
+  private static dnaRungList(): { x: number; y1: number; y2: number; op: number }[] {
+    const rungs = [];
+    for (let i = 0; i <= 24; i++) {
+      const x = i / 24;
+      const phase = x * Math.PI * 4;
+      const s = Math.sin(phase);
+      rungs.push({
+        x: +(x * 1200).toFixed(1),
+        y1: +(110 + s * 70).toFixed(1),
+        y2: +(110 - s * 70).toFixed(1),
+        op: +(0.15 + 0.5 * (0.5 + 0.5 * Math.cos(phase))).toFixed(2)
+      });
+    }
+    return rungs;
   }
 }

@@ -1,0 +1,200 @@
+<section class="admin-section-page">
+  <header class="page-header">
+    <div>
+      <p class="page-kicker">Panel administrateur</p>
+      <h1>{{ title }}</h1>
+      <p class="page-copy">
+        Supervision technique de Medilink : validation des comptes medicaux, monitoring temps reel,
+        securite, logs d activite et rapports analytics.
+      </p>
+    </div>
+    <a routerLink="/dashboard/admin" class="back-link">Retour au tableau de bord</a>
+  </header>
+
+  <ng-container [ngSwitch]="section">
+    <!-- Validation des comptes medicaux -->
+    <section *ngSwitchCase="'approvals'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Demandes en attente de validation</h2>
+          <span class="badge accent-red">{{ approvals.length }} a traiter</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let approval of approvals">
+            <div class="mini-card-top">
+              <h3>{{ approval.name }}</h3>
+              <span class="status">{{ approval.status }}</span>
+            </div>
+            <p>{{ approval.type }}</p>
+            <span>Demande recue le {{ approval.date }}</span>
+            <div class="action-row">
+              <button type="button" class="mini-btn approve">Approuver</button>
+              <button type="button" class="mini-btn reject">Refuser</button>
+            </div>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Criteres de validation</h2>
+        <ul class="checklist">
+          <li>Verifier le diplome ou l agrement professionnel.</li>
+          <li>Controler le numero d enregistrement officiel.</li>
+          <li>Confirmer l identite et l etablissement de rattachement.</li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- Gestion utilisateurs -->
+    <section *ngSwitchCase="'users'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Comptes de la plateforme</h2>
+          <span class="badge">{{ users.length }} utilisateurs</span>
+        </div>
+        <div class="table-like">
+          <div class="table-row" *ngFor="let user of users">
+            <div>
+              <strong>{{ user.name }}</strong>
+              <p>{{ user.email }}</p>
+            </div>
+            <div>{{ user.role }}</div>
+            <div><span class="status" [class.danger]="user.status === 'Suspendu'">{{ user.status }}</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Actions de moderation</h2>
+        <ul class="checklist">
+          <li>Suspendre un compte en cas d activite frauduleuse.</li>
+          <li>Reinitialiser l acces d un utilisateur a sa demande.</li>
+          <li>Verifier les doublons et fusionner les comptes.</li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- Monitoring systeme temps reel -->
+    <section *ngSwitchCase="'monitoring'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Etat des services en temps reel</h2>
+          <span class="badge accent-green">Live</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let service of monitoring">
+            <div class="mini-card-top">
+              <h3>{{ service.name }}</h3>
+              <span class="status" [class.danger]="service.status === 'Degrade'">{{ service.status }}</span>
+            </div>
+            <p>{{ service.metric }}</p>
+            <span>{{ service.sub }}</span>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Indicateurs systeme</h2>
+        <div class="kpi-list">
+          <div class="kpi-row" *ngFor="let kpi of monitoringKpis">
+            <span>{{ kpi.label }}</span>
+            <strong>{{ kpi.value }}</strong>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Securite & politiques d'acces -->
+    <section *ngSwitchCase="'security'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Politiques d acces</h2>
+          <span class="badge accent-red">Securite</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let policy of accessPolicies">
+            <div class="mini-card-top">
+              <h3>{{ policy.name }}</h3>
+              <span class="status">{{ policy.status }}</span>
+            </div>
+            <p>{{ policy.detail }}</p>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Incidents recents</h2>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let incident of securityIncidents">
+            <div class="mini-card-top">
+              <h3>{{ incident.title }}</h3>
+              <span class="status"
+                    [class.danger]="incident.level === 'Eleve'"
+                    [class.warn]="incident.level === 'Moyen'">{{ incident.level }}</span>
+            </div>
+            <span>{{ incident.meta }}</span>
+          </article>
+        </div>
+      </article>
+    </section>
+
+    <!-- Logs d'activite -->
+    <section *ngSwitchCase="'logs'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Journal d activite</h2>
+          <span class="badge accent-red">Audit</span>
+        </div>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let log of logs">
+            <div class="mini-card-top">
+              <h3>{{ log.action }}</h3>
+              <span class="status" [class.danger]="log.result === 'Bloque'">{{ log.result }}</span>
+            </div>
+            <p>{{ log.source }}</p>
+            <span>{{ log.date }}</span>
+            <strong>{{ log.note }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Traçabilite</h2>
+        <ul class="checklist">
+          <li>Conserver les logs pendant 12 mois (conformite).</li>
+          <li>Exporter les journaux pour audit externe.</li>
+          <li>Alerter sur les actions sensibles en temps reel.</li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- Rapports analytics -->
+    <section *ngSwitchCase="'analytics'" class="section-grid">
+      <article class="card wide-card">
+        <div class="card-header">
+          <h2>Indicateurs cles de la plateforme</h2>
+          <span class="badge accent-green">Analytics</span>
+        </div>
+        <div class="profile-grid">
+          <article class="profile-item" *ngFor="let stat of analytics">
+            <span>{{ stat.label }}</span>
+            <strong>{{ stat.value }}</strong>
+          </article>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>Rapports disponibles</h2>
+        <div class="list-cards">
+          <article class="mini-card" *ngFor="let report of analyticsReports">
+            <h3>{{ report.title }}</h3>
+            <p>{{ report.detail }}</p>
+          </article>
+        </div>
+        <div style="margin-top:16px;">
+          <button type="button" class="mini-btn approve" style="width:100%;">Exporter le rapport</button>
+        </div>
+      </article>
+    </section>
+  </ng-container>
+</section>

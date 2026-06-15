@@ -22,8 +22,9 @@ spring.data.redis:
   password: ""
 
 # JWT Configuration pour dev
+# Doit être identique à auth-service et patient-service pour valider les tokens
 jwt:
-  secret: c21hcnRoZWFsdGh0dW5pc2lhLXN1cGVyLXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9uLXZlcnktbG9uZy1hbmQtc2VjdXJl
+  secret: medilinktunisia2025SecretKeyForJWTTokenGenerationAndValidation
   expiration: 86400000 # 24 heures
 
 logging:

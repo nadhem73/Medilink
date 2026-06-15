@@ -4,6 +4,7 @@ import { MainLayoutComponent } from './layouts/main-layout/main-layout.component
 import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout.component';
 import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-layout.component';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 const routes: Routes = [
   // Routes publiques avec MainLayout
@@ -44,7 +45,13 @@ const routes: Routes = [
             loadChildren: () => import('./pages/patient-panel/patient.module').then(m => m.PatientModule)
           },
           {
+            path: 'admin',
+            canActivate: [adminGuard],
+            loadChildren: () => import('./pages/admin-panel/admin.module').then(m => m.AdminModule)
+          },
+          {
             path: 'doctor',
+            canActivate: [authGuard],
             loadChildren: () => import('./pages/doctor-panel/doctor.module').then(m => m.DoctorModule)
           },
           {
@@ -55,10 +62,6 @@ const routes: Routes = [
             path: 'laboratory',
             loadChildren: () => import('./pages/laboratory-panel/laboratory.module').then(m => m.LaboratoryModule)
           },
-          {
-            path: 'ambulance',
-            loadChildren: () => import('./pages/ambulance-panel/ambulance.module').then(m => m.AmbulanceModule)
-          }
         ]
       }
     ]
