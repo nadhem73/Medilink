@@ -5,10 +5,12 @@ on:
     branches: [ "main", "develop", "feature/**" ]
     paths:
       - 'Frontend/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'Frontend/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
