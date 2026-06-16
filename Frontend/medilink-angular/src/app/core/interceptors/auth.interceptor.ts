@@ -1,4 +1,4 @@
-import { HttpInterceptorFn, HttpRequest, HttpHandlerFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, catchError, filter, switchMap, take, throwError } from 'rxjs';
@@ -38,7 +38,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      if (!isRefreshing) {
+      if (isRefreshing === false) {
         isRefreshing = true;
         refreshTokenSubject.next(null);
 
@@ -59,7 +59,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return refreshTokenSubject.pipe(
           filter(token => token !== null),
           take(1),
-          switchMap(newToken => next(addToken(req, newToken!)))
+          switchMap(newToken => next(addToken(req, newToken)))
         );
       }
     })

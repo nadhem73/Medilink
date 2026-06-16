@@ -138,7 +138,8 @@
                     [(ngModel)]="searchQuery"
                     (input)="filterDoctors()"
                     placeholder="Rechercher un médecin, spécialité, hôpital..."
-                    class="form-control search-input" />
+                    class="form-control search-input"
+                    aria-label="Rechercher un médecin" />
                 </div>
                 <div class="filter-wrapper">
                   <label for="specialty-select" class="sr-only">Spécialité</label>
@@ -242,13 +243,13 @@
                 
                 <!-- Créneaux disponibles -->
                 <div class="form-group slots-group">
-                  <label>Créneaux disponibles (consultation 30 min)</label>
+                  <span class="slots-label">Crénaux disponibles (consultation 30 min)</span>
                   <div *ngIf="!bookingDate" class="slots-hint">Sélectionnez d'abord une date.</div>
                   <div *ngIf="loadingSlots" class="slots-loading">⏳ Chargement des créneaux...</div>
                   <div *ngIf="!loadingSlots && bookingDate && availableSlots.length === 0" class="slots-empty">
                     ❌ Aucun créneau disponible pour cette date.
                   </div>
-                  <div *ngIf="!loadingSlots && availableSlots.length > 0" class="slots-grid">
+                  <div *ngIf="!loadingSlots && availableSlots.length > 0" class="slots-grid" aria-label="Liste des créneaux disponibles">
                     <button 
                       type="button"
                       class="slot-btn"
