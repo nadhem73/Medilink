@@ -28,8 +28,13 @@
       <div *ngIf="activeTab === 'list'" class="section-grid animate-fade">
         <article class="card wide-card">
           <div class="card-header">
-            <h2>Mes consultations réservées</h2>
-            <span class="badge" *ngIf="!loadingAppointments">{{ appointments.length }} {{ appointments.length > 1 ? 'rendez-vous' : 'rendez-vous' }}</span>
+            <h2>Mes consultations</h2>
+            <div class="header-badges" *ngIf="!loadingAppointments && appointments.length > 0">
+              <span class="badge badge-pending" *ngIf="getPendingCount() > 0">
+                ⏳ {{ getPendingCount() }} en attente
+              </span>
+              <span class="badge badge-total">{{ appointments.length }} total</span>
+            </div>
           </div>
 
           <!-- Spinner de chargement -->
@@ -47,38 +52,51 @@
           </div>
 
           <!-- Liste des RDV -->
-          <div *ngIf="!loadingAppointments && appointments.length > 0" class="table-like">
-            <div class="table-row" *ngFor="let app of appointments">
-              <div class="doctor-cell">
-                <span class="avatar-stub">Dr</span>
-                <div>
-                  <strong>{{ getDoctorDetails(app.doctorId).name }}</strong>
-                  <p>{{ getDoctorDetails(app.doctorId).specialty }}</p>
+          <div *ngIf="!loadingAppointments && appointments.length > 0" class="appointments-list">
+            <div class="appointment-card" *ngFor="let app of appointments" [class.past]="!isUpcoming(app.dateTime)">
+              <div class="appointment-card-body">
+                <div class="card-left">
+                  <div class="doc-avatar-sm">
+                    <span>Dr</span>
+                  </div>
                 </div>
-              </div>
-              <div class="date-cell">
-                <strong>{{ app.dateTime | date:'dd MMM yyyy' }}</strong>
-                <p>{{ app.dateTime | date:'HH:mm' }}</p>
-              </div>
-              <div class="mode-cell">
-                <span class="mode-badge" [class.tele]="app.mode === 'TELECONSULTATION'">
-                  {{ app.mode === 'TELECONSULTATION' ? '💻 Téléconsultation' : '🏥 Présentiel' }}
-                </span>
-              </div>
-              <div class="status-cell">
-                <span class="status-badge" [class]="getStatusClass(app.status)">
-                  {{ getStatusLabel(app.status) }}
-                </span>
-              </div>
-              <div class="action-cell">
-                <button 
-                  *ngIf="app.status !== 'CANCELLED'" 
-                  class="btn btn-danger-link" 
-                  (click)="cancelAppointment(app.id)"
-                  title="Annuler le rendez-vous">
-                  Annuler
-                </button>
-                <span *ngIf="app.status === 'CANCELLED'" class="cancelled-text">Annulé</span>
+                <div class="card-center">
+                  <div class="doc-info">
+                    <strong>{{ getDoctorDetails(app.doctorId).name }}</strong>
+                    <span class="doc-specialty">{{ getDoctorDetails(app.doctorId).specialty }}</span>
+                  </div>
+                  <div class="appointment-meta">
+                    <span class="meta-item">
+                      <span class="meta-icon">📅</span>
+                      {{ app.dateTime | date:'EEEE d MMM yyyy' | titlecase }}
+                    </span>
+                    <span class="meta-item">
+                      <span class="meta-icon">🕐</span>
+                      {{ app.dateTime | date:'HH:mm' }}
+                    </span>
+                    <span class="meta-item mode-tag" [class.tele]="app.mode === 'TELECONSULTATION'">
+                      <span class="meta-icon">{{ app.mode === 'TELECONSULTATION' ? '💻' : '🏥' }}</span>
+                      {{ app.mode === 'TELECONSULTATION' ? 'Téléconsultation' : 'Présentiel' }}
+                    </span>
+                  </div>
+                  <div class="appointment-notes" *ngIf="app.notes">
+                    <span>📝 {{ app.notes }}</span>
+                  </div>
+                </div>
+                <div class="card-right">
+                  <span class="status-badge" [class]="getStatusClass(app.status)">
+                    <span class="status-icon">{{ getStatusIcon(app.status) }}</span>
+                    {{ getStatusLabel(app.status) }}
+                  </span>
+                  <button 
+                    *ngIf="app.status !== 'CANCELLED'" 
+                    class="btn btn-outline-danger" 
+                    (click)="cancelAppointment(app.id)"
+                    title="Annuler le rendez-vous">
+                    Annuler
+                  </button>
+                  <span *ngIf="app.status === 'CANCELLED'" class="cancelled-label">Annulé</span>
+                </div>
               </div>
             </div>
           </div>
@@ -140,7 +158,7 @@
 
             <!-- Cartes des médecins -->
             <div *ngIf="!loadingDoctors && filteredDoctors.length > 0" class="doctors-grid">
-              <div class="doctor-card" *ngFor="let doc of filteredDoctors" [class.unavailable]="!doc.available">
+              <div class="doctor-card" *ngFor="let doc of filteredDoctors" [class.unavailable]="!doc.available" [class.booked]="isDoctorBooked(doc.id)">
                 <div class="doc-card-header">
                   <div class="doc-avatar">
                     <span>{{ doc.firstName.substring(0,1) }}{{ doc.lastName.substring(0,1) }}</span>
@@ -162,11 +180,14 @@
                   <div class="doc-action">
                     <button 
                       class="btn btn-primary" 
-                      *ngIf="doc.available"
+                      *ngIf="doc.available && !isDoctorBooked(doc.id)"
                       (click)="selectDoctor(doc)">
                       Prendre RDV
                     </button>
-                    <span *ngIf="!doc.available" class="badge-unavailable">Indisponible</span>
+                    <span *ngIf="isDoctorBooked(doc.id)" class="badge-booked">
+                      <span class="badge-icon">📅</span> Déjà réservé
+                    </span>
+                    <span *ngIf="!doc.available && !isDoctorBooked(doc.id)" class="badge-unavailable">Indisponible</span>
                   </div>
                 </div>
               </div>

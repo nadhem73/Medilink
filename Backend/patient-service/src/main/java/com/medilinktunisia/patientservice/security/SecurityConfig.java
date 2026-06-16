@@ -3,6 +3,7 @@ package com.medilinktunisia.patientservice.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,10 +21,12 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoint interne appelé par l'auth-service (service-à-service)
+                        // Permettre les requetes OPTIONS (CORS preflight) sans authentification
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Endpoint interne appele par l'auth-service (service-a-service)
                         .requestMatchers("/api/patients/internal/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        // Le reste (ex. /api/patients/me/**) nécessite un JWT valide
+                        // Le reste (ex. /api/patients/me/**) necessite un JWT valide
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

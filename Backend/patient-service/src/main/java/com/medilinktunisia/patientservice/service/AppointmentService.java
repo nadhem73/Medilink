@@ -22,6 +22,16 @@ public class AppointmentService {
      * Crée un nouveau rendez-vous pour le patient.
      */
     public AppointmentDto createAppointment(Long patientId, AppointmentRequest request) {
+        // Vérifier que le patient n'a pas déjà un rendez-vous actif chez ce médecin
+        boolean alreadyBooked = repository.existsByPatientIdAndDoctorIdAndStatusIn(
+                patientId,
+                request.getDoctorId(),
+                List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
+        );
+        if (alreadyBooked) {
+            throw new IllegalStateException("Vous avez déjà un rendez-vous en cours avec ce médecin. Veuillez annuler ou attendre la consultation.");
+        }
+
         Appointment appointment = new Appointment();
         appointment.setPatientId(patientId);
         appointment.setDoctorId(request.getDoctorId());
@@ -113,6 +123,17 @@ public class AppointmentService {
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
         return toDto(repository.save(appointment));
+    }
+
+    /**
+     * Retourne la liste des IDs des médecins chez qui le patient a déjà un rendez-vous actif
+     * (PENDING ou CONFIRMED). Utile pour empêcher les doubles réservations chez le même médecin.
+     */
+    public List<Long> getActiveDoctorIdsForPatient(Long patientId) {
+        return repository.findActiveDoctorIdsByPatientId(
+                patientId,
+                List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
+        );
     }
 
     private AppointmentDto toDto(Appointment a) {

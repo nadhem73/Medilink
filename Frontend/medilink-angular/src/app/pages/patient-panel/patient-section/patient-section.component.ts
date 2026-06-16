@@ -29,6 +29,7 @@ export class PatientSectionComponent implements OnInit {
   loadingAppointments = false;
   loadingDoctors = false;
   submitting = false;
+  bookedDoctorIds: number[] = []; // IDs des médecins avec RDV déjà pris
 
   // Booking form model
   bookingDate: string = '';
@@ -153,6 +154,9 @@ export class PatientSectionComponent implements OnInit {
         const specs = data.map(d => d.specialty).filter(s => !!s);
         this.specialties = Array.from(new Set(specs));
         
+        // Charger les médecins déjà réservés par ce patient
+        this.loadBookedDoctorIds();
+        
         this.loadingDoctors = false;
       },
       error: (err) => {
@@ -160,6 +164,24 @@ export class PatientSectionComponent implements OnInit {
         this.loadingDoctors = false;
       }
     });
+  }
+
+  // Charge les IDs des médecins ayant déjà un rendez-vous actif
+  loadBookedDoctorIds(): void {
+    this.appointmentService.getActiveDoctorIds().subscribe({
+      next: (ids) => {
+        this.bookedDoctorIds = ids;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des médecins réservés', err);
+        this.bookedDoctorIds = [];
+      }
+    });
+  }
+
+  // Vérifie si un médecin a déjà un rendez-vous actif
+  isDoctorBooked(doctorId: number): boolean {
+    return this.bookedDoctorIds.includes(doctorId);
   }
 
   // Filter doctors list
@@ -279,16 +301,39 @@ export class PatientSectionComponent implements OnInit {
     }
   }
 
+  // Formatter for status icon
+  getStatusIcon(status: string): string {
+    switch (status.toUpperCase()) {
+      case 'CONFIRMED':
+        return '✅';
+      case 'CANCELLED':
+        return '❌';
+      case 'PENDING':
+      default:
+        return '⏳';
+    }
+  }
+
   // Formatter for status text translation
   getStatusLabel(status: string): string {
     switch (status.toUpperCase()) {
       case 'CONFIRMED':
-        return 'Confirme';
+        return 'Confirmé';
       case 'CANCELLED':
-        return 'Annule';
+        return 'Annulé';
       case 'PENDING':
       default:
         return 'En attente';
     }
+  }
+
+  // Check if appointment is upcoming
+  isUpcoming(dateTime: string): boolean {
+    return new Date(dateTime) > new Date();
+  }
+
+  // Count pending appointments
+  getPendingCount(): number {
+    return this.appointments.filter(a => a.status.toUpperCase() === 'PENDING').length;
   }
 }

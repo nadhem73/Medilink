@@ -45,6 +45,11 @@ export class AppointmentService {
     return this.http.put<AppointmentDto>(`${this.API_URL}/${id}/cancel`, {});
   }
 
+  /** Retourne la liste des IDs des médecins chez qui le patient a déjà un rendez-vous actif */
+  getActiveDoctorIds(): Observable<number[]> {
+    return this.http.get<number[]>(`${this.API_URL}/active-doctor-ids`);
+  }
+
   /** Confirme un rendez-vous (action médecin) */
   confirmAppointment(id: number): Observable<AppointmentDto> {
     return this.http.put<AppointmentDto>(`${this.API_URL}/${id}/confirm`, {});

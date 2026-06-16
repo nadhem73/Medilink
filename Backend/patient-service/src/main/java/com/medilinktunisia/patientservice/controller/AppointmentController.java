@@ -50,6 +50,16 @@ public class AppointmentController {
     }
 
     /**
+     * Retourne la liste des IDs des médecins chez qui le patient a déjà un rendez-vous actif
+     * (PENDING ou CONFIRMED). Utilisé par le frontend pour bloquer les doubles réservations.
+     */
+    @GetMapping("/active-doctor-ids")
+    public ResponseEntity<List<Long>> getActiveDoctorIds(HttpServletRequest request) {
+        Long patientId = (Long) request.getAttribute("userId");
+        return ResponseEntity.ok(service.getActiveDoctorIdsForPatient(patientId));
+    }
+
+    /**
      * Annule un rendez-vous du patient connecté.
      */
     @PutMapping("/{id}/cancel")
