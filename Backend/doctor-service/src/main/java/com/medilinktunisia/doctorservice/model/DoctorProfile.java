@@ -42,6 +42,18 @@ public class DoctorProfile {
     @Column(precision = 10, scale = 2)
     private BigDecimal fee;
 
+    @Column(name = "debut_matin", length = 5)
+    private String debutMatin;
+
+    @Column(name = "fin_matin", length = 5)
+    private String finMatin;
+
+    @Column(name = "debut_apres_midi", length = 5)
+    private String debutApresMidi;
+
+    @Column(name = "fin_apres_midi", length = 5)
+    private String finApresMidi;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

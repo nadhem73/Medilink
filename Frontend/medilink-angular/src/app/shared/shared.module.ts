@@ -20,7 +20,8 @@ import { FooterComponent } from './footer/footer.component';
   exports: [
     NavbarComponent,
     SidebarComponent,
-    FooterComponent
+    FooterComponent,
+    FormsModule
   ]
 })
 export class SharedModule { }

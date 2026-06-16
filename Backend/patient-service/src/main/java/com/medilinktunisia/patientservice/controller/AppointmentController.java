@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -57,6 +58,36 @@ public class AppointmentController {
     public ResponseEntity<List<Long>> getActiveDoctorIds(HttpServletRequest request) {
         Long patientId = (Long) request.getAttribute("userId");
         return ResponseEntity.ok(service.getActiveDoctorIdsForPatient(patientId));
+    }
+
+    /**
+     * Vérifie si un créneau est disponible pour un médecin (consultation = 30 min).
+     */
+    @GetMapping("/check-availability")
+    public ResponseEntity<Boolean> checkAvailability(
+            @RequestParam Long doctorId,
+            @RequestParam String dateTime) {
+        try {
+            service.validateTimeSlot(doctorId, LocalDateTime.parse(dateTime));
+            return ResponseEntity.ok(true);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.ok(false);
+        }
+    }
+
+    /**
+     * Retourne les créneaux disponibles (HH:mm) pour un médecin à une date donnée.
+     */
+    @GetMapping("/available-slots")
+    public ResponseEntity<List<String>> getAvailableSlots(
+            @RequestParam Long doctorId,
+            @RequestParam String date,
+            @RequestParam String debutMatin,
+            @RequestParam String finMatin,
+            @RequestParam String debutApresMidi,
+            @RequestParam String finApresMidi) {
+        return ResponseEntity.ok(service.getAvailableSlots(
+                doctorId, date, debutMatin, finMatin, debutApresMidi, finApresMidi));
     }
 
     /**

@@ -2,6 +2,7 @@ package com.medilinktunisia.authservice.controller;
 
 import com.medilinktunisia.authservice.dto.request.ForgotPasswordRequest;
 import com.medilinktunisia.authservice.dto.request.LoginRequest;
+import com.medilinktunisia.authservice.dto.request.RefreshTokenRequest;
 import com.medilinktunisia.authservice.dto.request.RegisterRequest;
 import com.medilinktunisia.authservice.dto.request.OtpVerificationRequest;
 import com.medilinktunisia.authservice.dto.request.ResetPasswordRequest;
@@ -41,6 +42,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /** Rafraîchit l'access token à partir du refresh token. */
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
     }
 
     /** Profil de l'utilisateur authentifié (via le JWT). */

@@ -26,6 +26,10 @@ public class DoctorProfileService {
         profile.setAvailable(request.getAvailable() != null ? request.getAvailable() : Boolean.TRUE);
         profile.setBiography(request.getBiography());
         profile.setFee(request.getFee());
+        profile.setDebutMatin(request.getDebutMatin() != null ? request.getDebutMatin() : "08:00");
+        profile.setFinMatin(request.getFinMatin() != null ? request.getFinMatin() : "13:00");
+        profile.setDebutApresMidi(request.getDebutApresMidi() != null ? request.getDebutApresMidi() : "15:00");
+        profile.setFinApresMidi(request.getFinApresMidi() != null ? request.getFinApresMidi() : "19:00");
         repository.save(profile);
     }
 
@@ -59,6 +63,10 @@ public class DoctorProfileService {
         }
         profile.setBiography(request.getBiography());
         profile.setFee(request.getFee());
+        if (request.getDebutMatin() != null) profile.setDebutMatin(request.getDebutMatin());
+        if (request.getFinMatin() != null) profile.setFinMatin(request.getFinMatin());
+        if (request.getDebutApresMidi() != null) profile.setDebutApresMidi(request.getDebutApresMidi());
+        if (request.getFinApresMidi() != null) profile.setFinApresMidi(request.getFinApresMidi());
         return toDto(repository.save(profile));
     }
 
@@ -68,6 +76,10 @@ public class DoctorProfileService {
                 .available(p.getAvailable())
                 .biography(p.getBiography())
                 .fee(p.getFee())
+                .debutMatin(p.getDebutMatin())
+                .finMatin(p.getFinMatin())
+                .debutApresMidi(p.getDebutApresMidi())
+                .finApresMidi(p.getFinApresMidi())
                 .build();
     }
 }

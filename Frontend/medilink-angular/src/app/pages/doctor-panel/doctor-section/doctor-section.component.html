@@ -50,36 +50,28 @@
     ════════════════════════════════════════════════════════════════ -->
     <section *ngSwitchCase="'appointments'" class="agenda-layout">
 
-      <!-- ── Stats bar ─────────────────────────────────────────────── -->
-      <div class="agenda-stats">
-        <div class="stat-card stat-total" (click)="setStatusFilter('ALL')" [class.active]="statusFilter === 'ALL'">
-          <span class="stat-icon">📅</span>
-          <div>
-            <strong>{{ countTotal }}</strong>
-            <span>Total</span>
-          </div>
+      <!-- ── Filtres ─────────────────────────────────────────────── -->
+      <div class="agenda-filters">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            class="search-input"
+            [(ngModel)]="searchQuery"
+            placeholder="Rechercher un patient ou un motif..."
+            aria-label="Rechercher"
+          />
         </div>
-        <div class="stat-card stat-pending" (click)="setStatusFilter('PENDING')" [class.active]="statusFilter === 'PENDING'">
-          <span class="stat-icon">⏳</span>
-          <div>
-            <strong>{{ countPending }}</strong>
-            <span>En attente</span>
-          </div>
-        </div>
-        <div class="stat-card stat-confirmed" (click)="setStatusFilter('CONFIRMED')" [class.active]="statusFilter === 'CONFIRMED'">
-          <span class="stat-icon">✅</span>
-          <div>
-            <strong>{{ countConfirmed }}</strong>
-            <span>Confirmés</span>
-          </div>
-        </div>
-        <div class="stat-card stat-cancelled" (click)="setStatusFilter('CANCELLED')" [class.active]="statusFilter === 'CANCELLED'">
-          <span class="stat-icon">❌</span>
-          <div>
-            <strong>{{ countCancelled }}</strong>
-            <span>Annulés</span>
-          </div>
-        </div>
+        <select
+          class="filter-select"
+          [(ngModel)]="statusFilter"
+          aria-label="Filtrer par statut"
+        >
+          <option value="ALL">📋 Tous les statuts</option>
+          <option value="PENDING">⏳ En attente</option>
+          <option value="CONFIRMED">✅ Confirmés</option>
+          <option value="CANCELLED">❌ Annulés</option>
+        </select>
       </div>
 
       <!-- ── Corps de l'agenda ─────────────────────────────────────── -->
@@ -134,7 +126,7 @@
               <p class="appt-subtitle" *ngIf="!loadingAppointments">
                 {{ filteredAppointments.length }} rendez-vous
                 <ng-container *ngIf="statusFilter !== 'ALL'">
-                  · filtre actif
+                  · {{ statusFilter === 'PENDING' ? 'En attente' : statusFilter === 'CONFIRMED' ? 'Confirmés' : 'Annulés' }}
                 </ng-container>
               </p>
             </div>
@@ -173,7 +165,7 @@
 
               <!-- Statut + actions -->
               <div class="appt-action-col">
-                <span class="status" [class]="appt.statusClass">{{ appt.status }}</span>
+                <span class="status" [ngClass]="appt.statusClass">{{ appt.status }}</span>
 
                 <div class="appt-btns" *ngIf="appt.statusClass !== 'status-cancelled'">
                   <!-- Confirmer (si en attente) -->

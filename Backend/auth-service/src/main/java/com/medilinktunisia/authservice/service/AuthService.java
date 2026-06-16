@@ -148,6 +148,22 @@ public class AuthService {
                 .build();
     }
 
+    public AuthResponse refreshToken(String refreshToken) {
+        if (!jwtService.isTokenValid(refreshToken)) {
+            throw new IllegalArgumentException("Refresh token invalide ou expiré");
+        }
+        String email = jwtService.extractEmail(refreshToken);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+        return AuthResponse.builder()
+                .accessToken(jwtService.generateAccessToken(user))
+                .refreshToken(jwtService.generateRefreshToken(user))
+                .tokenType("Bearer")
+                .expiresIn(jwtService.getExpiration())
+                .user(toUserDto(user))
+                .build();
+    }
+
     public UserDto getCurrentUser(String email) {
         return toUserDto(userRepository.findByEmail(email).orElseThrow());
     }

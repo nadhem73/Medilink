@@ -129,6 +129,13 @@ export class AuthService {
     );
   }
 
+  refreshToken(): Observable<AuthResponse> {
+    const refreshToken = this.storage.getRefreshToken();
+    return this.http.post<AuthResponse>(`${this.API_URL}/refresh`, { refreshToken }).pipe(
+      tap(response => this.handleAuthResponse(response))
+    );
+  }
+
   refreshCurrentUser(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/me`).pipe(
       tap(user => {

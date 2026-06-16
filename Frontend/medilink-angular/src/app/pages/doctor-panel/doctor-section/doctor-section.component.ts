@@ -58,6 +58,7 @@ export class DoctorSectionComponent implements OnInit {
 
   // Filtres
   statusFilter: 'ALL' | 'PENDING' | 'CONFIRMED' | 'CANCELLED' = 'ALL';
+  searchQuery: string = '';
 
   // ── Données mock autres sections ─────────────────────────────────────────
   consultations = [
@@ -256,6 +257,7 @@ export class DoctorSectionComponent implements OnInit {
       });
     }
 
+    // Filtre par statut
     if (this.statusFilter !== 'ALL') {
       const classMap: Record<string, string> = {
         PENDING: 'status-pending',
@@ -263,6 +265,16 @@ export class DoctorSectionComponent implements OnInit {
         CANCELLED: 'status-cancelled'
       };
       list = list.filter(app => app.statusClass === classMap[this.statusFilter]);
+    }
+
+    // Recherche textuelle dynamique
+    const q = this.searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter(app =>
+        app.patient.toLowerCase().includes(q) ||
+        app.reason.toLowerCase().includes(q) ||
+        app.mode.toLowerCase().includes(q)
+      );
     }
 
     return list;
@@ -279,16 +291,6 @@ export class DoctorSectionComponent implements OnInit {
     this.selectedDate = null;
     this.buildCalendar();
   }
-
-  setStatusFilter(f: 'ALL' | 'PENDING' | 'CONFIRMED' | 'CANCELLED'): void {
-    this.statusFilter = f;
-  }
-
-  // ── Stats ─────────────────────────────────────────────────────────────────
-  get countTotal(): number { return this.allAppointments.length; }
-  get countPending(): number { return this.allAppointments.filter(a => a.statusClass === 'status-pending').length; }
-  get countConfirmed(): number { return this.allAppointments.filter(a => a.statusClass === 'status-confirmed').length; }
-  get countCancelled(): number { return this.allAppointments.filter(a => a.statusClass === 'status-cancelled').length; }
 
   // ── Actions ───────────────────────────────────────────────────────────────
 

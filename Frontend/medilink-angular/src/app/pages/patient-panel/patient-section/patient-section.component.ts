@@ -30,12 +30,17 @@ export class PatientSectionComponent implements OnInit {
   loadingDoctors = false;
   submitting = false;
   bookedDoctorIds: number[] = []; // IDs des médecins avec RDV déjà pris
+  searchQuery: string = '';
 
   // Booking form model
   bookingDate: string = '';
   bookingTime: string = '';
   bookingMode: string = 'PRESENTIEL';
   bookingNotes: string = '';
+
+  // Available time slots
+  availableSlots: string[] = [];
+  loadingSlots = false;
 
   // Notifications
   successMessage: string = '';
@@ -184,15 +189,18 @@ export class PatientSectionComponent implements OnInit {
     return this.bookedDoctorIds.includes(doctorId);
   }
 
-  // Filter doctors list
-  onSpecialtyChange(): void {
-    if (!this.selectedSpecialty) {
-      this.filteredDoctors = this.doctors;
-    } else {
-      this.filteredDoctors = this.doctors.filter(
-        d => d.specialty === this.selectedSpecialty
-      );
-    }
+  // Filter doctors list by specialty and search query
+  filterDoctors(): void {
+    const query = this.searchQuery.toLowerCase().trim();
+    this.filteredDoctors = this.doctors.filter(d => {
+      const matchesSpecialty = !this.selectedSpecialty || d.specialty === this.selectedSpecialty;
+      const matchesSearch = !query
+        || `${d.firstName} ${d.lastName}`.toLowerCase().includes(query)
+        || (d.specialty || '').toLowerCase().includes(query)
+        || (d.hospital || '').toLowerCase().includes(query)
+        || (d.biography || '').toLowerCase().includes(query);
+      return matchesSpecialty && matchesSearch;
+    });
   }
 
   // Switch tabs
@@ -221,6 +229,34 @@ export class PatientSectionComponent implements OnInit {
   // Cancel booking form
   cancelBooking(): void {
     this.selectedDoctor = null;
+    this.availableSlots = [];
+    this.bookingTime = '';
+  }
+
+  // Called when date changes to load available slots
+  onDateChange(): void {
+    this.bookingTime = '';
+    this.availableSlots = [];
+    if (!this.selectedDoctor || !this.bookingDate) return;
+    this.loadingSlots = true;
+    this.errorMessage = '';
+    this.appointmentService.getAvailableSlots(
+      this.selectedDoctor.id,
+      this.bookingDate,
+      this.selectedDoctor.debutMatin,
+      this.selectedDoctor.finMatin,
+      this.selectedDoctor.debutApresMidi,
+      this.selectedDoctor.finApresMidi
+    ).subscribe({
+      next: (slots) => {
+        this.availableSlots = slots;
+        this.loadingSlots = false;
+      },
+      error: () => {
+        this.availableSlots = [];
+        this.loadingSlots = false;
+      }
+    });
   }
 
   // Book appointment
@@ -228,6 +264,10 @@ export class PatientSectionComponent implements OnInit {
     if (!this.selectedDoctor) return;
     if (!this.bookingDate || !this.bookingTime) {
       this.errorMessage = 'Veuillez selectionner une date et une heure.';
+      return;
+    }
+    if (!this.bookingTime) {
+      this.errorMessage = 'Veuillez sélectionner un créneau horaire.';
       return;
     }
 
@@ -255,7 +295,11 @@ export class PatientSectionComponent implements OnInit {
       },
       error: (err) => {
         console.error('Erreur lors de la reservation', err);
-        this.errorMessage = 'Une erreur est survenue lors de la reservation du rendez-vous. Veuillez reessayer.';
+        if (err.error && typeof err.error === 'string') {
+          this.errorMessage = err.error;
+        } else {
+          this.errorMessage = 'Une erreur est survenue lors de la reservation du rendez-vous. Veuillez reessayer.';
+        }
         this.submitting = false;
       }
     });

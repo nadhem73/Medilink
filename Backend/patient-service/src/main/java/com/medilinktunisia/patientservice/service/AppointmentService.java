@@ -32,6 +32,9 @@ public class AppointmentService {
             throw new IllegalStateException("Vous avez déjà un rendez-vous en cours avec ce médecin. Veuillez annuler ou attendre la consultation.");
         }
 
+        // Vérifier que le créneau est libre (consultation = 30 min)
+        validateTimeSlot(request.getDoctorId(), request.getDateTime());
+
         Appointment appointment = new Appointment();
         appointment.setPatientId(patientId);
         appointment.setDoctorId(request.getDoctorId());
@@ -134,6 +137,67 @@ public class AppointmentService {
                 patientId,
                 List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
         );
+    }
+
+    /**
+     * Retourne la liste des créneaux disponibles (format HH:mm) pour un médecin
+     * à une date donnée, selon ses horaires de travail (tranches de 30 min).
+     */
+    public List<String> getAvailableSlots(Long doctorId, String date,
+                                          String debutMatin, String finMatin,
+                                          String debutApresMidi, String finApresMidi) {
+        List<String> slots = new java.util.ArrayList<>();
+
+        // Générer les créneaux pour les deux plages horaires
+        slots.addAll(generateSlots(debutMatin, finMatin, date));
+        slots.addAll(generateSlots(debutApresMidi, finApresMidi, date));
+
+        // Exclure les créneaux déjà réservés (PENDING ou CONFIRMED)
+        LocalDateTime dayStart = LocalDateTime.parse(date + "T00:00:00");
+        LocalDateTime dayEnd = dayStart.plusDays(1);
+        List<Appointment> booked = repository.findByDoctorIdAndDateTimeBetweenOrderByDateTimeAsc(doctorId, dayStart, dayEnd)
+                .stream()
+                .filter(a -> a.getStatus() != AppointmentStatus.CANCELLED)
+                .toList();
+
+        return slots.stream()
+                .filter(slot -> {
+                    LocalDateTime slotStart = LocalDateTime.parse(date + "T" + slot + ":00");
+                    LocalDateTime slotEnd = slotStart.plusMinutes(30);
+                    return booked.stream().noneMatch(app ->
+                            app.getDateTime().isBefore(slotEnd) &&
+                            app.getDateTime().plusMinutes(30).isAfter(slotStart));
+                })
+                .toList();
+    }
+
+    private List<String> generateSlots(String debut, String fin, String date) {
+        List<String> slots = new java.util.ArrayList<>();
+        try {
+            java.time.LocalTime start = java.time.LocalTime.parse(debut);
+            java.time.LocalTime end = java.time.LocalTime.parse(fin);
+            while (start.isBefore(end)) {
+                slots.add(start.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
+                start = start.plusMinutes(30);
+            }
+        } catch (Exception ignored) {}
+        return slots;
+    }
+
+    /**
+     * Vérifie qu'aucun rendez-vous actif n'occupe le créneau (consultation = 30 min).
+     */
+    public void validateTimeSlot(Long doctorId, LocalDateTime dateTime) {
+        LocalDateTime start = dateTime.minusMinutes(29);
+        LocalDateTime end = dateTime.plusMinutes(30);
+        boolean overlap = repository.findByDoctorIdAndDateTimeBetweenOrderByDateTimeAsc(doctorId, start, end)
+                .stream()
+                .filter(a -> a.getStatus() != AppointmentStatus.CANCELLED)
+                .findFirst()
+                .isPresent();
+        if (overlap) {
+            throw new IllegalStateException("Ce créneau est déjà réservé. La durée d'une consultation est de 30 minutes.");
+        }
     }
 
     private AppointmentDto toDto(Appointment a) {
