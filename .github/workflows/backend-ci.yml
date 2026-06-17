@@ -7,7 +7,7 @@ on:
       - 'Backend/**'
       - '.github/workflows/**'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
     paths:
       - 'Backend/**'
       - '.github/workflows/**'
@@ -16,22 +16,10 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - config-server
-          - eureka-service
-          - api-gateway
-          - auth-service
-          - patient-service
-          - doctor-service
-          - pharmacy-service
-          - prescription-service
 
     defaults:
       run:
-        working-directory: Backend/${{ matrix.service }}
+        working-directory: Backend
 
     steps:
       - name: Checkout repository
@@ -48,19 +36,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('Backend/${{ matrix.service }}/pom.xml') }}
+          key: ${{ runner.os }}-m2-${{ hashFiles('Backend/**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-m2-
 
-      - name: Build and test (${{ matrix.service }})
-        run: mvn clean verify --no-transfer-progress
+      - name: Build and test all microservices
+        run: mvn clean verify --no-transfer-progress -T 2C
         env:
           SPRING_PROFILES_ACTIVE: test
 
-      - name: Upload JAR artifact (${{ matrix.service }})
+      - name: Upload JAR artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.service }}-jar
-          path: Backend/${{ matrix.service }}/target/*.jar
+          name: microservices-jars
+          path: Backend/*/target/*.jar
           retention-days: 7
           if-no-files-found: warn
