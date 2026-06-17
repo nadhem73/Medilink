@@ -90,6 +90,13 @@ jobs:
           path: Backend
           merge-multiple: false
 
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage
+          path: Frontend/medilink-angular/coverage
+        continue-on-error: true
+
       - name: Restore coverage files to correct paths
         shell: bash
         run: |
@@ -101,11 +108,9 @@ jobs:
               echo "Restored coverage for $service_name"
             fi
           done
-          # Also download frontend coverage if available
-          mkdir -p Frontend/medilink-angular/coverage
 
       - name: SonarQube Analysis
-        if: env.SONAR_TOKEN != ''
+        if: ${{ secrets.SONAR_TOKEN != '' }}
         uses: SonarSource/sonarqube-scan-action@v4
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
