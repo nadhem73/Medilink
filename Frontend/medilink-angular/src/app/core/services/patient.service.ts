@@ -29,4 +29,9 @@ export class PatientService {
   getMyMedicalRecord(): Observable<MedicalRecord> {
     return this.http.get<MedicalRecord>(`${this.API_URL}/me/medical-record`);
   }
+
+  /** Dossier médical d'un patient spécifique (accessible par un médecin). */
+  getPatientMedicalRecord(userId: number): Observable<MedicalRecord> {
+    return this.http.get<MedicalRecord>(`${this.API_URL}/${userId}/medical-record`);
+  }
 }

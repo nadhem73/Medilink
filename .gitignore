@@ -5,6 +5,8 @@ target/
 *.war
 *.ear
 *.log
+logs/
+log/
 .mvn/wrapper/maven-wrapper.jar
 hs_err_pid*
 

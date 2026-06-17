@@ -237,6 +237,7 @@ public class AuthService {
                 .lastName(patient.getLastName())
                 .email(patient.getEmail())
                 .phone(patient.getPhone())
+                .gender(patient.getGender() != null ? patient.getGender().name() : null)
                 .build();
     }
 }

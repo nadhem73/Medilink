@@ -6,10 +6,14 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("native")
-class ConfigServerApplicationTests {
+class ConfigServerApplicationTest {
 
     @Test
     void contextLoads() {
-        // Test que le contexte Spring se charge correctement
+    }
+
+    @Test
+    void mainStarts() {
+        ConfigServerApplication.main(new String[]{});
     }
 }

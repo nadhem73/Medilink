@@ -1,1 +1,571 @@
-@import '../doctor-page';
+// ─── Layout principal ──────────────────────────────────────────────
+.mr-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: 100%;
+  color: var(--noir-profond, #1a2b3c);
+}
+
+// ─── En-tête ───────────────────────────────────────────────────────
+.mr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 24px;
+  background: var(--blanc-sante, #fff);
+  border: 1px solid var(--gris-clair, #f0f4f8);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(26, 43, 60, 0.08);
+
+  h1 { margin: 0; color: var(--bleu-nuit, #0f2c4c); font-size: 26px; }
+}
+
+.mr-kicker {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vert-oasis, #2e8b57);
+}
+
+.mr-copy {
+  max-width: 720px;
+  margin: 12px 0 0;
+  color: var(--gris-clinique, #5a6a7a);
+  font-size: 15px;
+}
+
+.mr-back {
+  white-space: nowrap;
+  color: var(--vert-oasis, #2e8b57);
+  font-weight: 700;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vert-oasis, #2e8b57) 10%, #fff);
+  border: 1px solid color-mix(in srgb, var(--vert-oasis, #2e8b57) 18%, #f0f4f8);
+}
+
+// ─── Corps : split layout ─────────────────────────────────────────
+.mr-body {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  COLONNE GAUCHE — Liste des patients
+// ═══════════════════════════════════════════════════════════════════
+.mr-list-panel {
+  width: 360px;
+  min-width: 300px;
+  background: var(--blanc-sante, #fff);
+  border: 1px solid var(--gris-clair, #f0f4f8);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(26, 43, 60, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// ─── En-tête de la liste ──────────────────────────────────────────
+.mr-list-header {
+  padding: 18px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--gris-clair, #f0f4f8);
+}
+
+.mr-list-header-left {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--bleu-nuit, #0f2c4c);
+  }
+}
+
+.mr-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--vert-oasis, #2e8b57) 12%, #fff), color-mix(in srgb, var(--bleu-mediterranee, #0066a2) 8%, #fff));
+  color: var(--vert-oasis, #2e8b57);
+
+  &.green { background: color-mix(in srgb, var(--vert-oasis, #2e8b57) 14%, #fff); color: var(--vert-oasis, #2e8b57); }
+  &.orange { background: color-mix(in srgb, var(--or-carthage, #d4a843) 18%, #fff); color: #a87d1f; }
+  &.purple { background: color-mix(in srgb, var(--bleu-nuit, #0f2c4c) 10%, #fff); color: var(--bleu-nuit, #0f2c4c); }
+}
+
+// ─── Barre de recherche ────────────────────────────────────────────
+.mr-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.mr-search-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.mr-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid var(--gris-clair, #f0f4f8);
+  border-radius: 10px;
+  background: var(--gris-clair, #f0f4f8);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--bleu-nuit, #0f2c4c);
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  &::placeholder { color: var(--gris-clinique, #5a6a7a); }
+
+  &:focus {
+    border-color: var(--vert-oasis, #2e8b57);
+    background: var(--blanc-sante, #fff);
+  }
+}
+
+// ─── Corps de la liste ─────────────────────────────────────────────
+.mr-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  // Scrollbar subtile
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--gris-clinique) 20%, transparent); border-radius: 999px; }
+}
+
+// ─── Carte patient ─────────────────────────────────────────────────
+.mr-patient-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+  font-family: inherit;
+  position: relative;
+
+  &:hover {
+    background: color-mix(in srgb, var(--vert-oasis, #2e8b57) 5%, var(--gris-clair, #f0f4f8));
+
+    .mr-patient-avatar {
+      transform: scale(1.05);
+    }
+
+    .mr-chevron {
+      color: var(--vert-oasis, #2e8b57);
+      transform: translateX(3px);
+    }
+  }
+
+  &.active {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--vert-oasis, #2e8b57) 8%, #fff), #fff);
+    box-shadow: inset 3px 0 0 var(--vert-oasis, #2e8b57);
+
+    .mr-patient-avatar {
+      background: linear-gradient(135deg, var(--vert-oasis, #2e8b57), color-mix(in srgb, var(--vert-oasis) 70%, var(--bleu-mediterranee)));
+      color: #fff;
+    }
+
+    .mr-status-dot {
+      background: var(--vert-oasis, #2e8b57);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--vert-oasis, #2e8b57) 20%, transparent);
+    }
+
+    .mr-chevron {
+      color: var(--vert-oasis, #2e8b57);
+      transform: translateX(3px);
+    }
+
+    .mr-patient-info strong {
+      color: var(--vert-oasis, #2e8b57);
+    }
+  }
+}
+
+// ─── Avatar ────────────────────────────────────────────────────────
+.mr-patient-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--bleu-mediterranee) 12%, var(--gris-clair)), color-mix(in srgb, var(--bleu-nuit) 8%, var(--gris-clair)));
+  color: var(--bleu-mediterranee, #0066a2);
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+  letter-spacing: 0.03em;
+}
+
+// ─── Infos patient ─────────────────────────────────────────────────
+.mr-patient-info {
+  flex: 1;
+  min-width: 0;
+
+  strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--bleu-nuit, #0f2c4c);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+  }
+}
+
+.mr-patient-email {
+  display: block;
+  font-size: 11px;
+  color: var(--gris-clinique, #5a6a7a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.mr-patient-phone {
+  display: block;
+  font-size: 11px;
+  color: color-mix(in srgb, var(--gris-clinique) 70%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+// ─── Colonne droite de la carte ────────────────────────────────────
+.mr-patient-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.mr-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--vert-oasis, #2e8b57) 40%, var(--gris-clair));
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mr-chevron {
+  font-size: 20px;
+  color: var(--gris-clinique, #5a6a7a);
+  transition: color 0.2s ease, transform 0.2s ease;
+  line-height: 1;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  COLONNE DROITE — Dossier médical (avec transition slide-in)
+// ═══════════════════════════════════════════════════════════════════
+.mr-detail-panel {
+  flex: 1;
+  min-width: 0;
+  background: var(--blanc-sante, #fff);
+  border: 1px solid var(--gris-clair, #f0f4f8);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(26, 43, 60, 0.08);
+  overflow-y: auto;
+  position: relative;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+// État initial : caché
+.mr-detail-panel:not(.visible) {
+  opacity: 0;
+  transform: translateX(30px);
+  pointer-events: none;
+}
+
+// État visible : transition slide-in
+.mr-detail-panel.visible {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+// Placeholder
+.mr-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 40px;
+  height: 100%;
+
+  .mr-placeholder-icon {
+    font-size: 56px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--bleu-nuit, #0f2c4c);
+  }
+
+  p {
+    margin: 0;
+    color: var(--gris-clinique, #5a6a7a);
+    font-size: 14px;
+    max-width: 320px;
+    line-height: 1.6;
+  }
+}
+
+// Contenu du dossier
+.mr-detail-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// Entête du dossier
+.mr-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--gris-clair, #f0f4f8);
+}
+
+.mr-detail-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  h2 { margin: 0; font-size: 20px; color: var(--bleu-nuit, #0f2c4c); }
+  p { margin: 4px 0 0; font-size: 13px; color: var(--gris-clinique, #5a6a7a); }
+}
+
+.mr-detail-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--vert-oasis, #2e8b57), var(--bleu-mediterranee, #0066a2));
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mr-close-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--gris-clair, #f0f4f8);
+  color: var(--gris-clinique, #5a6a7a);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: color-mix(in srgb, #b91c1c 12%, var(--gris-clair));
+    color: #b91c1c;
+  }
+}
+
+// Grille du détail
+.mr-detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// Cartes dans le détail
+.mr-card {
+  padding: 20px;
+  border: 1px solid var(--gris-clair, #f0f4f8);
+  border-radius: 16px;
+  background: var(--blanc-sante, #fff);
+
+  > .mr-field.full + .mr-field.full {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--gris-clair, #f0f4f8);
+  }
+}
+
+.mr-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+
+  h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--bleu-nuit, #0f2c4c);
+  }
+}
+
+// Grille 2 colonnes pour les champs
+.mr-grid-2cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+// Champ individuel
+.mr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--vert-oasis, #2e8b57) 4%, var(--gris-clair, #f0f4f8));
+
+  &.full {
+    grid-column: 1 / -1;
+  }
+
+  .mr-field-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gris-clinique, #5a6a7a);
+  }
+
+  strong {
+    font-size: 15px;
+    color: var(--bleu-nuit, #0f2c4c);
+    line-height: 1.4;
+  }
+}
+
+// ─── États ─────────────────────────────────────────────────────────
+.mr-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: var(--gris-clinique, #5a6a7a);
+  font-size: 14px;
+
+  &::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--gris-clair, #f0f4f8);
+    border-top-color: var(--vert-oasis, #2e8b57);
+    border-radius: 50%;
+    animation: mr-spin 0.6s linear infinite;
+  }
+}
+
+@keyframes mr-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mr-error {
+  text-align: center;
+  padding: 14px 18px;
+  margin: 12px;
+  color: #b91c1c;
+  background: color-mix(in srgb, #b91c1c 8%, #fff);
+  border: 1px solid color-mix(in srgb, #b91c1c 20%, #f0f4f8);
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mr-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 6px;
+
+  .mr-empty-icon { font-size: 28px; opacity: 0.5; }
+
+  h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--bleu-nuit, #0f2c4c);
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--gris-clinique, #5a6a7a);
+  }
+}
+
+// ─── Responsive ────────────────────────────────────────────────────
+@media (max-width: 1024px) {
+  .mr-body {
+    flex-direction: column;
+  }
+
+  .mr-list-panel {
+    width: 100%;
+    min-width: 0;
+    max-height: 300px;
+  }
+
+  .mr-detail-panel:not(.visible) {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .mr-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mr-grid-2cols {
+    grid-template-columns: 1fr;
+  }
+}
