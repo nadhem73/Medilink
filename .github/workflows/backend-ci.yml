@@ -72,6 +72,14 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
+      - name: Upload compiled classes (${{ matrix.service }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: classes-${{ matrix.service }}
+          path: Backend/${{ matrix.service }}/target/classes/
+          retention-days: 7
+          if-no-files-found: warn
+
   sonarcloud-analysis:
     needs: build-and-test
     runs-on: ubuntu-latest
@@ -99,7 +107,14 @@ jobs:
           path: Frontend/medilink-angular/coverage
         continue-on-error: true
 
-      - name: Restore coverage files to correct paths
+      - name: Download compiled classes
+        uses: actions/download-artifact@v4
+        with:
+          pattern: classes-*
+          path: Backend
+          merge-multiple: false
+
+      - name: Restore artifacts to correct paths
         shell: bash
         run: |
           for dir in Backend/coverage-*/; do
@@ -110,10 +125,17 @@ jobs:
               echo "Restored coverage for $service_name"
             fi
           done
+          for dir in Backend/classes-*/; do
+            service_name=$(basename "$dir" | sed 's/^classes-//')
+            classes_dir="Backend/$service_name/target/classes"
+            mkdir -p "$classes_dir"
+            cp -r "${dir}"* "$classes_dir/"
+            echo "Restored classes for $service_name"
+          done
 
       - name: SonarQube Analysis
         if: env.SONAR_TOKEN != ''
-        uses: SonarSource/sonarqube-scan-action@v4
+        uses: SonarSource/sonarqube-scan-action@v6
         with:
           args: >
             -Dsonar.projectBaseDir=.
