@@ -34,7 +34,8 @@ describe('SidebarComponent', () => {
   }
 
   function setup(user: any, url: string) {
-    const mockAuth = createMockAuthService(user);
+    const userCopy = user ? { ...user } : null;
+    const mockAuth = createMockAuthService(userCopy);
     TestBed.configureTestingModule({
       imports: [RouterTestingModule, FormsModule],
       declarations: [SidebarComponent],
