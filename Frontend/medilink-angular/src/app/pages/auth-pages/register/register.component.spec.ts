@@ -11,8 +11,6 @@ describe('RegisterComponent', () => {
   let component: RegisterComponent;
   let fixture: ComponentFixture<RegisterComponent>;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
-  let routerSpy: jasmine.SpyObj<Router>;
-
   const validFormValues = {
     firstName: 'Ahmed',
     lastName: 'Ben Ali',
@@ -54,7 +52,6 @@ describe('RegisterComponent', () => {
     }).compileComponents();
 
     authServiceSpy = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
-    routerSpy = TestBed.inject(Router) as jasmine.SpyObj<Router>;
 
     fixture = TestBed.createComponent(RegisterComponent);
     component = fixture.componentInstance;

@@ -1,27 +1,10 @@
-import { TestBed } from '@angular/core/testing';
-import { CanActivateFn } from '@angular/router';
-import { Router } from '@angular/router';
 import { roleGuard } from './role.guard';
-import { AuthService } from '../services/auth.service';
+import { setupGuardTest } from './guard-test-helpers';
 
 describe('roleGuard', () => {
-  const executeGuard: CanActivateFn = (...guardParameters) =>
-    TestBed.runInInjectionContext(() => roleGuard(...guardParameters));
+  const { mockAuthService, mockRouter, executeGuard, configureTestBed } = setupGuardTest(roleGuard, ['getUserRole']);
 
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockRouter: jasmine.SpyObj<Router>;
-
-  beforeEach(() => {
-    mockAuthService = jasmine.createSpyObj('AuthService', ['getUserRole']);
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
-
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: mockAuthService },
-        { provide: Router, useValue: mockRouter }
-      ]
-    });
-  });
+  beforeEach(() => configureTestBed());
 
   it('should return true when user has expected role from route data', () => {
     const roles = ['ADMIN'];

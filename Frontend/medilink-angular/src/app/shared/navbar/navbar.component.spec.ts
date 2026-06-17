@@ -43,7 +43,7 @@ describe('NavbarComponent', () => {
     fixture.detectChanges();
   });
 
-  function setUser(user: any | null) {
+  function setUser(user: unknown) {
     currentUserSubject.next(user);
     fixture.detectChanges();
   }
