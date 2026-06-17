@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { DoctorDashboardComponent } from './doctor-dashboard/doctor-dashboard.component';
 import { DoctorSectionComponent } from './doctor-section/doctor-section.component';
+import { ConsultationsComponent } from './consultations/consultations.component';
 import { MedicalRecordsComponent } from './medical-records/medical-records.component';
 import { TeleconsultationComponent } from './teleconsultation/teleconsultation.component';
 import { MessagesComponent } from './messages/messages.component';
@@ -23,8 +24,7 @@ const routes: Routes = [
   },
   {
     path: 'consultations',
-    component: DoctorSectionComponent,
-    data: { section: 'consultations', title: 'Mes consultations' }
+    component: ConsultationsComponent
   },
   {
     path: 'prescriptions',

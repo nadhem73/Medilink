@@ -1,0 +1,180 @@
+<section class="dp-page">
+  <header class="dp-header">
+    <div>
+      <p class="dp-kicker">Panel medecin</p>
+      <h1>Mes consultations</h1>
+      <p class="dp-copy">Consultez et gerez vos consultations en cours et terminees.</p>
+    </div>
+    <a routerLink="/dashboard/doctor" class="dp-back">← Retour au tableau de bord</a>
+  </header>
+
+  <ng-container *ngIf="!selectedConsultation; else detailView">
+    <!-- Filtres par statut -->
+    <div class="dp-filters">
+      <button type="button" class="dp-filter-btn" [class.active]="!filterStatus" (click)="filterByStatus('')">Toutes</button>
+      <button type="button" class="dp-filter-btn" [class.active]="filterStatus === 'PENDING'" (click)="filterByStatus('PENDING')">⏳ En attente</button>
+      <button type="button" class="dp-filter-btn" [class.active]="filterStatus === 'IN_PROGRESS'" (click)="filterByStatus('IN_PROGRESS')">🔄 En cours</button>
+      <button type="button" class="dp-filter-btn" [class.active]="filterStatus === 'COMPLETED'" (click)="filterByStatus('COMPLETED')">✅ Terminees</button>
+    </div>
+
+    <!-- Liste des consultations -->
+    <div class="dp-list" *ngIf="!loading && consultations.length > 0">
+      <div class="dp-item consultation-item" *ngFor="let c of consultations" (click)="selectConsultation(c)">
+        <div class="consultation-item-info">
+          <h3>Patient #{{ c.patientId }}</h3>
+          <p>{{ c.reason || 'Motif non renseigne' }} — {{ c.startTime | date:'dd/MM/yyyy HH:mm' }}</p>
+          <span class="consultation-meta">{{ c.type }}</span>
+        </div>
+        <div class="consultation-item-actions">
+          <span class="dp-badge" [class.green]="c.status === 'COMPLETED'" [class.orange]="c.status === 'PENDING'" [class.blue]="c.status === 'IN_PROGRESS'" [class]="c.status === 'CANCELLED' ? 'dp-badge-cancelled' : ''">
+            {{ c.status === 'PENDING' ? 'En attente' : c.status === 'IN_PROGRESS' ? 'En cours' : c.status === 'COMPLETED' ? 'Terminee' : 'Annulee' }}
+          </span>
+          <button type="button" class="dp-btn ghost" (click)="$event.stopPropagation(); selectConsultation(c)">Voir</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dp-empty" *ngIf="!loading && consultations.length === 0">
+      <span class="dp-empty-icon">📋</span>
+      <h3>Aucune consultation</h3>
+      <p>Aucune consultation trouvee pour ce filtre.</p>
+    </div>
+  </ng-container>
+
+  <ng-template #detailView>
+    <div class="dp-detail" *ngIf="selectedConsultation">
+      <!-- En-tete detail -->
+      <div class="dp-detail-header">
+        <button type="button" class="dp-btn ghost" (click)="backToList()">← Retour</button>
+        <div class="dp-detail-title">
+          <h2>Consultation #{{ selectedConsultation.id }}</h2>
+          <span class="dp-badge" [class.green]="selectedConsultation.status === 'COMPLETED'" [class.orange]="selectedConsultation.status === 'PENDING'" [class.blue]="selectedConsultation.status === 'IN_PROGRESS'" [class]="selectedConsultation.status === 'CANCELLED' ? 'dp-badge-cancelled' : ''">
+            {{ selectedConsultation.status === 'PENDING' ? 'En attente' : selectedConsultation.status === 'IN_PROGRESS' ? 'En cours' : selectedConsultation.status === 'COMPLETED' ? 'Terminee' : 'Annulee' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="dp-detail-grid">
+        <!-- Infos consultation -->
+        <article class="dp-card">
+          <div class="dp-card-header"><h2>Informations</h2></div>
+          <div class="dp-info-grid">
+            <div class="dp-info">
+              <span>Patient</span>
+              <strong>#{{ selectedConsultation.patientId }}</strong>
+            </div>
+            <div class="dp-info">
+              <span>Debut</span>
+              <strong>{{ selectedConsultation.startTime | date:'dd/MM/yyyy HH:mm' }}</strong>
+            </div>
+            <div class="dp-info" *ngIf="selectedConsultation.endTime">
+              <span>Fin</span>
+              <strong>{{ selectedConsultation.endTime | date:'dd/MM/yyyy HH:mm' }}</strong>
+            </div>
+            <div class="dp-info">
+              <span>Type</span>
+              <strong>{{ selectedConsultation.type }}</strong>
+            </div>
+            <div class="dp-info">
+              <span>Motif</span>
+              <strong>{{ selectedConsultation.reason || 'Non renseigne' }}</strong>
+            </div>
+          </div>
+        </article>
+
+        <!-- Donnees cliniques (vue) -->
+        <article class="dp-card" *ngIf="!editing && selectedConsultation.status !== 'CANCELLED'">
+          <div class="dp-card-header">
+            <h2>Donnees cliniques</h2>
+            <button type="button" class="dp-btn ghost" *ngIf="selectedConsultation.status !== 'COMPLETED'" (click)="startEdit(selectedConsultation)">Modifier</button>
+          </div>
+          <div class="dp-info-grid">
+            <div class="dp-info"><span>Diagnostic</span><strong>{{ selectedConsultation.diagnosis || 'Non renseigne' }}</strong></div>
+            <div class="dp-info"><span>TA</span><strong>{{ selectedConsultation.bloodPressure || 'Non renseigne' }}</strong></div>
+            <div class="dp-info"><span>Pouls</span><strong>{{ selectedConsultation.pulse ? selectedConsultation.pulse + ' bpm' : 'Non renseigne' }}</strong></div>
+            <div class="dp-info"><span>Temperature</span><strong>{{ selectedConsultation.temperature ? selectedConsultation.temperature + ' °C' : 'Non renseigne' }}</strong></div>
+            <div class="dp-info"><span>Poids</span><strong>{{ selectedConsultation.weight ? selectedConsultation.weight + ' kg' : 'Non renseigne' }}</strong></div>
+            <div class="dp-info"><span>Taille</span><strong>{{ selectedConsultation.height ? selectedConsultation.height + ' cm' : 'Non renseigne' }}</strong></div>
+            <div class="dp-info"><span>IMC</span><strong>{{ selectedConsultation.bmi || 'Non calcule' }}</strong></div>
+            <div class="dp-info"><span>Date de suivi</span><strong>{{ selectedConsultation.followUpDate || 'Non renseignee' }}</strong></div>
+          </div>
+          <div *ngIf="selectedConsultation.observations" style="margin-top:16px">
+            <h3 style="font-size:14px;color:var(--gris-clinique,#5a6a7a);margin:0 0 8px;">Observations</h3>
+            <p style="color:var(--noir-profond,#1a2b3c);margin:0;">{{ selectedConsultation.observations }}</p>
+          </div>
+          <div *ngIf="selectedConsultation.requestedExams" style="margin-top:16px">
+            <h3 style="font-size:14px;color:var(--gris-clinique,#5a6a7a);margin:0 0 8px;">Examens demandes</h3>
+            <p style="color:var(--noir-profond,#1a2b3c);margin:0;">{{ selectedConsultation.requestedExams }}</p>
+          </div>
+        </article>
+
+        <!-- Formulaire d'edition -->
+        <article class="dp-card dp-form-card" *ngIf="editing">
+          <div class="dp-card-header"><h2>Modifier la consultation</h2></div>
+          <div class="dp-form">
+            <div class="dp-form-row">
+              <div class="dp-form-group">
+                <label>Diagnostic</label>
+                <textarea [(ngModel)]="editingConsultation.diagnosis" rows="3" placeholder="Saisissez le diagnostic..."></textarea>
+              </div>
+            </div>
+            <div class="dp-form-row">
+              <div class="dp-form-group">
+                <label>Observations</label>
+                <textarea [(ngModel)]="editingConsultation.observations" rows="3" placeholder="Notes cliniques..."></textarea>
+              </div>
+            </div>
+            <div class="dp-form-row dp-form-row-3">
+              <div class="dp-form-group">
+                <label>TA (mmHg)</label>
+                <input [(ngModel)]="editingConsultation.bloodPressure" placeholder="ex: 12/8" />
+              </div>
+              <div class="dp-form-group">
+                <label>Pouls (bpm)</label>
+                <input type="number" [(ngModel)]="editingConsultation.pulse" placeholder="72" />
+              </div>
+              <div class="dp-form-group">
+                <label>Temperature (°C)</label>
+                <input type="number" step="0.1" [(ngModel)]="editingConsultation.temperature" placeholder="36.6" />
+              </div>
+            </div>
+            <div class="dp-form-row dp-form-row-3">
+              <div class="dp-form-group">
+                <label>Poids (kg)</label>
+                <input type="number" step="0.1" [(ngModel)]="editingConsultation.weight" placeholder="70" />
+              </div>
+              <div class="dp-form-group">
+                <label>Taille (cm)</label>
+                <input type="number" step="0.1" [(ngModel)]="editingConsultation.height" placeholder="175" />
+              </div>
+              <div class="dp-form-group">
+                <label>Date de suivi</label>
+                <input type="date" [(ngModel)]="editingConsultation.followUpDate" />
+              </div>
+            </div>
+            <div class="dp-form-row">
+              <div class="dp-form-group">
+                <label>Examens demandes</label>
+                <textarea [(ngModel)]="editingConsultation.requestedExams" rows="2" placeholder="Ex: NFS, CRP, Radiographie thoracique..."></textarea>
+              </div>
+            </div>
+            <div class="dp-form-actions">
+              <button type="button" class="dp-btn" (click)="saveDraft()">Sauvegarder le brouillon</button>
+              <button type="button" class="dp-btn" (click)="completeConsultation()">Finaliser la consultation</button>
+              <button type="button" class="dp-btn ghost" (click)="cancelEdit()">Annuler</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Carte d'actions rapides (visible si non termine/non annule) -->
+        <article class="dp-card" *ngIf="selectedConsultation.status !== 'COMPLETED' && selectedConsultation.status !== 'CANCELLED' && !editing">
+          <h2>Actions</h2>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">
+            <button type="button" class="dp-btn" (click)="startEdit(selectedConsultation)">Modifier la consultation</button>
+            <button type="button" class="dp-btn ghost" style="background:#fff8f8;color:#ef4444;border-color:#fca5a5;" (click)="cancelConsultation(selectedConsultation)">Annuler la consultation</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </ng-template>
+</section>

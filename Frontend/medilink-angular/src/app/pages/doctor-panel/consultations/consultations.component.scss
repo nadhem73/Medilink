@@ -1,0 +1,183 @@
+@import '../doctor-page';
+
+// ── Filtres ────────────────────────────────────────────────────────────────────
+.dp-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dp-filter-btn {
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--gris-clair, #f0f4f8);
+  background: var(--blanc-sante, #fff);
+  color: var(--gris-clinique, #5a6a7a);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--vert-oasis, #2e8b57) 30%, var(--gris-clair, #f0f4f8));
+    background: color-mix(in srgb, var(--vert-oasis, #2e8b57) 5%, #fff);
+  }
+
+  &.active {
+    background: linear-gradient(135deg, var(--vert-oasis, #2e8b57), var(--bleu-mediterranee, #0066a2));
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(46, 139, 87, 0.25);
+  }
+}
+
+// ── Consultation items dans la liste ──────────────────────────────────────────
+.consultation-item {
+  cursor: pointer;
+
+  .consultation-item-info {
+    flex: 1;
+    min-width: 0;
+
+    h3 { margin: 0 0 2px; font-size: 15px; color: var(--bleu-nuit, #0f2c4c); }
+    p { margin: 0; font-size: 13px; color: var(--gris-clinique, #5a6a7a); }
+  }
+
+  .consultation-meta {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--bleu-mediterranee, #0066a2);
+  }
+
+  .consultation-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+}
+
+// ── Badge annule ──────────────────────────────────────────────────────────────
+.dp-badge-cancelled {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+// ── Detail header ─────────────────────────────────────────────────────────────
+.dp-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dp-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h2 { margin: 0; color: var(--bleu-nuit, #0f2c4c); font-size: 22px; }
+}
+
+// ── Detail grid ───────────────────────────────────────────────────────────────
+.dp-detail-grid {
+  display: grid;
+  gap: 24px;
+}
+
+// ── Formulaire ─────────────────────────────────────────────────────────────────
+.dp-form-card {
+  max-width: 720px;
+}
+
+.dp-form {
+  display: grid;
+  gap: 16px;
+}
+
+.dp-form-row {
+  display: grid;
+  gap: 16px;
+
+  &.dp-form-row-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.dp-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gris-clinique, #5a6a7a);
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--gris-clair, #f0f4f8);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--noir-profond, #1a2b3c);
+    background: var(--blanc-sante, #fff);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+
+    &::placeholder {
+      color: var(--gris-clinique, #5a6a7a);
+      font-size: 13px;
+    }
+
+    &:focus {
+      border-color: var(--vert-oasis, #2e8b57);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--vert-oasis, #2e8b57) 15%, transparent);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    font-family: inherit;
+  }
+}
+
+.dp-form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+// ── Etat vide ──────────────────────────────────────────────────────────────────
+.dp-empty {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--gris-clinique, #5a6a7a);
+  background: var(--blanc-sante, #fff);
+  border: 1px solid var(--gris-clair, #f0f4f8);
+  border-radius: 20px;
+
+  .dp-empty-icon { font-size: 48px; display: block; margin-bottom: 16px; }
+  h3 { color: var(--bleu-nuit, #0f2c4c); margin: 0 0 8px; }
+  p  { margin: 0; font-size: 14px; }
+}
+
+// ── Responsive ─────────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .dp-form-row-3 { grid-template-columns: 1fr; }
+  .consultation-item { flex-direction: column; align-items: flex-start; }
+  .consultation-item-actions { width: 100%; justify-content: flex-end; }
+  .dp-detail-header { flex-direction: column; align-items: flex-start; }
+}

@@ -23,14 +23,14 @@ describe('roleGuard', () => {
   });
 
   it('should allow access when user has expected role', () => {
-    mockAuthService.getUserRole.and.returnValue('DOCTOR');
+    mockAuthService.getUserRole.and.returnValue(['DOCTOR']);
     const result = TestBed.runInInjectionContext(() => roleGuard(mockRoute, mockState));
     expect(result).toBeTrue();
     expect(mockRouter.navigate).not.toHaveBeenCalled();
   });
 
   it('should deny access when user does not have expected role', () => {
-    mockAuthService.getUserRole.and.returnValue('PATIENT');
+    mockAuthService.getUserRole.and.returnValue(['PATIENT']);
     const result = TestBed.runInInjectionContext(() => roleGuard(mockRoute, mockState));
     expect(result).toBeFalse();
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
