@@ -4,6 +4,7 @@ import com.medilinktunisia.authservice.model.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import java.util.function.Function;
  * Génération et validation des tokens JWT.
  * Le sujet du token est l'email ; les claims contiennent userId et role.
  */
+@Slf4j
 @Service
 public class JwtService {
 
@@ -35,11 +37,17 @@ public class JwtService {
     }
 
     public String generateAccessToken(User user) {
-        return buildToken(user, expiration);
+        log.info("Generating access token for user ID: {}, email: {}", user.getId(), user.getEmail());
+        String token = buildToken(user, expiration);
+        log.debug("Access token generated for user ID: {}", user.getId());
+        return token;
     }
 
     public String generateRefreshToken(User user) {
-        return buildToken(user, refreshExpiration);
+        log.info("Generating refresh token for user ID: {}, email: {}", user.getId(), user.getEmail());
+        String token = buildToken(user, refreshExpiration);
+        log.debug("Refresh token generated for user ID: {}", user.getId());
+        return token;
     }
 
     public long getExpiration() {
@@ -67,16 +75,22 @@ public class JwtService {
 
     public boolean isTokenValid(String token, String email) {
         try {
-            return extractEmail(token).equals(email) && !isExpired(token);
+            boolean valid = extractEmail(token).equals(email) && !isExpired(token);
+            log.debug("Token validation for email {}: {}", email, valid);
+            return valid;
         } catch (Exception e) {
+            log.warn("Token validation failed for email {}: {}", email, e.getMessage());
             return false;
         }
     }
 
     public boolean isTokenValid(String token) {
         try {
-            return !isExpired(token);
+            boolean valid = !isExpired(token);
+            log.debug("Token validity check result: {}", valid);
+            return valid;
         } catch (Exception e) {
+            log.warn("Token validity check failed: {}", e.getMessage());
             return false;
         }
     }

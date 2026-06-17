@@ -54,13 +54,13 @@ management:
         enabled: true
 
 logging:
-  level:
-    root: INFO
-    com.netflix.eureka: INFO
-    com.netflix.discovery: INFO
-    com.medilinktunisia: DEBUG
+  file:
+    name: logs/eureka-service.log
+    max-size: 10MB
+    max-history: 30
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/eureka-service.log
+  level:
+    root: INFO
+    com.medilinktunisia: DEBUG

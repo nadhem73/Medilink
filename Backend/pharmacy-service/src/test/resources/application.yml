@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: pharmacy-service-test
+  cloud:
+    config:
+      enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+  jpa:
+    hibernate:
+      ddl-auto: none
+eureka:
+  client:
+    enabled: false
+jwt:
+  secret: test-secret-key-for-unit-testing-only-very-long-and-secure
