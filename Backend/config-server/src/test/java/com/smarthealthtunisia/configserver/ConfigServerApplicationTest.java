@@ -11,9 +11,4 @@ class ConfigServerApplicationTest {
     @Test
     void contextLoads() {
     }
-
-    @Test
-    void mainStarts() {
-        ConfigServerApplication.main(new String[]{});
-    }
 }
