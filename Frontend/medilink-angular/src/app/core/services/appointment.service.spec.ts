@@ -37,7 +37,7 @@ function testPutMethod(
       const httpMock = getHttpMock();
       const response: AppointmentDto = {
         id: 1, patientId: 1, doctorId: 2, dateTime: '2025-01-15T10:00:00',
-        status: status as AppointmentDto['status'], mode: 'PRESENTIEL', createdAt: '2025-01-10T00:00:00'
+        status, mode: 'PRESENTIEL', createdAt: '2025-01-10T00:00:00'
       };
       (service as any)[methodName](1).subscribe((res: any) => {
         expect(res).toEqual(response);

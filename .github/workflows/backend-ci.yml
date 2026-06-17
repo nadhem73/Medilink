@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  quality:
+  build-and-test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -56,14 +56,6 @@ jobs:
         env:
           SPRING_PROFILES_ACTIVE: test
 
-      - name: Upload coverage report (${{ matrix.service }})
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-${{ matrix.service }}
-          path: Backend/${{ matrix.service }}/target/site/jacoco/
-          retention-days: 7
-          if-no-files-found: warn
-
       - name: Upload JAR artifact (${{ matrix.service }})
         uses: actions/upload-artifact@v4
         with:
@@ -72,8 +64,16 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-  sonarcloud:
-    needs: quality
+      - name: Upload coverage (${{ matrix.service }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.service }}
+          path: Backend/${{ matrix.service }}/target/site/jacoco/jacoco.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+  sonarcloud-analysis:
+    needs: build-and-test
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
 
@@ -83,12 +83,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download all coverage reports
+      - name: Download all backend coverage reports
         uses: actions/download-artifact@v4
         with:
           pattern: coverage-*
-          path: coverage-reports
-          merge-multiple: true
+          path: Backend
+          merge-multiple: false
+
+      - name: Restore coverage files to correct paths
+        shell: bash
+        run: |
+          for dir in Backend/coverage-*/; do
+            service_name=$(basename "$dir" | sed 's/^coverage-//')
+            mkdir -p "Backend/$service_name/target/site/jacoco"
+            if [ -f "${dir}jacoco.xml" ]; then
+              cp "${dir}jacoco.xml" "Backend/$service_name/target/site/jacoco/jacoco.xml"
+              echo "Restored coverage for $service_name"
+            fi
+          done
+          # Also download frontend coverage if available
+          mkdir -p Frontend/medilink-angular/coverage
 
       - name: SonarQube Analysis
         if: env.SONAR_TOKEN != ''
@@ -98,5 +112,3 @@ jobs:
         with:
           args: >
             -Dsonar.projectBaseDir=.
-            -Dsonar.sources=Backend,Frontend/medilink-angular/src
-            -Dsonar.coverage.jacoco.xmlReportPaths=coverage-reports/jacoco.xml

@@ -59,14 +59,3 @@ jobs:
           path: Frontend/medilink-angular/dist/
           retention-days: 7
           if-no-files-found: warn
-
-      - name: SonarQube Analysis
-        if: env.SONAR_TOKEN != ''
-        uses: SonarSource/sonarqube-scan-action@v4
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectBaseDir=.
-            -Dsonar.sources=Frontend/medilink-angular/src
-            -Dsonar.javascript.lcov.reportPaths=Frontend/medilink-angular/coverage/lcov.info
