@@ -13,22 +13,6 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - config-server
-          - eureka-service
-          - api-gateway
-          - auth-service
-          - patient-service
-          - doctor-service
-          - pharmacy-service
-          - prescription-service
-
-    defaults:
-      run:
-        working-directory: Backend/${{ matrix.service }}
 
     steps:
       - name: Checkout repository
@@ -47,21 +31,34 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles(format('Backend/{0}/pom.xml', matrix.service)) }}
+          key: ${{ runner.os }}-m2-${{ hashFiles('Backend/**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-m2-
 
-      - name: Build, test, and generate coverage (${{ matrix.service }})
-        run: mvn clean verify --no-transfer-progress
-        env:
-          SPRING_PROFILES_ACTIVE: test
+      - name: Build, test, and generate coverage (all services)
+        shell: bash
+        run: |
+          set -e
+          services=("config-server" "eureka-service" "api-gateway" "auth-service" "patient-service" "doctor-service" "pharmacy-service" "prescription-service")
+          pids=()
+          failed=""
+          for svc in "${services[@]}"; do
+            (cd "Backend/$svc" && mvn clean verify --no-transfer-progress -q 2>&1 | tail -1) &
+            pids+=($!)
+          done
+          for i in "${!pids[@]}"; do
+            wait "${pids[$i]}" || failed+="${services[$i]} "
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::FAILED services: $failed"
+            exit 1
+          fi
+          echo "All 8 services built and tested successfully"
 
-      - name: Upload JAR artifact (${{ matrix.service }})
+      - name: Upload JAR artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.service }}-jar
-          path: Backend/${{ matrix.service }}/target/*.jar
+          name: backend-jars
+          path: Backend/*/target/*.jar
           retention-days: 7
           if-no-files-found: warn
-
-
