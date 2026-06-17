@@ -121,68 +121,50 @@ describe('SidebarComponent', () => {
     });
   });
 
+  function testRoleIdentification(roleKey: string, roleLabel: string, initials: string, url: string) {
+    const isProp = `is${roleKey.charAt(0).toUpperCase() + roleKey.slice(1)}` as keyof SidebarComponent;
+    const linksProp = `${roleKey}Links` as keyof SidebarComponent;
+
+    it(`should be identified as ${roleKey}`, () => {
+      if (roleKey === 'patient') {
+        expect(component.isDoctor).toBeFalse();
+        expect(component.isAdmin).toBeFalse();
+        expect(component.isPharmacy).toBeFalse();
+      } else {
+        expect((component as any)[isProp]).toBeTrue();
+      }
+    });
+
+    it(`should return ${roleKey} links`, () => {
+      expect(component.links).toBe((component as any)[linksProp]);
+    });
+
+    it(`should have role label ${roleLabel}`, () => {
+      expect(component.roleLabel).toBe(roleLabel);
+    });
+
+    it(`should return ${initials} as avatar initial for ${roleKey} when no name`, () => {
+      Object.assign(component.currentUser, { firstName: '', lastName: '', email: '' });
+      expect(component.avatarInitial).toBe(initials);
+    });
+  }
+
   describe('with admin user on admin dashboard', () => {
     beforeEach(() => setup({ ...mockUser, roles: ['ROLE_ADMIN'] }, '/dashboard/admin'));
-
-    it('should be identified as admin', () => {
-      expect(component.isAdmin).toBeTrue();
-      expect(component.isDoctor).toBeFalse();
-    });
-
-    it('should return admin links', () => {
-      expect(component.links).toBe(component.adminLinks);
-    });
-
-    it('should have role label Administrateur', () => {
-      expect(component.roleLabel).toBe('Administrateur');
-    });
-
-    it('should return A as avatar initial for admin when no name', () => {
-      Object.assign(component.currentUser, { firstName: '', lastName: '', email: '' });
-      expect(component.avatarInitial).toBe('A');
-    });
+    testRoleIdentification('admin', 'Administrateur', 'A', '/dashboard/admin');
   });
 
   describe('with pharmacy user on pharmacy dashboard', () => {
     beforeEach(() => setup({ ...mockUser, roles: ['ROLE_PHARMACY'] }, '/dashboard/pharmacy'));
-
-    it('should be identified as pharmacy', () => {
-      expect(component.isPharmacy).toBeTrue();
-      expect(component.isAdmin).toBeFalse();
-    });
-
-    it('should return pharmacy links', () => {
-      expect(component.links).toBe(component.pharmacyLinks);
-    });
-
-    it('should have role label Pharmacie', () => {
-      expect(component.roleLabel).toBe('Pharmacie');
-    });
-
-    it('should return Ph as avatar initial for pharmacy when no name', () => {
-      Object.assign(component.currentUser, { firstName: '', lastName: '', email: '' });
-      expect(component.avatarInitial).toBe('Ph');
-    });
+    testRoleIdentification('pharmacy', 'Pharmacie', 'Ph', '/dashboard/pharmacy');
   });
 
   describe('as patient (default)', () => {
     beforeEach(() => setup({ ...mockUser, roles: ['ROLE_PATIENT'] }, '/dashboard/patient'));
-
-    it('should return patient links', () => {
-      expect(component.links).toBe(component.patientLinks);
-    });
-
-    it('should have role label Patient', () => {
-      expect(component.roleLabel).toBe('Patient');
-    });
+    testRoleIdentification('patient', 'Patient', 'P', '/dashboard/patient');
 
     it('should display name without Dr prefix', () => {
       expect(component.displayName).toBe('John Doe');
-    });
-
-    it('should return P as avatar initial for patient when no name', () => {
-      Object.assign(component.currentUser, { firstName: '', lastName: '', email: '' });
-      expect(component.avatarInitial).toBe('P');
     });
   });
 

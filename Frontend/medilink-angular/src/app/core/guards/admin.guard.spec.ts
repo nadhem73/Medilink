@@ -18,25 +18,20 @@ describe('adminGuard', () => {
     );
   });
 
-  it('should return true when authenticated and user has ADMIN role', () => {
-    mockAuthService.isAuthenticated.and.returnValue(true);
-    mockAuthService.getUserRole.and.returnValue(['ADMIN']);
+  function testReturnsTrueForRole(role: string): void {
+    it(`should return true when authenticated and user has ${role} role`, () => {
+      mockAuthService.isAuthenticated.and.returnValue(true);
+      mockAuthService.getUserRole.and.returnValue([role]);
 
-    const result = executeGuard({} as any, { url: '/admin' } as any);
+      const result = executeGuard({} as any, { url: '/admin' } as any);
 
-    expect(result).toBeTrue();
-    expect(mockRouter.navigate).not.toHaveBeenCalled();
-  });
+      expect(result).toBeTrue();
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
+    });
+  }
 
-  it('should return true when authenticated and user has ROLE_ADMIN role', () => {
-    mockAuthService.isAuthenticated.and.returnValue(true);
-    mockAuthService.getUserRole.and.returnValue(['ROLE_ADMIN']);
-
-    const result = executeGuard({} as any, { url: '/admin' } as any);
-
-    expect(result).toBeTrue();
-    expect(mockRouter.navigate).not.toHaveBeenCalled();
-  });
+  testReturnsTrueForRole('ADMIN');
+  testReturnsTrueForRole('ROLE_ADMIN');
 
   it('should return false and navigate to / when authenticated but not admin', () => {
     mockAuthService.isAuthenticated.and.returnValue(true);
