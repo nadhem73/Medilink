@@ -32,14 +32,14 @@ class SecurityConfigTest {
     }
 
     @Test
-    void myMedicalRecordEndpoint_shouldReturn401WithoutToken() throws Exception {
+    void myMedicalRecordEndpoint_shouldReturn403WithoutToken() throws Exception {
         mockMvc.perform(get("/api/patients/me/medical-record"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void patientMedicalRecordEndpoint_shouldReturn401WithoutToken() throws Exception {
+    void patientMedicalRecordEndpoint_shouldReturn403WithoutToken() throws Exception {
         mockMvc.perform(get("/api/patients/1/medical-record"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 }
