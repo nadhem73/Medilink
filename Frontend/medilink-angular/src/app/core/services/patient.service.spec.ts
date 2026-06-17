@@ -49,4 +49,20 @@ describe('PatientService', () => {
     const req = httpMock.expectOne('http://localhost:8765/api/patients/me/medical-record');
     req.flush({ userId: 1 });
   });
+
+  it('should handle error on getMyMedicalRecord', () => {
+    service.getMyMedicalRecord().subscribe({
+      error: err => expect(err.status).toBe(500)
+    });
+    const req = httpMock.expectOne('http://localhost:8765/api/patients/me/medical-record');
+    req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+  });
+
+  it('should handle error on getPatientMedicalRecord', () => {
+    service.getPatientMedicalRecord(99).subscribe({
+      error: err => expect(err.status).toBe(404)
+    });
+    const req = httpMock.expectOne('http://localhost:8765/api/patients/99/medical-record');
+    req.flush('Not found', { status: 404, statusText: 'Not Found' });
+  });
 });

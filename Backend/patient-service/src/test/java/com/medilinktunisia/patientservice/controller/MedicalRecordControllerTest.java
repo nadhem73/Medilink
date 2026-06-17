@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -55,6 +56,8 @@ class MedicalRecordControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated());
+
+        verify(service).createMedicalRecord(any());
     }
 
     @Test
@@ -81,5 +84,31 @@ class MedicalRecordControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(2L))
                 .andExpect(jsonPath("$.bloodGroup").value("B+"));
+    }
+
+    @Test
+    void getMyMedicalRecord_whenRecordNotFound_shouldReturnEmptyDto() throws Exception {
+        when(service.getByUserId(1L))
+                .thenReturn(MedicalRecordDto.builder().userId(1L).build());
+
+        mockMvc.perform(get("/api/patients/me/medical-record")
+                        .with(request -> {
+                            request.setAttribute("userId", 1L);
+                            return request;
+                        }))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1L))
+                .andExpect(jsonPath("$.bloodGroup").isEmpty());
+    }
+
+    @Test
+    void getPatientMedicalRecord_whenNotFound_shouldReturnEmptyDto() throws Exception {
+        when(service.getByUserId(999L))
+                .thenReturn(MedicalRecordDto.builder().userId(999L).build());
+
+        mockMvc.perform(get("/api/patients/{userId}/medical-record", 999L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(999L))
+                .andExpect(jsonPath("$.bloodGroup").isEmpty());
     }
 }

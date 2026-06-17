@@ -1,12 +1,22 @@
+# ===== Logs =====
+*.log
+*.log.gz
+*.log.*
+logs/
+log/
+**/logs/
+**/log/
+spring.log
+spring.log.*
+access.log.*
+gc-*.log
+
 # ===== Java / Maven (Backend microservices) =====
 target/
 *.class
 *.jar
 *.war
 *.ear
-*.log
-logs/
-log/
 .mvn/wrapper/maven-wrapper.jar
 hs_err_pid*
 

@@ -1,0 +1,21 @@
+### Logs ###
+logs/
+log/
+*.log
+*.log.gz
+*.log.*
+spring.log
+spring.log.*
+access.log.*
+gc-*.log
+
+target/
+*.class
+*.jar
+*.war
+*.ear
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
