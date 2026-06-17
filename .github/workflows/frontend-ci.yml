@@ -1,11 +1,6 @@
 name: Frontend CI - Angular
 
 on:
-  push:
-    branches: [ "main", "develop", "feature/**" ]
-    paths:
-      - 'Frontend/**'
-      - '.github/workflows/**'
   pull_request:
     branches: [ "main", "develop" ]
     paths:
