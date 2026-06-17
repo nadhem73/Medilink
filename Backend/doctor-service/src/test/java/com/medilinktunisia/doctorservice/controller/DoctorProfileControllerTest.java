@@ -84,4 +84,51 @@ class DoctorProfileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.available").value(false));
     }
+
+    @Test
+    void createDoctorProfile_withAllFields_returns201() throws Exception {
+        DoctorProfileRequest request = new DoctorProfileRequest();
+        request.setUserId(1L);
+        request.setAvailable(true);
+        request.setBiography("General practitioner");
+        request.setFee(new BigDecimal("50.00"));
+
+        mockMvc.perform(post("/api/doctors/internal/doctor-profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void getAllDoctorProfiles_emptyList_returns200() throws Exception {
+        when(service.getAllProfiles()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/doctors/all"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void createDoctorProfile_emptyBody_returns400() throws Exception {
+        mockMvc.perform(post("/api/doctors/internal/doctor-profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(""))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateMyDoctorProfile_partialFields_returns200() throws Exception {
+        DoctorProfileRequest request = new DoctorProfileRequest();
+        request.setAvailable(true);
+
+        DoctorProfileDto dto = DoctorProfileDto.builder().userId(1L).available(true).build();
+        when(service.updateByUserId(any(Long.class), any(DoctorProfileRequest.class))).thenReturn(dto);
+
+        mockMvc.perform(put("/api/doctors/me/doctor-profile")
+                .requestAttr("userId", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(true));
+    }
 }

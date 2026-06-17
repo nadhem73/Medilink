@@ -164,4 +164,101 @@ class DoctorProfileServiceTest {
         assertThat(result.getBiography()).isEqualTo("New bio");
         verify(repository).save(any(DoctorProfile.class));
     }
+
+    @Test
+    void createDoctorProfile_customTimes_savesWithCustomTimes() {
+        DoctorProfileRequest request = new DoctorProfileRequest();
+        request.setUserId(userId);
+        request.setAvailable(false);
+        request.setDebutMatin("09:00");
+        request.setFinMatin("12:00");
+        request.setDebutApresMidi("14:00");
+        request.setFinApresMidi("18:00");
+
+        when(repository.existsByUserId(userId)).thenReturn(false);
+
+        service.createDoctorProfile(request);
+
+        verify(repository).save(profileCaptor.capture());
+        DoctorProfile saved = profileCaptor.getValue();
+        assertThat(saved.getAvailable()).isFalse();
+        assertThat(saved.getDebutMatin()).isEqualTo("09:00");
+        assertThat(saved.getFinMatin()).isEqualTo("12:00");
+        assertThat(saved.getDebutApresMidi()).isEqualTo("14:00");
+        assertThat(saved.getFinApresMidi()).isEqualTo("18:00");
+    }
+
+    @Test
+    void updateByUserId_nullAvailable_keepsExistingValue() {
+        DoctorProfile existing = new DoctorProfile();
+        existing.setUserId(userId);
+        existing.setAvailable(true);
+        existing.setBiography("Original bio");
+        existing.setFee(new BigDecimal("50.00"));
+
+        DoctorProfileRequest request = new DoctorProfileRequest();
+        request.setBiography("Updated bio");
+
+        when(repository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        DoctorProfileDto result = service.updateByUserId(userId, request);
+
+        assertThat(result.getAvailable()).isTrue();
+        assertThat(result.getBiography()).isEqualTo("Updated bio");
+    }
+
+    @Test
+    void updateByUserId_nullTimeFields_keepsExistingTimes() {
+        DoctorProfile existing = new DoctorProfile();
+        existing.setUserId(userId);
+        existing.setAvailable(true);
+        existing.setDebutMatin("08:00");
+        existing.setFinMatin("13:00");
+        existing.setDebutApresMidi("15:00");
+        existing.setFinApresMidi("19:00");
+
+        DoctorProfileRequest request = new DoctorProfileRequest();
+        request.setAvailable(false);
+
+        when(repository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        DoctorProfileDto result = service.updateByUserId(userId, request);
+
+        assertThat(result.getAvailable()).isFalse();
+        assertThat(result.getDebutMatin()).isEqualTo("08:00");
+        assertThat(result.getFinMatin()).isEqualTo("13:00");
+        assertThat(result.getDebutApresMidi()).isEqualTo("15:00");
+        assertThat(result.getFinApresMidi()).isEqualTo("19:00");
+    }
+
+    @Test
+    void updateByUserId_nullBiographyAndFee_setsThemToNull() {
+        DoctorProfile existing = new DoctorProfile();
+        existing.setUserId(userId);
+        existing.setAvailable(true);
+        existing.setBiography("Old bio");
+        existing.setFee(new BigDecimal("50.00"));
+
+        DoctorProfileRequest request = new DoctorProfileRequest();
+        request.setAvailable(false);
+
+        when(repository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        DoctorProfileDto result = service.updateByUserId(userId, request);
+
+        assertThat(result.getBiography()).isNull();
+        assertThat(result.getFee()).isNull();
+    }
+
+    @Test
+    void getAllProfiles_emptyList_returnsEmptyList() {
+        when(repository.findAll()).thenReturn(List.of());
+
+        List<DoctorProfileDto> result = service.getAllProfiles();
+
+        assertThat(result).isEmpty();
+    }
 }

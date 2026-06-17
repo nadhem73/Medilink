@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JwtServiceTest {
 
@@ -62,5 +63,55 @@ class JwtServiceTest {
         String token = createToken("test@example.com", 1L, 3600000);
         String tampered = token + "tampered";
         assertThat(jwtService.isTokenValid(tampered)).isFalse();
+    }
+
+    @Test
+    void extractEmail_expiredToken_throwsExpiredJwtException() {
+        String token = createToken("test@example.com", 1L, -1000);
+        assertThatThrownBy(() -> jwtService.extractEmail(token))
+                .isInstanceOf(io.jsonwebtoken.ExpiredJwtException.class);
+    }
+
+    @Test
+    void extractUserId_expiredToken_throwsExpiredJwtException() {
+        String token = createToken("test@example.com", 42L, -1000);
+        assertThatThrownBy(() -> jwtService.extractUserId(token))
+                .isInstanceOf(io.jsonwebtoken.ExpiredJwtException.class);
+    }
+
+    @Test
+    void isTokenValid_nullToken_returnsFalse() {
+        assertThat(jwtService.isTokenValid(null)).isFalse();
+    }
+
+    @Test
+    void isTokenValid_emptyToken_returnsFalse() {
+        assertThat(jwtService.isTokenValid("")).isFalse();
+    }
+
+    @Test
+    void isTokenValid_differentSecret_returnsFalse() {
+        String differentSecret = "differentDifferentDifferentDifferentDifferentDifferentDifferent!";
+        SecretKey differentKey = Keys.hmacShaKeyFor(differentSecret.getBytes(StandardCharsets.UTF_8));
+        String token = Jwts.builder()
+                .subject("test@example.com")
+                .claim("userId", 1L)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 3600000))
+                .signWith(differentKey)
+                .compact();
+        assertThat(jwtService.isTokenValid(token)).isFalse();
+    }
+
+    @Test
+    void extractUserId_missingClaim_returnsNull() {
+        SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+        String token = Jwts.builder()
+                .subject("test@example.com")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 3600000))
+                .signWith(key)
+                .compact();
+        assertThat(jwtService.extractUserId(token)).isNull();
     }
 }
