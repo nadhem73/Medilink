@@ -130,6 +130,11 @@ $shadow:  var(--box-shadow, 0 8px 24px rgba(26,43,60,.08));
     color: #ef4444;
     border: 1px solid #fca5a5;
   }
+  &.status-completed {
+    background: color-mix(in srgb, $blue 12%, $white);
+    color: $blue;
+    border: 1px solid color-mix(in srgb, $blue 20%, $light);
+  }
 }
 
 // ── Mini-cartes (patients, consultations…) ────────────────────────────────────
@@ -560,6 +565,14 @@ $shadow:  var(--box-shadow, 0 8px 24px rgba(26,43,60,.08));
     border-color: #fca5a5;
 
     &:hover:not(:disabled) { background: #ef4444; color: #fff; box-shadow: 0 6px 16px rgba(239,68,68,.2); }
+  }
+
+  &.btn-start {
+    background: color-mix(in srgb, $med 14%, $white);
+    color: $med;
+    border-color: color-mix(in srgb, $med 30%, $light);
+
+    &:hover:not(:disabled) { background: $med; color: #fff; box-shadow: 0 6px 16px rgba(0,102,162,.25); }
   }
 }
 

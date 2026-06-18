@@ -70,6 +70,7 @@
           <option value="ALL">📋 Tous les statuts</option>
           <option value="PENDING">⏳ En attente</option>
           <option value="CONFIRMED">✅ Confirmés</option>
+          <option value="COMPLETED">✅ Terminés</option>
           <option value="CANCELLED">❌ Annulés</option>
         </select>
       </div>
@@ -126,7 +127,7 @@
               <p class="appt-subtitle" *ngIf="!loadingAppointments">
                 {{ filteredAppointments.length }} rendez-vous
                 <ng-container *ngIf="statusFilter !== 'ALL'">
-                  · {{ statusFilter === 'PENDING' ? 'En attente' : statusFilter === 'CONFIRMED' ? 'Confirmés' : 'Annulés' }}
+                  · {{ statusFilter === 'PENDING' ? 'En attente' : statusFilter === 'CONFIRMED' ? 'Confirmés' : statusFilter === 'COMPLETED' ? 'Terminés' : 'Annulés' }}
                 </ng-container>
               </p>
             </div>
@@ -167,7 +168,7 @@
               <div class="appt-action-col">
                 <span class="status" [ngClass]="appt.statusClass">{{ appt.status }}</span>
 
-                <div class="appt-btns" *ngIf="appt.statusClass !== 'status-cancelled'">
+                <div class="appt-btns" *ngIf="appt.statusClass !== 'status-cancelled' && appt.statusClass !== 'status-completed'">
                   <!-- Confirmer (si en attente) -->
                   <button
                     *ngIf="appt.statusClass === 'status-pending'"
@@ -181,17 +182,20 @@
                     <span *ngIf="actionLoading[appt.id]" class="btn-spinner"></span>
                   </button>
 
-                  <!-- Annuler -->
+                  <!-- Démarrer la consultation (si confirmé et le jour même) -->
                   <button
-                    class="appt-btn btn-cancel"
+                    *ngIf="appt.statusClass === 'status-confirmed' && isAppointmentToday(appt)"
+                    class="appt-btn btn-start"
                     [disabled]="actionLoading[appt.id]"
-                    (click)="cancelAppointment(appt)"
-                    [id]="'btn-cancel-' + appt.id"
-                    title="Annuler ce rendez-vous"
+                    (click)="startConsultation(appt)"
+                    [id]="'btn-start-' + appt.id"
+                    title="Démarrer la consultation"
                   >
-                    <span *ngIf="!actionLoading[appt.id]">✕ Annuler</span>
+                    <span *ngIf="!actionLoading[appt.id]">🩺 Démarrer</span>
                     <span *ngIf="actionLoading[appt.id]" class="btn-spinner"></span>
                   </button>
+
+
                 </div>
               </div>
 

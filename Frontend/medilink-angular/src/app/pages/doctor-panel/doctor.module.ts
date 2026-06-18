@@ -15,6 +15,8 @@ import { SettingsComponent } from './settings/settings.component';
 import { HelpComponent } from './help/help.component';
 
 
+import { MedicalHologramComponent } from '../auth-pages/register/medical-hologram/medical-hologram.component';
+
 @NgModule({
   declarations: [
     DoctorDashboardComponent,
@@ -31,7 +33,8 @@ import { HelpComponent } from './help/help.component';
     CommonModule,
     FormsModule,
     SharedModule,
-    DoctorRoutingModule
+    DoctorRoutingModule,
+    MedicalHologramComponent
   ]
 })
 export class DoctorModule { }

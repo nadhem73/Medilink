@@ -4,7 +4,6 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -28,7 +27,7 @@ public class ConsultationResponse {
     private BigDecimal height;
     private BigDecimal bmi;
     private String requestedExams;
-    private LocalDate followUpDate;
+    private LocalDateTime followUpDate;
     private Long prescriptionId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

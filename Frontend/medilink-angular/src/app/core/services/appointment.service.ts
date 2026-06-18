@@ -73,4 +73,18 @@ export class AppointmentService {
   cancelByDoctor(id: number): Observable<AppointmentDto> {
     return this.http.put<AppointmentDto>(`${this.API_URL}/${id}/doctor-cancel`, {});
   }
+
+  /** Crée un rendez-vous de suivi par le médecin (utilisé depuis la consultation) */
+  createFollowUpAppointment(patientId: number, dateTime: string): Observable<AppointmentDto> {
+    return this.http.post<AppointmentDto>(`${this.API_URL}/follow-up?patientId=${patientId}`, {
+      dateTime,
+      mode: 'PRESENTIEL',
+      notes: 'Consultation de suivi'
+    });
+  }
+
+  /** Marque un rendez-vous comme terminé après finalisation de la consultation */
+  markAppointmentAsCompleted(appointmentId: number): Observable<AppointmentDto> {
+    return this.http.put<AppointmentDto>(`${this.API_URL}/${appointmentId}/complete`, {});
+  }
 }

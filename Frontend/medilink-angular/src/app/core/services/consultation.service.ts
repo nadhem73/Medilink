@@ -16,6 +16,7 @@ export interface ConsultationRequest {
   height?: number;
   requestedExams?: string;
   followUpDate?: string;
+  followUpTime?: string;
 }
 
 export interface ConsultationResponse {

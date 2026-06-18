@@ -88,13 +88,7 @@
                     <span class="status-icon">{{ getStatusIcon(app.status) }}</span>
                     {{ getStatusLabel(app.status) }}
                   </span>
-                  <button 
-                    *ngIf="app.status !== 'CANCELLED'" 
-                    class="btn btn-outline-danger" 
-                    (click)="cancelAppointment(app.id)"
-                    title="Annuler le rendez-vous">
-                    Annuler
-                  </button>
+
                   <span *ngIf="app.status === 'CANCELLED'" class="cancelled-label">Annulé</span>
                 </div>
               </div>

@@ -52,6 +52,12 @@ export class DoctorService {
     return this.http.get<DoctorProfile[]>(`${this.DOCTOR_API_URL}/all`);
   }
 
+  getDoctorProfileById(doctorId: number): Observable<DoctorProfile | undefined> {
+    return this.getAllDoctorProfiles().pipe(
+      map(profiles => profiles.find(p => p.userId === doctorId))
+    );
+  }
+
   getDoctorsWithProfiles(): Observable<DoctorWithProfile[]> {
     return forkJoin({
       doctors: this.getAllDoctors(),

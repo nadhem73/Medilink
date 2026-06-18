@@ -3,7 +3,7 @@ package com.medilinktunisia.doctorservice.dto;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 public class ConsultationRequest {
@@ -19,5 +19,5 @@ public class ConsultationRequest {
     private BigDecimal weight;
     private BigDecimal height;
     private String requestedExams;
-    private LocalDate followUpDate;
+    private LocalDateTime followUpDate;
 }

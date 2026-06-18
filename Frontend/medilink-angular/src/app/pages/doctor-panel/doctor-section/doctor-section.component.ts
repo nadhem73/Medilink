@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, PatientListDto } from '../../../core/services/auth.service';
 import { AppointmentService, AppointmentDto } from '../../../core/services/appointment.service';
+import { ConsultationService, ConsultationRequest } from '../../../core/services/consultation.service';
 
 type DoctorSectionKey = 'patients' | 'appointments' | 'consultations' | 'prescriptions' | 'labs' | 'profile';
 
@@ -18,12 +19,14 @@ interface CalendarDay {
 
 interface AgendaAppointment {
   id: number;
+  patientId: number;
   patient: string;
   reason: string;
   date: string;
   hour: string;
   mode: string;
   modeIcon: string;
+  rawMode: string;
   status: string;
   statusClass: string;
   rawDateTime: string;
@@ -57,7 +60,7 @@ export class DoctorSectionComponent implements OnInit {
   selectedDate: Date | null = null;
 
   // Filtres
-  statusFilter: 'ALL' | 'PENDING' | 'CONFIRMED' | 'CANCELLED' = 'ALL';
+  statusFilter: 'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' = 'ALL';
   searchQuery: string = '';
 
   // ── Données mock autres sections ─────────────────────────────────────────
@@ -88,8 +91,10 @@ export class DoctorSectionComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private authService: AuthService,
-    private appointmentService: AppointmentService
+    private appointmentService: AppointmentService,
+    private consultationService: ConsultationService
   ) {
     this.currentUser = this.authService.getCurrentUser();
     this.profileCards = [
@@ -154,12 +159,14 @@ export class DoctorSectionComponent implements OnInit {
   private mapAppointment(app: AppointmentDto): AgendaAppointment {
     return {
       id: app.id,
+      patientId: app.patientId,
       patient: this.getPatientName(app.patientId),
       reason: app.notes || 'Consultation générale',
       date: this.formatDate(app.dateTime),
       hour: this.formatHour(app.dateTime),
       mode: app.mode === 'TELECONSULTATION' ? 'Téléconsultation' : 'Présentiel',
       modeIcon: app.mode === 'TELECONSULTATION' ? '💻' : '🏥',
+      rawMode: app.mode,
       status: this.getStatusLabel(app.status),
       statusClass: this.getStatusClass(app.status),
       rawDateTime: app.dateTime
@@ -262,6 +269,7 @@ export class DoctorSectionComponent implements OnInit {
       const classMap: Record<string, string> = {
         PENDING: 'status-pending',
         CONFIRMED: 'status-confirmed',
+        COMPLETED: 'status-completed',
         CANCELLED: 'status-cancelled'
       };
       list = list.filter(app => app.statusClass === classMap[this.statusFilter]);
@@ -312,21 +320,23 @@ export class DoctorSectionComponent implements OnInit {
     });
   }
 
-  cancelAppointment(app: AgendaAppointment): void {
-    if (!confirm(`Annuler le RDV de ${app.patient} le ${app.date} à ${app.hour} ?`)) return;
-    this.actionLoading[app.id] = true;
-    this.appointmentService.cancelByDoctor(app.id).subscribe({
-      next: (updated) => {
-        const idx = this.allAppointments.findIndex(a => a.id === app.id);
-        if (idx !== -1) {
-          this.allAppointments[idx] = this.mapAppointmentFromDto(updated, app);
-        }
-        this.buildCalendar();
-        this.actionLoading[app.id] = false;
+  startConsultation(appt: AgendaAppointment): void {
+    if (!confirm(`Démarrer la consultation pour ${appt.patient} ?`)) return;
+    this.actionLoading[appt.id] = true;
+    const request: ConsultationRequest = {
+      patientId: appt.patientId,
+      appointmentId: appt.id,
+      reason: appt.reason,
+      type: appt.rawMode === 'TELECONSULTATION' ? 'TELECONSULTATION' : 'PRESENTIEL'
+    };
+    this.consultationService.startConsultation(request).subscribe({
+      next: () => {
+        this.actionLoading[appt.id] = false;
+        this.router.navigate(['/dashboard/doctor/consultations']);
       },
       error: (err) => {
-        console.error('Erreur annulation', err);
-        this.actionLoading[app.id] = false;
+        console.error('Erreur création consultation', err);
+        this.actionLoading[appt.id] = false;
       }
     });
   }
@@ -364,10 +374,23 @@ export class DoctorSectionComponent implements OnInit {
     } catch { return dateTimeStr; }
   }
 
+  isAppointmentToday(appt: AgendaAppointment): boolean {
+    try {
+      const today = new Date();
+      const apptDate = new Date(appt.rawDateTime);
+      return apptDate.getFullYear() === today.getFullYear()
+        && apptDate.getMonth() === today.getMonth()
+        && apptDate.getDate() === today.getDate();
+    } catch {
+      return false;
+    }
+  }
+
   getStatusLabel(status: string): string {
     switch ((status || '').toUpperCase()) {
       case 'CONFIRMED': return 'Confirmé';
       case 'CANCELLED': return 'Annulé';
+      case 'COMPLETED': return 'Terminé';
       case 'PENDING': default: return 'En attente';
     }
   }
@@ -376,6 +399,7 @@ export class DoctorSectionComponent implements OnInit {
     switch ((status || '').toUpperCase()) {
       case 'CONFIRMED': return 'status-confirmed';
       case 'CANCELLED': return 'status-cancelled';
+      case 'COMPLETED': return 'status-completed';
       case 'PENDING': default: return 'status-pending';
     }
   }

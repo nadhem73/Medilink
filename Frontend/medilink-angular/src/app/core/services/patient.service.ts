@@ -34,4 +34,9 @@ export class PatientService {
   getPatientMedicalRecord(userId: number): Observable<MedicalRecord> {
     return this.http.get<MedicalRecord>(`${this.API_URL}/${userId}/medical-record`);
   }
+
+  /** Mise à jour partielle du dossier médical (taille, poids). */
+  updatePatientMedicalRecord(userId: number, data: Partial<MedicalRecord>): Observable<MedicalRecord> {
+    return this.http.put<MedicalRecord>(`${this.API_URL}/${userId}/medical-record`, data);
+  }
 }

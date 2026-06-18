@@ -3,11 +3,17 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 import { ConsultationsComponent } from './consultations.component';
 import { ConsultationService, ConsultationResponse } from '../../../core/services/consultation.service';
+import { AppointmentService } from '../../../core/services/appointment.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { PatientService } from '../../../core/services/patient.service';
 
 describe('ConsultationsComponent', () => {
   let component: ConsultationsComponent;
   let fixture: ComponentFixture<ConsultationsComponent>;
-  let mockService: jasmine.SpyObj<ConsultationService>;
+  let mockConsultationService: jasmine.SpyObj<ConsultationService>;
+  let mockAppointmentService: jasmine.SpyObj<AppointmentService>;
+  let mockAuthService: jasmine.SpyObj<AuthService>;
+  let mockPatientService: jasmine.SpyObj<PatientService>;
 
   const mockConsultations: ConsultationResponse[] = [
     {
@@ -33,15 +39,29 @@ describe('ConsultationsComponent', () => {
   ];
 
   beforeEach(async () => {
-    mockService = jasmine.createSpyObj('ConsultationService', [
+    mockConsultationService = jasmine.createSpyObj('ConsultationService', [
       'getAllConsultations', 'getTodayConsultations', 'getConsultation',
       'startConsultation', 'updateConsultation', 'completeConsultation', 'cancelConsultation'
     ]);
-    mockService.getAllConsultations.and.returnValue(of(mockConsultations));
+    mockConsultationService.getAllConsultations.and.returnValue(of(mockConsultations));
+
+    mockAppointmentService = jasmine.createSpyObj('AppointmentService', ['getDoctorAppointments']);
+    mockAppointmentService.getDoctorAppointments.and.returnValue(of([]));
+
+    mockAuthService = jasmine.createSpyObj('AuthService', ['getAllPatients']);
+    mockAuthService.getAllPatients.and.returnValue(of([]));
+
+    mockPatientService = jasmine.createSpyObj('PatientService', ['getPatientMedicalRecord']);
+    mockPatientService.getPatientMedicalRecord.and.returnValue(of(null as any));
 
     await TestBed.configureTestingModule({
       declarations: [ConsultationsComponent],
-      providers: [{ provide: ConsultationService, useValue: mockService }],
+      providers: [
+        { provide: ConsultationService, useValue: mockConsultationService },
+        { provide: AppointmentService, useValue: mockAppointmentService },
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: PatientService, useValue: mockPatientService }
+      ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
 
@@ -55,19 +75,20 @@ describe('ConsultationsComponent', () => {
   });
 
   it('should load consultations on init', () => {
-    expect(mockService.getAllConsultations).toHaveBeenCalledWith(undefined);
+    expect(mockConsultationService.getAllConsultations).toHaveBeenCalledWith(undefined);
     expect(component.consultations.length).toBe(2);
   });
 
   it('should filter consultations by status', () => {
-    mockService.getAllConsultations.and.returnValue(of([mockConsultations[1]]));
+    mockConsultationService.getAllConsultations.and.returnValue(of([mockConsultations[1]]));
     component.filterByStatus('IN_PROGRESS');
-    expect(mockService.getAllConsultations).toHaveBeenCalledWith('IN_PROGRESS');
+    expect(mockConsultationService.getAllConsultations).toHaveBeenCalledWith('IN_PROGRESS');
   });
 
-  it('should select a consultation', () => {
+  it('should select a consultation and init editing form', () => {
     component.selectConsultation(mockConsultations[0]);
     expect(component.selectedConsultation).toEqual(mockConsultations[0]);
+    expect(component.editingConsultation.patientId).toBe(10);
   });
 
   it('should go back to list', () => {
@@ -76,47 +97,34 @@ describe('ConsultationsComponent', () => {
     expect(component.selectedConsultation).toBeNull();
   });
 
-  it('should start editing a consultation', () => {
-    component.startEdit(mockConsultations[1]);
-    expect(component.editing).toBeTrue();
-    expect(component.editingConsultation.patientId).toBe(11);
-    expect(component.editingConsultation.diagnosis).toBe('Migraine');
-  });
-
-  it('should cancel edit', () => {
-    component.editing = true;
-    component.cancelEdit();
-    expect(component.editing).toBeFalse();
-  });
-
   it('should save draft', () => {
     const updated = { ...mockConsultations[0], diagnosis: 'Tension' };
-    mockService.updateConsultation.and.returnValue(of(updated));
+    mockConsultationService.updateConsultation.and.returnValue(of(updated));
     component.selectedConsultation = mockConsultations[0];
     component.editingConsultation = { diagnosis: 'Tension' };
     component.saveDraft();
-    expect(mockService.updateConsultation).toHaveBeenCalledWith(1, { diagnosis: 'Tension' });
+    expect(mockConsultationService.updateConsultation).toHaveBeenCalledWith(1, { diagnosis: 'Tension' });
   });
 
   it('should complete consultation', () => {
     const completed = { ...mockConsultations[1], status: 'COMPLETED' };
-    mockService.completeConsultation.and.returnValue(of(completed));
+    mockConsultationService.completeConsultation.and.returnValue(of(completed));
     component.selectedConsultation = mockConsultations[1];
     component.completeConsultation();
-    expect(mockService.completeConsultation).toHaveBeenCalledWith(2, {});
+    expect(mockConsultationService.completeConsultation).toHaveBeenCalledWith(2, {});
   });
 
   it('should cancel consultation', () => {
-    mockService.cancelConsultation.and.returnValue(of(void 0));
+    mockConsultationService.cancelConsultation.and.returnValue(of(void 0));
     component.cancelConsultation(mockConsultations[0]);
-    expect(mockService.cancelConsultation).toHaveBeenCalledWith(1);
+    expect(mockConsultationService.cancelConsultation).toHaveBeenCalledWith(1);
   });
 
-  it('should return correct status badge class', () => {
-    expect(component.getStatusClass('PENDING')).toBe('badge-warning');
-    expect(component.getStatusClass('IN_PROGRESS')).toBe('badge-info');
-    expect(component.getStatusClass('COMPLETED')).toBe('badge-success');
-    expect(component.getStatusClass('CANCELLED')).toBe('badge-danger');
+  it('should return correct status class', () => {
+    expect(component.getStatusClass('PENDING')).toBe('pending');
+    expect(component.getStatusClass('IN_PROGRESS')).toBe('progress');
+    expect(component.getStatusClass('COMPLETED')).toBe('completed');
+    expect(component.getStatusClass('CANCELLED')).toBe('cancelled');
     expect(component.getStatusClass('UNKNOWN')).toBe('');
   });
 });
