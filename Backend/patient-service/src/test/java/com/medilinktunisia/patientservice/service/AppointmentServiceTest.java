@@ -1,13 +1,15 @@
 package com.medilinktunisia.patientservice.service;
 
+import com.medilinktunisia.patientservice.dto.AppointmentDto;
 import com.medilinktunisia.patientservice.dto.AppointmentRequest;
 import com.medilinktunisia.patientservice.model.Appointment;
 import com.medilinktunisia.patientservice.model.AppointmentMode;
 import com.medilinktunisia.patientservice.model.AppointmentStatus;
 import com.medilinktunisia.patientservice.repository.AppointmentRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -15,6 +17,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -23,143 +27,198 @@ import static org.mockito.Mockito.*;
 class AppointmentServiceTest {
 
     @Mock
-    private AppointmentRepository appointmentRepository;
+    private AppointmentRepository repository;
 
-    private AppointmentService appointmentService;
-
-    @BeforeEach
-    void setUp() {
-        appointmentService = new AppointmentService(appointmentRepository);
-    }
+    @InjectMocks
+    private AppointmentService service;
 
     @Test
-    void createAppointment_shouldReturnAppointmentDto() {
+    void createAppointment_shouldSaveAndReturnDto() {
+        Long patientId = 1L;
         AppointmentRequest request = new AppointmentRequest();
-        request.setDoctorId(1L);
-        request.setDateTime(LocalDateTime.now().plusDays(1));
+        request.setDoctorId(2L);
+        request.setDateTime(LocalDateTime.of(2025, 6, 20, 10, 0));
         request.setMode("PRESENTIEL");
+        request.setNotes("Check-up");
 
-        when(appointmentRepository.existsByPatientIdAndDoctorIdAndStatusIn(
-                anyLong(), anyLong(), anyList())).thenReturn(false);
-
-        when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> {
+        when(repository.existsByPatientIdAndDoctorIdAndStatusIn(
+                eq(patientId), eq(2L), anyList())).thenReturn(false);
+        when(repository.findByDoctorIdAndDateTimeBetweenOrderByDateTimeAsc(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of());
+        when(repository.save(any(Appointment.class))).thenAnswer(invocation -> {
             Appointment a = invocation.getArgument(0);
             a.setId(1L);
+            a.setCreatedAt(LocalDateTime.now());
+            a.setUpdatedAt(LocalDateTime.now());
             return a;
         });
 
-        var result = appointmentService.createAppointment(2L, request);
+        AppointmentDto result = service.createAppointment(patientId, request);
 
-        assertNotNull(result);
-        assertEquals(1L, result.getDoctorId());
-        assertEquals("PENDING", result.getStatus());
-        assertEquals("PRESENTIEL", result.getMode());
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getPatientId()).isEqualTo(1L);
+        assertThat(result.getDoctorId()).isEqualTo(2L);
+        assertThat(result.getStatus()).isEqualTo("PENDING");
+        assertThat(result.getMode()).isEqualTo("PRESENTIEL");
+        assertThat(result.getNotes()).isEqualTo("Check-up");
 
-        verify(appointmentRepository, times(1)).save(any(Appointment.class));
+        ArgumentCaptor<Appointment> captor = ArgumentCaptor.forClass(Appointment.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getPatientId()).isEqualTo(1L);
+        assertThat(captor.getValue().getMode()).isEqualTo(AppointmentMode.PRESENTIEL);
     }
 
     @Test
-    void createAppointment_withExistingBooking_shouldThrow() {
+    void createAppointment_duplicate_shouldThrow() {
+        Long patientId = 1L;
         AppointmentRequest request = new AppointmentRequest();
-        request.setDoctorId(1L);
-        request.setDateTime(LocalDateTime.now().plusDays(1));
+        request.setDoctorId(2L);
+        request.setDateTime(LocalDateTime.of(2025, 6, 20, 10, 0));
         request.setMode("PRESENTIEL");
 
-        when(appointmentRepository.existsByPatientIdAndDoctorIdAndStatusIn(
-                anyLong(), anyLong(), anyList())).thenReturn(true);
+        when(repository.existsByPatientIdAndDoctorIdAndStatusIn(
+                eq(patientId), eq(2L), anyList())).thenReturn(true);
 
-        assertThrows(IllegalStateException.class,
-                () -> appointmentService.createAppointment(2L, request));
+        assertThatThrownBy(() -> service.createAppointment(patientId, request))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("déjà un rendez-vous");
 
-        verify(appointmentRepository, never()).save(any(Appointment.class));
+        verify(repository, never()).save(any());
     }
 
     @Test
     void createAppointment_withInvalidMode_shouldThrow() {
+        Long patientId = 1L;
         AppointmentRequest request = new AppointmentRequest();
-        request.setDoctorId(1L);
-        request.setDateTime(LocalDateTime.now().plusDays(1));
+        request.setDoctorId(2L);
+        request.setDateTime(LocalDateTime.of(2025, 6, 20, 10, 0));
         request.setMode("INVALID");
 
-        when(appointmentRepository.existsByPatientIdAndDoctorIdAndStatusIn(
-                anyLong(), anyLong(), anyList())).thenReturn(false);
+        when(repository.existsByPatientIdAndDoctorIdAndStatusIn(
+                eq(patientId), eq(2L), anyList())).thenReturn(false);
+        when(repository.findByDoctorIdAndDateTimeBetweenOrderByDateTimeAsc(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of());
 
-        assertThrows(IllegalArgumentException.class,
-                () -> appointmentService.createAppointment(2L, request));
+        assertThatThrownBy(() -> service.createAppointment(patientId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Mode de consultation invalide");
 
-        verify(appointmentRepository, never()).save(any(Appointment.class));
+        verify(repository, never()).save(any());
     }
 
     @Test
     void getPatientAppointments_shouldReturnList() {
+        Appointment a1 = new Appointment();
+        a1.setId(1L);
+        a1.setPatientId(1L);
+        a1.setDoctorId(2L);
+        a1.setStatus(AppointmentStatus.PENDING);
+        a1.setMode(AppointmentMode.PRESENTIEL);
+
+        Appointment a2 = new Appointment();
+        a2.setId(2L);
+        a2.setPatientId(1L);
+        a2.setDoctorId(3L);
+        a2.setStatus(AppointmentStatus.CONFIRMED);
+        a2.setMode(AppointmentMode.TELECONSULTATION);
+
+        when(repository.findByPatientIdOrderByDateTimeDesc(1L)).thenReturn(List.of(a1, a2));
+
+        List<AppointmentDto> result = service.getPatientAppointments(1L);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getId()).isEqualTo(1L);
+        assertThat(result.get(1).getId()).isEqualTo(2L);
+    }
+
+    @Test
+    void getDoctorAppointments_shouldReturnList() {
+        Appointment a1 = new Appointment();
+        a1.setId(1L);
+        a1.setDoctorId(2L);
+        a1.setPatientId(3L);
+        a1.setStatus(AppointmentStatus.PENDING);
+        a1.setMode(AppointmentMode.PRESENTIEL);
+
+        when(repository.findByDoctorIdOrderByDateTimeDesc(2L)).thenReturn(List.of(a1));
+
+        List<AppointmentDto> result = service.getDoctorAppointments(2L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getDoctorId()).isEqualTo(2L);
+    }
+
+    @Test
+    void cancelAppointment_byOwner_shouldSucceed() {
         Appointment appointment = new Appointment();
         appointment.setId(1L);
-        appointment.setPatientId(2L);
-        appointment.setDoctorId(1L);
+        appointment.setPatientId(1L);
+        appointment.setDoctorId(2L);
         appointment.setDateTime(LocalDateTime.now());
         appointment.setStatus(AppointmentStatus.PENDING);
         appointment.setMode(AppointmentMode.PRESENTIEL);
+        appointment.setCreatedAt(LocalDateTime.now());
 
-        when(appointmentRepository.findByPatientIdOrderByDateTimeDesc(anyLong()))
-                .thenReturn(List.of(appointment));
+        when(repository.findById(1L)).thenReturn(Optional.of(appointment));
+        when(repository.save(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        var result = appointmentService.getPatientAppointments(2L);
+        AppointmentDto result = service.cancelAppointment(1L, 1L);
 
-        assertEquals(1, result.size());
-        assertEquals(1L, result.get(0).getId());
+        assertThat(result.getStatus()).isEqualTo("CANCELLED");
+        verify(repository).save(appointment);
+        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
     }
 
     @Test
-    void cancelAppointment_shouldCancelSuccessfully() {
+    void cancelAppointment_byWrongUser_shouldThrow() {
         Appointment appointment = new Appointment();
         appointment.setId(1L);
-        appointment.setPatientId(2L);
-        appointment.setDoctorId(1L);
-        appointment.setMode(AppointmentMode.PRESENTIEL);
+        appointment.setPatientId(1L);
+        appointment.setDoctorId(2L);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(appointment));
+
+        assertThatThrownBy(() -> service.cancelAppointment(99L, 1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("pas autorisé");
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void confirmAppointment_byDoctor_shouldSucceed() {
+        Appointment appointment = new Appointment();
+        appointment.setId(1L);
+        appointment.setPatientId(1L);
+        appointment.setDoctorId(2L);
+        appointment.setDateTime(LocalDateTime.now());
+        appointment.setStatus(AppointmentStatus.PENDING);
+        appointment.setMode(AppointmentMode.TELECONSULTATION);
+        appointment.setCreatedAt(LocalDateTime.now());
+
+        when(repository.findById(1L)).thenReturn(Optional.of(appointment));
+        when(repository.save(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AppointmentDto result = service.confirmAppointment(2L, 1L);
+
+        assertThat(result.getStatus()).isEqualTo("CONFIRMED");
+        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.CONFIRMED);
+    }
+
+    @Test
+    void confirmAppointment_byWrongDoctor_shouldThrow() {
+        Appointment appointment = new Appointment();
+        appointment.setId(1L);
+        appointment.setDoctorId(2L);
         appointment.setStatus(AppointmentStatus.PENDING);
 
-        when(appointmentRepository.findById(1L)).thenReturn(Optional.of(appointment));
-        when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.findById(1L)).thenReturn(Optional.of(appointment));
 
-        var result = appointmentService.cancelAppointment(2L, 1L);
-
-        assertEquals("CANCELLED", result.getStatus());
-        verify(appointmentRepository, times(1)).save(appointment);
-    }
-
-    @Test
-    void cancelAppointmentByDoctor_shouldCancel() {
-        Appointment appointment = new Appointment();
-        appointment.setId(1L);
-        appointment.setDoctorId(1L);
-        appointment.setPatientId(2L);
-        appointment.setMode(AppointmentMode.PRESENTIEL);
-        appointment.setDoctorId(1L);
-        appointment.setMode(AppointmentMode.PRESENTIEL);
-
-        when(appointmentRepository.findById(1L)).thenReturn(Optional.of(appointment));
-
-        assertThrows(IllegalStateException.class,
-                () -> appointmentService.cancelAppointment(99L, 1L));
-
-        verify(appointmentRepository, never()).save(any(Appointment.class));
-    }
-
-    @Test
-    void confirmAppointment_shouldConfirmSuccessfully() {
-        Appointment appointment = new Appointment();
-        appointment.setId(1L);
-        appointment.setDoctorId(1L);
-        appointment.setPatientId(2L);
-        appointment.setMode(AppointmentMode.PRESENTIEL);
-        appointment.setStatus(AppointmentStatus.PENDING);
-
-        when(appointmentRepository.findById(1L)).thenReturn(Optional.of(appointment));
-        when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        var result = appointmentService.confirmAppointment(1L, 1L);
-
-        assertEquals("CONFIRMED", result.getStatus());
+        assertThatThrownBy(() -> service.confirmAppointment(99L, 1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("pas autorisé");
     }
 
     @Test
@@ -171,23 +230,50 @@ class AppointmentServiceTest {
         appointment.setMode(AppointmentMode.PRESENTIEL);
         appointment.setStatus(AppointmentStatus.CANCELLED);
 
-        when(appointmentRepository.findById(1L)).thenReturn(Optional.of(appointment));
+        when(repository.findById(1L)).thenReturn(Optional.of(appointment));
 
-        assertThrows(IllegalStateException.class,
-                () -> appointmentService.confirmAppointment(1L, 1L));
+        assertThatThrownBy(() -> service.confirmAppointment(1L, 1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("annulé");
 
-        verify(appointmentRepository, never()).save(any(Appointment.class));
+        verify(repository, never()).save(any());
     }
 
     @Test
     void getActiveDoctorIdsForPatient_shouldReturnList() {
-        when(appointmentRepository.findActiveDoctorIdsByPatientId(
+        when(repository.findActiveDoctorIdsByPatientId(
                 anyLong(), anyList())).thenReturn(List.of(1L, 3L));
 
-        var result = appointmentService.getActiveDoctorIdsForPatient(2L);
+        List<Long> result = service.getActiveDoctorIdsForPatient(2L);
 
         assertEquals(2, result.size());
         assertTrue(result.contains(1L));
         assertTrue(result.contains(3L));
+    }
+
+    @Test
+    void getAvailableSlots_shouldReturnFilteredSlots() {
+        Long doctorId = 1L;
+        String date = "2025-06-20";
+        String debutMatin = "09:00";
+        String finMatin = "10:00";
+        String debutApresMidi = "14:00";
+        String finApresMidi = "15:00";
+
+        Appointment booked = new Appointment();
+        booked.setDateTime(LocalDateTime.parse("2025-06-20T09:30:00"));
+        booked.setStatus(AppointmentStatus.CONFIRMED);
+
+        when(repository.findByDoctorIdAndDateTimeBetweenOrderByDateTimeAsc(
+                eq(doctorId), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of(booked));
+
+        List<String> slots = service.getAvailableSlots(
+                doctorId, date, debutMatin, finMatin, debutApresMidi, finApresMidi);
+
+        assertThat(slots)
+                .hasSize(3)
+                .contains("09:00", "14:00", "14:30")
+                .doesNotContain("09:30");
     }
 }

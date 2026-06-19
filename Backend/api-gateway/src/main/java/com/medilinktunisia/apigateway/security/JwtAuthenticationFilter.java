@@ -1,5 +1,6 @@
 package com.medilinktunisia.apigateway.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
  * Valide les tokens JWT et configure le contexte de sécurité
  */
 @Component
+@Slf4j
 public class JwtAuthenticationFilter implements WebFilter {
 
     private final JwtUtil jwtUtil;
@@ -35,6 +37,7 @@ public class JwtAuthenticationFilter implements WebFilter {
         
         // Skip JWT validation pour les endpoints publics
         if (isPublicPath(path)) {
+            log.debug("Skipping JWT validation for public path: {}", path);
             return chain.filter(exchange);
         }
 
@@ -48,6 +51,8 @@ public class JwtAuthenticationFilter implements WebFilter {
                     String username = jwtUtil.extractUsername(token);
                     String userId = jwtUtil.extractUserId(token);
                     List<String> roles = jwtUtil.extractRoles(token);
+
+                    log.debug("Authenticated user: {} with roles: {} for path: {}", username, roles, path);
 
                     List<SimpleGrantedAuthority> authorities = roles.stream()
                             .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
@@ -69,11 +74,16 @@ public class JwtAuthenticationFilter implements WebFilter {
 
                     return chain.filter(mutatedExchange)
                             .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication));
+                } else {
+                    log.warn("Invalid token provided for path: {}", path);
                 }
             } catch (Exception e) {
+                log.error("JWT authentication error for path {}: {}", path, e.getMessage());
                 // Token invalide, continuer sans authentification
                 return chain.filter(exchange);
             }
+        } else {
+            log.debug("No Bearer token found in request for path: {}", path);
         }
 
         return chain.filter(exchange);

@@ -1,15 +1,17 @@
 name: Frontend CI - Angular
 
 on:
-  pull_request:
+  push:
     branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
     paths:
       - 'Frontend/**'
       - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
-  ci:
+  build-and-test:
     runs-on: ubuntu-latest
 
     defaults:
@@ -30,9 +32,8 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Lint check
-        run: npx ng lint
-        continue-on-error: true
+      - name: Run ESLint
+        run: npm run lint
 
       - name: Build Angular app
         run: npm run build -- --configuration production

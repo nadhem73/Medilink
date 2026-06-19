@@ -3,6 +3,7 @@ package com.medilinktunisia.apigateway.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import java.util.function.Function;
  * Utilitaire JWT pour la validation des tokens
  */
 @Component
+@Slf4j
 public class JwtUtil {
 
     @Value("${jwt.secret}")
@@ -66,8 +68,13 @@ public class JwtUtil {
 
     public Boolean validateToken(String token) {
         try {
-            return !isTokenExpired(token);
+            boolean valid = !isTokenExpired(token);
+            if (!valid) {
+                log.warn("Token validation failed: token is expired");
+            }
+            return valid;
         } catch (Exception e) {
+            log.error("Token validation error: {}", e.getMessage());
             return false;
         }
     }

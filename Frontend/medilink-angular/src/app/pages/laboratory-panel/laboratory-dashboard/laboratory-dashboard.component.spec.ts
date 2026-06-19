@@ -9,8 +9,7 @@ describe('LaboratoryDashboardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [LaboratoryDashboardComponent]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(LaboratoryDashboardComponent);
     component = fixture.componentInstance;

@@ -1,8 +1,10 @@
 name: Backend CI - Microservices
 
 on:
-  pull_request:
+  push:
     branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
     paths:
       - 'Backend/**'
       - '.github/workflows/**'
@@ -11,7 +13,6 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: Backend
@@ -35,15 +36,31 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-
 
-      - name: Build and test all microservices
-        run: mvn clean verify --no-transfer-progress -T 2C
+      - name: Build and test all services
+        shell: bash
+        run: |
+          services=(
+            config-server
+            eureka-service
+            api-gateway
+            auth-service
+            patient-service
+            doctor-service
+            pharmacy-service
+            prescription-service
+          )
+          for service in "${services[@]}"; do
+            echo "::group::Building and testing $service"
+            (cd "$service" && mvn clean verify --no-transfer-progress)
+            echo "::endgroup::"
+          done
         env:
           SPRING_PROFILES_ACTIVE: test
 
       - name: Upload JAR artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: microservices-jars
+          name: backend-jars
           path: Backend/*/target/*.jar
           retention-days: 7
           if-no-files-found: warn

@@ -1,32 +1,35 @@
 package com.medilinktunisia.authservice.controller;
 
-import com.medilinktunisia.authservice.dto.request.LoginRequest;
-import com.medilinktunisia.authservice.dto.request.RegisterRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.medilinktunisia.authservice.dto.request.*;
 import com.medilinktunisia.authservice.dto.response.AuthResponse;
-import com.medilinktunisia.authservice.dto.response.MessageResponse;
+import com.medilinktunisia.authservice.dto.response.DoctorListDto;
+import com.medilinktunisia.authservice.dto.response.PatientListDto;
+import com.medilinktunisia.authservice.dto.response.UserDto;
 import com.medilinktunisia.authservice.model.enums.Gender;
-import com.medilinktunisia.authservice.security.JwtService;
 import com.medilinktunisia.authservice.security.CustomUserDetailsService;
+import com.medilinktunisia.authservice.security.JwtService;
 import com.medilinktunisia.authservice.service.AuthService;
 import com.medilinktunisia.authservice.service.PasswordResetService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = AuthController.class, properties = {"jwt.secret=testSecretKeyForJWTTokenGenerationAndValidationThatIsLongEnough"})
+@WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class AuthControllerTest {
@@ -61,7 +64,7 @@ class AuthControllerTest {
         request.setGender(Gender.MALE);
         request.setBirthDate(LocalDate.of(1990, 1, 1));
 
-        when(authService.register(any(RegisterRequest.class))).thenReturn(com.medilinktunisia.authservice.dto.response.UserDto.builder().build());
+        when(authService.register(any(RegisterRequest.class))).thenReturn(UserDto.builder().build());
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,6 +75,20 @@ class AuthControllerTest {
     }
 
     @Test
+    void register_withInvalidEmail_shouldReturn400() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("invalid");
+        request.setPassword("123");
+        request.setFirstName("");
+        request.setLastName("");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void login_shouldReturn200() throws Exception {
         LoginRequest request = new LoginRequest();
         request.setEmail("test@test.com");
@@ -79,6 +96,7 @@ class AuthControllerTest {
 
         AuthResponse authResponse = AuthResponse.builder()
                 .accessToken("token")
+                .refreshToken("refresh")
                 .tokenType("Bearer")
                 .expiresIn(3600000L)
                 .build();
@@ -94,16 +112,81 @@ class AuthControllerTest {
     }
 
     @Test
-    void register_withInvalidEmail_shouldReturn400() throws Exception {
-        RegisterRequest request = new RegisterRequest();
-        request.setEmail("invalid");
-        request.setPassword("123");
-        request.setFirstName("");
-        request.setLastName("");
+    void login_badCredentials_shouldReturn401() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@test.com");
+        request.setPassword("wrong");
 
-        mockMvc.perform(post("/api/auth/register")
+        when(authService.login(any())).thenThrow(new BadCredentialsException("Bad credentials"));
+
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void refresh_shouldReturn200() throws Exception {
+        RefreshTokenRequest request = new RefreshTokenRequest("refresh-token");
+
+        AuthResponse response = AuthResponse.builder()
+                .accessToken("new-token")
+                .refreshToken("new-refresh")
+                .tokenType("Bearer")
+                .expiresIn(3600000L)
+                .build();
+        when(authService.refreshToken("refresh-token")).thenReturn(response);
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("new-token"));
+    }
+
+    @Test
+    void getAllDoctors_shouldReturn200() throws Exception {
+        DoctorListDto doctor = DoctorListDto.builder()
+                .id(1L).firstName("Dr").lastName("Smith").build();
+        when(authService.getAllActiveDoctors()).thenReturn(List.of(doctor));
+
+        mockMvc.perform(get("/api/auth/doctors"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void getAllPatients_shouldReturn200() throws Exception {
+        PatientListDto patient = PatientListDto.builder()
+                .id(1L).firstName("John").lastName("Doe").build();
+        when(authService.getAllActivePatients()).thenReturn(List.of(patient));
+
+        mockMvc.perform(get("/api/auth/patients"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void forgotPassword_shouldReturn200() throws Exception {
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setRole("patient");
+        request.setEmail("test@test.com");
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void resetPassword_shouldReturn200() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("token");
+        request.setNewPassword("newPass123");
+
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
     }
 }

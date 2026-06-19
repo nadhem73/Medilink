@@ -582,6 +582,19 @@
         font-size: 11px;
       }
     }
+
+    .hours {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: var(--vert-oasis);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      .icon-small {
+        font-size: 10px;
+      }
+    }
   }
 }
 
@@ -690,6 +703,26 @@
   }
 }
 
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+
+  .filter-wrapper {
+    flex: 1;
+    min-width: 200px;
+  }
+}
+
+.search-input {
+  padding-left: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235a6a7a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  background-size: 16px;
+}
+
 .form-control {
   padding: 12px 16px;
   border-radius: 10px;
@@ -747,6 +780,53 @@
   &.selected {
     border-color: var(--turquoise-tunisie);
     background: color-mix(in srgb, var(--turquoise-tunisie) 5%, var(--blanc-sante));
+  }
+}
+
+/* Slots Grid */
+.slots-group {
+  label { margin-bottom: 4px; }
+}
+
+.slots-hint,
+.slots-loading,
+.slots-empty {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gris-clinique);
+  padding: 12px 0;
+}
+
+.slots-empty { color: #ef4444; }
+
+.slots-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.slot-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--gris-clair);
+  background: var(--blanc-sante);
+  color: var(--bleu-nuit);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--turquoise-tunisie);
+    background: color-mix(in srgb, var(--turquoise-tunisie) 5%, var(--blanc-sante));
+  }
+
+  &.selected {
+    border-color: var(--turquoise-tunisie);
+    background: var(--turquoise-tunisie);
+    color: #ffffff;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--turquoise-tunisie) 30%, transparent);
   }
 }
 

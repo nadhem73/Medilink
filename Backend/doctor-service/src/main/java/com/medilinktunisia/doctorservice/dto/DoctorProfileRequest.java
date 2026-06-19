@@ -14,4 +14,8 @@ public class DoctorProfileRequest {
     private Boolean available;
     private String biography;
     private BigDecimal fee;
+    private String debutMatin;
+    private String finMatin;
+    private String debutApresMidi;
+    private String finApresMidi;
 }

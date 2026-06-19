@@ -84,7 +84,7 @@
                   </div>
                 </div>
                 <div class="card-right">
-                  <span class="status-badge" [class]="getStatusClass(app.status)">
+                  <span class="status-badge" [ngClass]="getStatusClass(app.status)">
                     <span class="status-icon">{{ getStatusIcon(app.status) }}</span>
                     {{ getStatusLabel(app.status) }}
                   </span>
@@ -129,17 +129,29 @@
             <div class="card-header flex-column-mobile">
               <h2>Choisissez un médecin</h2>
               
-              <!-- Filtre par spécialité -->
-              <div class="filter-wrapper">
-                <label for="specialty-select" class="sr-only">Spécialité</label>
-                <select 
-                  id="specialty-select" 
-                  [(ngModel)]="selectedSpecialty" 
-                  (change)="onSpecialtyChange()" 
-                  class="form-control filter-select">
-                  <option value="">Toutes les spécialités</option>
-                  <option *ngFor="let spec of specialties" [value]="spec">{{ spec }}</option>
-                </select>
+              <!-- Filtres : recherche + spécialité -->
+              <div class="filter-bar">
+                <div class="filter-wrapper search-wrapper">
+                  <input
+                    type="text"
+                    id="doctor-search"
+                    [(ngModel)]="searchQuery"
+                    (input)="filterDoctors()"
+                    placeholder="Rechercher un médecin, spécialité, hôpital..."
+                    class="form-control search-input"
+                    aria-label="Rechercher un médecin" />
+                </div>
+                <div class="filter-wrapper">
+                  <label for="specialty-select" class="sr-only">Spécialité</label>
+                  <select 
+                    id="specialty-select" 
+                    [(ngModel)]="selectedSpecialty" 
+                    (change)="filterDoctors()" 
+                    class="form-control filter-select">
+                    <option value="">Toutes les spécialités</option>
+                    <option *ngFor="let spec of specialties" [value]="spec">{{ spec }}</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -167,6 +179,7 @@
                     <h3>Dr. {{ doc.firstName }} {{ doc.lastName }}</h3>
                     <span class="specialty-tag">{{ doc.specialty }}</span>
                     <p class="hospital"><span class="icon-small">📍</span> {{ doc.hospital }}</p>
+                    <p class="hours"><span class="icon-small">🕐</span> {{ doc.debutMatin }}-{{ doc.finMatin }} & {{ doc.debutApresMidi }}-{{ doc.finApresMidi }}</p>
                   </div>
                 </div>
                 
@@ -222,21 +235,30 @@
                     type="date" 
                     id="booking-date" 
                     [(ngModel)]="bookingDate" 
+                    (change)="onDateChange()"
                     name="bookingDate" 
                     required 
                     class="form-control" />
                 </div>
                 
-                <!-- Heure -->
-                <div class="form-group">
-                  <label for="booking-time">Heure de consultation</label>
-                  <input 
-                    type="time" 
-                    id="booking-time" 
-                    [(ngModel)]="bookingTime" 
-                    name="bookingTime" 
-                    required 
-                    class="form-control" />
+                <!-- Créneaux disponibles -->
+                <div class="form-group slots-group">
+                  <span class="slots-label">Crénaux disponibles (consultation 30 min)</span>
+                  <div *ngIf="!bookingDate" class="slots-hint">Sélectionnez d'abord une date.</div>
+                  <div *ngIf="loadingSlots" class="slots-loading">⏳ Chargement des créneaux...</div>
+                  <div *ngIf="!loadingSlots && bookingDate && availableSlots.length === 0" class="slots-empty">
+                    ❌ Aucun créneau disponible pour cette date.
+                  </div>
+                  <div *ngIf="!loadingSlots && availableSlots.length > 0" class="slots-grid" aria-label="Liste des créneaux disponibles">
+                    <button 
+                      type="button"
+                      class="slot-btn"
+                      *ngFor="let slot of availableSlots"
+                      [class.selected]="bookingTime === slot"
+                      (click)="bookingTime = slot">
+                      {{ slot }}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -286,7 +308,7 @@
                 <button 
                   type="submit" 
                   class="btn btn-primary btn-submit" 
-                  [disabled]="submitting || !bookingForm.valid">
+                  [disabled]="submitting || !bookingForm.valid || !bookingTime">
                   <span *ngIf="submitting" class="spinner-small"></span>
                   {{ submitting ? 'Réservation en cours...' : 'Confirmer et réserver' }}
                 </button>
@@ -308,6 +330,7 @@
               
               <div class="summary-details">
                 <p><strong>📍 Adresse :</strong> {{ selectedDoctor.hospital }}</p>
+                <p><strong>🕐 Horaires :</strong> {{ selectedDoctor.debutMatin }}-{{ selectedDoctor.finMatin }} & {{ selectedDoctor.debutApresMidi }}-{{ selectedDoctor.finApresMidi }}</p>
                 <p><strong>💳 Tarif :</strong> {{ selectedDoctor.fee }} DT</p>
                 <p><strong>📞 Contact :</strong> {{ selectedDoctor.phone }}</p>
               </div>
