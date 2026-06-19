@@ -5,10 +5,12 @@ import com.medilinktunisia.patientservice.dto.MedicalRecordRequest;
 import com.medilinktunisia.patientservice.model.MedicalRecord;
 import com.medilinktunisia.patientservice.repository.MedicalRecordRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MedicalRecordService {
 
     private final MedicalRecordRepository repository;
@@ -19,8 +21,10 @@ public class MedicalRecordService {
      */
     public void createMedicalRecord(MedicalRecordRequest request) {
         if (request.getUserId() == null || repository.existsByUserId(request.getUserId())) {
+            log.warn("Medical record already exists for userId={}, skipping creation", request.getUserId());
             return;
         }
+        log.info("Creating medical record for userId={}", request.getUserId());
         MedicalRecord record = new MedicalRecord();
         record.setUserId(request.getUserId());
         record.setBloodGroup(request.getBloodGroup());
@@ -38,9 +42,13 @@ public class MedicalRecordService {
 
     /** Dossier médical de l'utilisateur connecté ; vide si aucun n'existe encore. */
     public MedicalRecordDto getByUserId(Long userId) {
+        log.debug("Fetching medical record for userId={}", userId);
         return repository.findByUserId(userId)
                 .map(this::toDto)
-                .orElseGet(() -> MedicalRecordDto.builder().userId(userId).build());
+                .orElseGet(() -> {
+                    log.info("No medical record found for userId={}, returning empty", userId);
+                    return MedicalRecordDto.builder().userId(userId).build();
+                });
     }
 
     private MedicalRecordDto toDto(MedicalRecord r) {

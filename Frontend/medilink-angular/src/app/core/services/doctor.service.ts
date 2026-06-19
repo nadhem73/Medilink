@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 export interface Doctor {
   id: number;
@@ -19,20 +20,28 @@ export interface DoctorProfile {
   available: boolean;
   biography?: string;
   fee?: number;
+  debutMatin: string;
+  finMatin: string;
+  debutApresMidi: string;
+  finApresMidi: string;
 }
 
 export interface DoctorWithProfile extends Doctor {
   available: boolean;
   biography?: string;
   fee?: number;
+  debutMatin: string;
+  finMatin: string;
+  debutApresMidi: string;
+  finApresMidi: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class DoctorService {
-  private readonly AUTH_API_URL = 'http://localhost:8765/api/auth';
-  private readonly DOCTOR_API_URL = 'http://localhost:8765/api/doctors';
+  private readonly AUTH_API_URL = `${environment.apiBaseUrl}/auth`;
+  private readonly DOCTOR_API_URL = `${environment.apiBaseUrl}/doctors`;
 
   constructor(private http: HttpClient) {}
 
@@ -59,7 +68,11 @@ export class DoctorService {
             ...doctor,
             available: profile ? profile.available : true,
             biography: profile ? profile.biography : 'Aucune biographie renseignée',
-            fee: profile ? profile.fee : 0
+            fee: profile ? profile.fee : 0,
+            debutMatin: profile ? profile.debutMatin : '08:00',
+            finMatin: profile ? profile.finMatin : '13:00',
+            debutApresMidi: profile ? profile.debutApresMidi : '15:00',
+            finApresMidi: profile ? profile.finApresMidi : '19:00'
           };
         });
       })

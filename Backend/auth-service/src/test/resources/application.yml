@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  mail:
+    host: localhost
+    port: 3025
+    username: test
+    password: test
+jwt:
+  secret: test-secret-key-for-unit-testing-only-very-long-and-secure
+  expiration: 3600000
+  refresh-expiration: 86400000
+eureka:
+  client:
+    enabled: false
+app:
+  frontend-url: http://localhost:4200
+  reset-token-expiration-minutes: 60
+  mail:
+    from: test@medilink.tn

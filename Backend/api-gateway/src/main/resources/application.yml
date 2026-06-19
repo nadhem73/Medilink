@@ -86,17 +86,19 @@ management:
 
 # Logging
 logging:
+  file:
+    name: logs/api-gateway.log
+    max-size: 10MB
+    max-history: 30
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   level:
     root: INFO
     com.medilinktunisia: DEBUG
     org.springframework.cloud.gateway: DEBUG
     org.springframework.security: DEBUG
     reactor.netty.http.client: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/api-gateway.log
 
 # Resilience4j Circuit Breaker
 resilience4j:

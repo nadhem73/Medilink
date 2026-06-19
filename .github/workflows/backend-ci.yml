@@ -1,0 +1,62 @@
+name: Backend CI - Microservices
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'Backend/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('Backend/**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
+
+      - name: Build, test, and generate coverage (all services)
+        shell: bash
+        run: |
+          set -e
+          services=("config-server" "eureka-service" "api-gateway" "auth-service" "patient-service" "doctor-service" "pharmacy-service" "prescription-service")
+          pids=()
+          failed=""
+          for svc in "${services[@]}"; do
+            (cd "Backend/$svc" && mvn clean verify --no-transfer-progress -q 2>&1 | tail -1) &
+            pids+=($!)
+          done
+          for i in "${!pids[@]}"; do
+            wait "${pids[$i]}" || failed+="${services[$i]} "
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::FAILED services: $failed"
+            exit 1
+          fi
+          echo "All 8 services built and tested successfully"
+
+      - name: Upload JAR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jars
+          path: Backend/*/target/*.jar
+          retention-days: 7
+          if-no-files-found: warn

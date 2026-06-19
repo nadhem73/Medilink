@@ -1,23 +1,41 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { AuthService } from '../../../core/services/auth.service';
 import { DoctorDashboardComponent } from './doctor-dashboard.component';
+import { setupDashboardTest, testDashboardCreation, testSummaryCards, testQuickActions } from '../../../core/testing/dashboard-test-helper';
 
 describe('DoctorDashboardComponent', () => {
   let component: DoctorDashboardComponent;
-  let fixture: ComponentFixture<DoctorDashboardComponent>;
+  let authServiceSpy: jasmine.SpyObj<AuthService>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [DoctorDashboardComponent]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(DoctorDashboardComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    const ctx = await setupDashboardTest(DoctorDashboardComponent, { firstName: 'Sami', lastName: 'Ben Ahmed' });
+    component = ctx.component;
+    authServiceSpy = ctx.authServiceSpy;
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  testDashboardCreation(() => component, () => authServiceSpy, 'Sami');
+
+  testSummaryCards(() => component, [
+    'Patients du jour',
+    'Consultations a venir',
+    'Ordonnances a signer',
+    'Messages patients'
+  ]);
+
+  testQuickActions(() => component);
+
+  it('should have today appointments defined', () => {
+    expect(component.todayAppointments.length).toBe(3);
+  });
+
+  it('should have pending tasks defined', () => {
+    expect(component.pendingTasks.length).toBe(3);
+  });
+
+  it('should have activity timeline defined', () => {
+    expect(component.activityTimeline.length).toBe(3);
+  });
+
+  it('should have care team defined', () => {
+    expect(component.careTeam.length).toBe(3);
   });
 });

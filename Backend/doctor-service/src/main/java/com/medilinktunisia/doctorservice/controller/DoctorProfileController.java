@@ -5,6 +5,7 @@ import com.medilinktunisia.doctorservice.dto.DoctorProfileRequest;
 import com.medilinktunisia.doctorservice.service.DoctorProfileService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/doctors")
 @RequiredArgsConstructor
+@Slf4j
 public class DoctorProfileController {
 
     private final DoctorProfileService service;
@@ -22,6 +24,7 @@ public class DoctorProfileController {
      */
     @PostMapping("/internal/doctor-profile")
     public ResponseEntity<Void> createDoctorProfile(@RequestBody DoctorProfileRequest request) {
+        log.info("POST /api/doctors/internal/doctor-profile - Creating doctor profile for userId: {}", request.getUserId());
         service.createDoctorProfile(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -33,6 +36,7 @@ public class DoctorProfileController {
     @GetMapping("/me/doctor-profile")
     public ResponseEntity<DoctorProfileDto> getMyDoctorProfile(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
+        log.info("GET /api/doctors/me/doctor-profile - Fetching profile for userId: {}", userId);
         return ResponseEntity.ok(service.getByUserId(userId));
     }
 
@@ -42,6 +46,7 @@ public class DoctorProfileController {
      */
     @GetMapping("/all")
     public ResponseEntity<java.util.List<DoctorProfileDto>> getAllDoctorProfiles() {
+        log.info("GET /api/doctors/all - Fetching all doctor profiles");
         return ResponseEntity.ok(service.getAllProfiles());
     }
 
@@ -53,6 +58,7 @@ public class DoctorProfileController {
             HttpServletRequest request,
             @RequestBody DoctorProfileRequest body) {
         Long userId = (Long) request.getAttribute("userId");
+        log.info("PUT /api/doctors/me/doctor-profile - Updating profile for userId: {}", userId);
         return ResponseEntity.ok(service.updateByUserId(userId, body));
     }
 }

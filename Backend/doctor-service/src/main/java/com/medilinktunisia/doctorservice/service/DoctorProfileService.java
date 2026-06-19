@@ -5,10 +5,12 @@ import com.medilinktunisia.doctorservice.dto.DoctorProfileRequest;
 import com.medilinktunisia.doctorservice.model.DoctorProfile;
 import com.medilinktunisia.doctorservice.repository.DoctorProfileRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DoctorProfileService {
 
     private final DoctorProfileRepository repository;
@@ -19,18 +21,25 @@ public class DoctorProfileService {
      */
     public void createDoctorProfile(DoctorProfileRequest request) {
         if (request.getUserId() == null || repository.existsByUserId(request.getUserId())) {
+            log.warn("createDoctorProfile skipped - userId null or already exists: {}", request.getUserId());
             return;
         }
+        log.info("Creating doctor profile for userId: {}", request.getUserId());
         DoctorProfile profile = new DoctorProfile();
         profile.setUserId(request.getUserId());
         profile.setAvailable(request.getAvailable() != null ? request.getAvailable() : Boolean.TRUE);
         profile.setBiography(request.getBiography());
         profile.setFee(request.getFee());
+        profile.setDebutMatin(request.getDebutMatin() != null ? request.getDebutMatin() : "08:00");
+        profile.setFinMatin(request.getFinMatin() != null ? request.getFinMatin() : "13:00");
+        profile.setDebutApresMidi(request.getDebutApresMidi() != null ? request.getDebutApresMidi() : "15:00");
+        profile.setFinApresMidi(request.getFinApresMidi() != null ? request.getFinApresMidi() : "19:00");
         repository.save(profile);
     }
 
     /** Profil du médecin connecté ; vide si aucun n'existe encore. */
     public DoctorProfileDto getByUserId(Long userId) {
+        log.debug("Fetching doctor profile for userId: {}", userId);
         return repository.findByUserId(userId)
                 .map(this::toDto)
                 .orElseGet(() -> DoctorProfileDto.builder().userId(userId).available(Boolean.TRUE).build());
@@ -38,6 +47,7 @@ public class DoctorProfileService {
 
     /** Tous les profils médecins (écran de prise de RDV patient). */
     public java.util.List<DoctorProfileDto> getAllProfiles() {
+        log.debug("Fetching all doctor profiles");
         return repository.findAll().stream()
                 .map(this::toDto)
                 .toList();
@@ -48,6 +58,7 @@ public class DoctorProfileService {
      * Crée le profil s'il n'existait pas encore.
      */
     public DoctorProfileDto updateByUserId(Long userId, DoctorProfileRequest request) {
+        log.info("Updating doctor profile for userId: {}", userId);
         DoctorProfile profile = repository.findByUserId(userId)
                 .orElseGet(() -> {
                     DoctorProfile p = new DoctorProfile();
@@ -59,6 +70,10 @@ public class DoctorProfileService {
         }
         profile.setBiography(request.getBiography());
         profile.setFee(request.getFee());
+        if (request.getDebutMatin() != null) profile.setDebutMatin(request.getDebutMatin());
+        if (request.getFinMatin() != null) profile.setFinMatin(request.getFinMatin());
+        if (request.getDebutApresMidi() != null) profile.setDebutApresMidi(request.getDebutApresMidi());
+        if (request.getFinApresMidi() != null) profile.setFinApresMidi(request.getFinApresMidi());
         return toDto(repository.save(profile));
     }
 
@@ -68,6 +83,10 @@ public class DoctorProfileService {
                 .available(p.getAvailable())
                 .biography(p.getBiography())
                 .fee(p.getFee())
+                .debutMatin(p.getDebutMatin())
+                .finMatin(p.getFinMatin())
+                .debutApresMidi(p.getDebutApresMidi())
+                .finApresMidi(p.getFinApresMidi())
                 .build();
     }
 }

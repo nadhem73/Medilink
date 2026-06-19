@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { DoctorRoutingModule } from './doctor-routing.module';
+import { SharedModule } from '../../shared/shared.module';
 import { DoctorDashboardComponent } from './doctor-dashboard/doctor-dashboard.component';
 import { DoctorSectionComponent } from './doctor-section/doctor-section.component';
 import { MedicalRecordsComponent } from './medical-records/medical-records.component';
@@ -25,6 +26,7 @@ import { HelpComponent } from './help/help.component';
   ],
   imports: [
     CommonModule,
+    SharedModule,
     DoctorRoutingModule
   ]
 })
