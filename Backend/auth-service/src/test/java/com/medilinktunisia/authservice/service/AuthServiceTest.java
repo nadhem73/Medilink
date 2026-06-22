@@ -11,6 +11,7 @@ import com.medilinktunisia.authservice.exception.EmailAlreadyExistsException;
 import com.medilinktunisia.authservice.model.entity.Doctor;
 import com.medilinktunisia.authservice.model.entity.Patient;
 import com.medilinktunisia.authservice.model.entity.User;
+import com.medilinktunisia.authservice.model.enums.Gender;
 import com.medilinktunisia.authservice.model.enums.Role;
 import com.medilinktunisia.authservice.model.enums.UserStatus;
 import com.medilinktunisia.authservice.repository.DoctorRepository;
@@ -20,8 +21,6 @@ import com.medilinktunisia.authservice.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,82 +28,102 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    @Mock private UserRepository userRepository;
-    @Mock private PatientRepository patientRepository;
-    @Mock private DoctorRepository doctorRepository;
-    @Mock private PasswordEncoder passwordEncoder;
-    @Mock private JwtService jwtService;
-    @Mock private AuthenticationManager authenticationManager;
-    @Mock private PatientServiceClient patientServiceClient;
-    @Mock private EmailVerificationService emailVerificationService;
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private PatientRepository patientRepository;
+
+    @Mock
+    private DoctorRepository doctorRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private JwtService jwtService;
+
+    @Mock
+    private AuthenticationManager authenticationManager;
+
+    @Mock
+    private PatientServiceClient patientServiceClient;
+
+    @Mock
+    private EmailVerificationService emailVerificationService;
 
     private AuthService authService;
 
-    @Captor private ArgumentCaptor<Patient> patientCaptor;
-
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepository, patientRepository, doctorRepository,
+        authService = new AuthService(
+                userRepository, patientRepository, doctorRepository,
                 passwordEncoder, jwtService, authenticationManager,
-                patientServiceClient, emailVerificationService);
+                patientServiceClient, emailVerificationService
+        );
     }
 
     @Test
-    void register_createsPatientAndMedicalRecord() {
+    void register_shouldCreatePatientWithMedicalRecord() {
         RegisterRequest request = new RegisterRequest();
+        request.setEmail("test@test.com");
+        request.setPassword("password123");
         request.setFirstName("John");
         request.setLastName("Doe");
-        request.setEmail("john@example.com");
-        request.setPhone("12345678");
+        request.setPhone("+21650123456");
         request.setCin("12345678");
-        request.setPassword("password123");
+        request.setGender(Gender.MALE);
+        request.setBirthDate(LocalDate.of(1990, 1, 1));
 
-        when(userRepository.existsByEmail("john@example.com")).thenReturn(false);
-        when(userRepository.existsByPhone("12345678")).thenReturn(false);
-        when(patientRepository.existsByCin("12345678")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("encoded");
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(userRepository.existsByPhone(anyString())).thenReturn(false);
+        when(patientRepository.existsByCin(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> {
+            Patient p = invocation.getArgument(0);
+            p.setId(1L);
+            return p;
+        });
 
-        Patient savedPatient = new Patient();
-        savedPatient.setId(1L);
-        savedPatient.setEmail("john@example.com");
-        savedPatient.setFirstName("John");
-        savedPatient.setLastName("Doe");
-        savedPatient.setRole(Role.PATIENT);
-        savedPatient.setStatus(UserStatus.ACTIVE);
+        UserDto result = authService.register(request);
 
-        when(patientRepository.save(any(Patient.class))).thenReturn(savedPatient);
+        assertNotNull(result);
+        assertEquals("test@test.com", result.getEmail());
+        assertEquals("John", result.getFirstName());
+        assertEquals("Doe", result.getLastName());
 
-        authService.register(request);
-
-        verify(patientRepository).save(any(Patient.class));
-        verify(patientServiceClient).createMedicalRecord(any());
+        verify(patientRepository, times(1)).save(any(Patient.class));
+        verify(patientServiceClient, times(1)).createMedicalRecord(any());
     }
 
     @Test
-    void register_duplicateEmail_throws() {
+    void register_withExistingEmail_shouldThrow() {
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("existing@example.com");
+        request.setEmail("existing@test.com");
+        request.setPassword("password123");
+        request.setFirstName("Jane");
+        request.setLastName("Doe");
 
-        when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
+        when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.register(request))
-                .isInstanceOf(EmailAlreadyExistsException.class);
-        verify(userRepository, never()).save(any());
+        assertThrows(EmailAlreadyExistsException.class,
+                () -> authService.register(request));
     }
 
     @Test
-    void login_withEmail_succeeds() {
+    void login_withEmail_shouldSucceed() {
         LoginRequest request = new LoginRequest();
         request.setEmail("john@example.com");
         request.setPassword("password123");
@@ -126,12 +145,13 @@ class AuthServiceTest {
 
         AuthResponse response = authService.login(request);
 
-        assertThat(response.getAccessToken()).isEqualTo("access-token");
-        assertThat(response.getTokenType()).isEqualTo("Bearer");
+        assertNotNull(response);
+        assertEquals("access-token", response.getAccessToken());
+        assertEquals("Bearer", response.getTokenType());
     }
 
     @Test
-    void login_badPassword_throws() {
+    void login_badPassword_shouldThrow() {
         LoginRequest request = new LoginRequest();
         request.setEmail("john@example.com");
         request.setPassword("wrong");
@@ -139,12 +159,12 @@ class AuthServiceTest {
         when(authenticationManager.authenticate(any()))
                 .thenThrow(new BadCredentialsException("Bad credentials"));
 
-        assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(BadCredentialsException.class);
+        assertThrows(BadCredentialsException.class,
+                () -> authService.login(request));
     }
 
     @Test
-    void refreshToken_returnsNewTokens() {
+    void refreshToken_shouldReturnNewTokens() {
         String refreshToken = "valid-refresh-token";
         Patient user = new Patient();
         user.setId(1L);
@@ -162,11 +182,12 @@ class AuthServiceTest {
 
         AuthResponse response = authService.refreshToken(refreshToken);
 
-        assertThat(response.getAccessToken()).isEqualTo("new-access-token");
+        assertNotNull(response);
+        assertEquals("new-access-token", response.getAccessToken());
     }
 
     @Test
-    void getCurrentUser_returnsUserDto() {
+    void getCurrentUser_shouldReturnUserDto() {
         Patient patient = new Patient();
         patient.setId(1L);
         patient.setEmail("john@example.com");
@@ -179,40 +200,60 @@ class AuthServiceTest {
 
         UserDto result = authService.getCurrentUser("john@example.com");
 
-        assertThat(result.getEmail()).isEqualTo("john@example.com");
-        assertThat(result.getFirstName()).isEqualTo("John");
+        assertNotNull(result);
+        assertEquals("john@example.com", result.getEmail());
+        assertEquals("John", result.getFirstName());
     }
 
     @Test
-    void getAllActiveDoctors_returnsList() {
-        Doctor doctor = new Doctor();
-        doctor.setId(1L);
-        doctor.setFirstName("Dr");
-        doctor.setLastName("Smith");
-        doctor.setSpecialty("Cardiology");
-        doctor.setStatus(UserStatus.ACTIVE);
+    void getAllActiveDoctors_shouldReturnOnlyActiveDoctors() {
+        Doctor activeDoctor = new Doctor();
+        activeDoctor.setId(1L);
+        activeDoctor.setFirstName("Dr");
+        activeDoctor.setLastName("Smith");
+        activeDoctor.setEmail("dr.smith@test.com");
+        activeDoctor.setStatus(UserStatus.ACTIVE);
+        activeDoctor.setRole(Role.DOCTOR);
 
-        when(doctorRepository.findAll()).thenReturn(List.of(doctor));
+        Doctor inactiveDoctor = new Doctor();
+        inactiveDoctor.setId(2L);
+        inactiveDoctor.setFirstName("Dr");
+        inactiveDoctor.setLastName("Inactive");
+        inactiveDoctor.setEmail("dr.inactive@test.com");
+        inactiveDoctor.setStatus(UserStatus.PENDING);
+        inactiveDoctor.setRole(Role.DOCTOR);
+
+        when(doctorRepository.findAll()).thenReturn(List.of(activeDoctor, inactiveDoctor));
 
         List<DoctorListDto> result = authService.getAllActiveDoctors();
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getFirstName()).isEqualTo("Dr");
+        assertEquals(1, result.size());
+        assertEquals("Dr Smith", result.get(0).getFirstName() + " " + result.get(0).getLastName());
     }
 
     @Test
-    void getAllActivePatients_returnsList() {
-        Patient patient = new Patient();
-        patient.setId(1L);
-        patient.setFirstName("John");
-        patient.setLastName("Doe");
-        patient.setStatus(UserStatus.ACTIVE);
+    void getAllActivePatients_shouldReturnOnlyActivePatients() {
+        Patient activePatient = new Patient();
+        activePatient.setId(1L);
+        activePatient.setFirstName("John");
+        activePatient.setLastName("Active");
+        activePatient.setEmail("john@test.com");
+        activePatient.setStatus(UserStatus.ACTIVE);
+        activePatient.setRole(Role.PATIENT);
 
-        when(patientRepository.findAll()).thenReturn(List.of(patient));
+        Patient inactivePatient = new Patient();
+        inactivePatient.setId(2L);
+        inactivePatient.setFirstName("Jane");
+        inactivePatient.setLastName("Inactive");
+        inactivePatient.setEmail("jane@test.com");
+        inactivePatient.setStatus(UserStatus.PENDING);
+        inactivePatient.setRole(Role.PATIENT);
+
+        when(patientRepository.findAll()).thenReturn(List.of(activePatient, inactivePatient));
 
         List<PatientListDto> result = authService.getAllActivePatients();
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getFirstName()).isEqualTo("John");
+        assertEquals(1, result.size());
+        assertEquals("John", result.get(0).getFirstName());
     }
 }

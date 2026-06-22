@@ -10,9 +10,28 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+  mail:
+    host: localhost
+    port: 3025
+    username:
+    password:
   cloud:
     config:
       enabled: false
+    import-check:
+      enabled: false
+
 eureka:
   client:
     enabled: false
+
+jwt:
+  secret: testSecretKeyForJWTTokenGenerationAndValidationThatIsLongEnough
+  expiration: 3600000
+  refresh-expiration: 86400000
+
+app:
+  mail:
+    from: test@medilink.tn
+  frontend-url: http://localhost:4200
+  reset-token-expiration-minutes: 60

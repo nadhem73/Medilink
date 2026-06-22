@@ -1,14 +1,18 @@
 package com.medilinktunisia.patientservice.controller;
 
 import com.medilinktunisia.patientservice.dto.AppointmentDto;
+import com.medilinktunisia.patientservice.dto.AppointmentRequest;
 import com.medilinktunisia.patientservice.security.JwtService;
 import com.medilinktunisia.patientservice.service.AppointmentService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -21,8 +25,9 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AppointmentController.class)
+@WebMvcTest(controllers = AppointmentController.class, properties = {"jwt.secret=testSecretKeyForJWTTokenGenerationAndValidationThatIsLongEnough"})
 @AutoConfigureMockMvc(addFilters = false)
+@ActiveProfiles("test")
 class AppointmentControllerTest {
 
     @Autowired
@@ -33,6 +38,8 @@ class AppointmentControllerTest {
 
     @MockBean
     private JwtService jwtService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Test
     void createAppointment_shouldReturn201() throws Exception {
