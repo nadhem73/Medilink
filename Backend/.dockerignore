@@ -1,0 +1,30 @@
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Build =====
+target/
+
+# ===== Coverage =====
+coverage/
+.nyc_output/
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# ===== Temp =====
+tmp/
+temp/
+*.tmp
+
+# ===== Environment =====
+.env
+.env.local
+
+# ===== OS =====
+.DS_Store
+Thumbs.db

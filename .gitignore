@@ -17,8 +17,16 @@ target/
 *.jar
 *.war
 *.ear
+*.log
+*.tmp
+logs/
+**/logs/
 .mvn/wrapper/maven-wrapper.jar
 hs_err_pid*
+
+# ===== Code Coverage =====
+coverage/
+.nyc_output/
 
 # ===== Node / Angular (Frontend) =====
 node_modules/
@@ -34,6 +42,10 @@ yarn-error.log*
 .env.local
 application-local.properties
 application-local.yml
+
+# ===== Temp files =====
+tmp/
+temp/
 
 # ===== IDE / Editor =====
 .idea/

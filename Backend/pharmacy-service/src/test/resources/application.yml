@@ -1,28 +1,19 @@
 spring:
   application:
-    name: pharmacy-service
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    name: pharmacy-service-test
+  cloud:
+    config:
+      enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.H2Dialect
-  cloud:
-    discovery:
-      enabled: false
-  sql:
-    init:
-      mode: never
-
+      ddl-auto: none
 eureka:
   client:
     enabled: false
-    register-with-eureka: false
-    fetch-registry: false
-
 jwt:
-  secret: test-secret-key-for-unit-testing-purposes-only
-  expiration: 3600000
+  secret: test-secret-key-for-unit-testing-only-very-long-and-secure

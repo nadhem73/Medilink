@@ -1,6 +1,8 @@
 name: Backend CI - Microservices
 
 on:
+  push:
+    branches: [ "main", "develop" ]
   pull_request:
   workflow_dispatch:
 
@@ -31,12 +33,22 @@ jobs:
             ${{ runner.os }}-m2-
 
       - name: Build and test all services
+        shell: bash
         run: |
-          for service in config-server eureka-service api-gateway auth-service patient-service doctor-service pharmacy-service prescription-service; do
-            echo "=== Building $service ==="
-            cd $service
-            mvn clean verify --no-transfer-progress
-            cd ..
+          services=(
+            config-server
+            eureka-service
+            api-gateway
+            auth-service
+            patient-service
+            doctor-service
+            pharmacy-service
+            prescription-service
+          )
+          for service in "${services[@]}"; do
+            echo "::group::Building and testing $service"
+            (cd "$service" && mvn clean verify --no-transfer-progress)
+            echo "::endgroup::"
           done
         env:
           SPRING_PROFILES_ACTIVE: test

@@ -1,5 +1,6 @@
 package com.medilinktunisia.doctorservice.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -14,6 +15,7 @@ import java.sql.Statement;
  * avant l'initialisation du DataSource. Évite l'erreur "database does not exist"
  * au premier démarrage.
  */
+@Slf4j
 public class DatabaseCreationListener implements ApplicationListener<ApplicationEnvironmentPreparedEvent> {
 
     @Override
@@ -39,11 +41,10 @@ public class DatabaseCreationListener implements ApplicationListener<Application
                     "SELECT 1 FROM pg_database WHERE datname = '" + dbName + "'");
             if (!rs.next()) {
                 statement.executeUpdate("CREATE DATABASE \"" + dbName + "\"");
-                System.out.println("[DatabaseCreationListener] Base de données créée : " + dbName);
+                log.info("Base de données créée : {}", dbName);
             }
         } catch (Exception e) {
-            System.err.println("[DatabaseCreationListener] Impossible de créer la base " + dbName
-                    + " : " + e.getMessage());
+            log.error("Impossible de créer la base {} : {}", dbName, e.getMessage());
         }
     }
 }

@@ -1,7 +1,9 @@
 package com.medilinktunisia.patientservice.controller;
 
 import com.medilinktunisia.patientservice.dto.MedicalRecordDto;
+import com.medilinktunisia.patientservice.dto.MedicalRecordRequest;
 import com.medilinktunisia.patientservice.security.JwtAuthenticationFilter;
+import com.medilinktunisia.patientservice.security.JwtService;
 import com.medilinktunisia.patientservice.security.SecurityConfig;
 import com.medilinktunisia.patientservice.service.MedicalRecordService;
 import org.junit.jupiter.api.Test;
@@ -14,9 +16,9 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -32,7 +34,7 @@ class MedicalRecordControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private MedicalRecordService service;
+    private MedicalRecordService medicalRecordService;
 
     @Test
     void createMedicalRecord_shouldReturn201() throws Exception {
@@ -57,13 +59,20 @@ class MedicalRecordControllerTest {
                         .content(body))
                 .andExpect(status().isCreated());
 
-        verify(service).createMedicalRecord(any());
+        verify(medicalRecordService).createMedicalRecord(any());
     }
 
     @Test
     void getMyMedicalRecord_shouldReturn200() throws Exception {
-        when(service.getByUserId(1L))
-                .thenReturn(MedicalRecordDto.builder().userId(1L).bloodGroup("A+").build());
+        MedicalRecordDto dto = MedicalRecordDto.builder()
+                .userId(1L)
+                .bloodGroup("A+")
+                .height(175.0)
+                .weight(70.0)
+                .allergies("None")
+                .build();
+
+        when(medicalRecordService.getByUserId(1L)).thenReturn(dto);
 
         mockMvc.perform(get("/api/patients/me/medical-record")
                         .with(request -> {
@@ -71,13 +80,16 @@ class MedicalRecordControllerTest {
                             return request;
                         }))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(1L))
-                .andExpect(jsonPath("$.bloodGroup").value("A+"));
+                .andExpect(jsonPath("$.userId", is(1)))
+                .andExpect(jsonPath("$.bloodGroup", is("A+")))
+                .andExpect(jsonPath("$.height", is(175.0)))
+                .andExpect(jsonPath("$.weight", is(70.0)))
+                .andExpect(jsonPath("$.allergies", is("None")));
     }
 
     @Test
     void getPatientMedicalRecord_shouldReturn200() throws Exception {
-        when(service.getByUserId(2L))
+        when(medicalRecordService.getByUserId(2L))
                 .thenReturn(MedicalRecordDto.builder().userId(2L).bloodGroup("B+").build());
 
         mockMvc.perform(get("/api/patients/{userId}/medical-record", 2L))
@@ -88,7 +100,7 @@ class MedicalRecordControllerTest {
 
     @Test
     void getMyMedicalRecord_whenRecordNotFound_shouldReturnEmptyDto() throws Exception {
-        when(service.getByUserId(1L))
+        when(medicalRecordService.getByUserId(1L))
                 .thenReturn(MedicalRecordDto.builder().userId(1L).build());
 
         mockMvc.perform(get("/api/patients/me/medical-record")
@@ -103,7 +115,7 @@ class MedicalRecordControllerTest {
 
     @Test
     void getPatientMedicalRecord_whenNotFound_shouldReturnEmptyDto() throws Exception {
-        when(service.getByUserId(999L))
+        when(medicalRecordService.getByUserId(999L))
                 .thenReturn(MedicalRecordDto.builder().userId(999L).build());
 
         mockMvc.perform(get("/api/patients/{userId}/medical-record", 999L))

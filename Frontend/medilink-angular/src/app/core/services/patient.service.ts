@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 /** Dossier médical du patient renvoyé par le patient-service. */
 export interface MedicalRecord {
@@ -21,7 +22,7 @@ export interface MedicalRecord {
   providedIn: 'root'
 })
 export class PatientService {
-  private readonly API_URL = 'http://localhost:8765/api/patients';
+  private readonly API_URL = `${environment.apiBaseUrl}/patients`;
 
   constructor(private http: HttpClient) {}
 
