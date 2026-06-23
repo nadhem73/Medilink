@@ -12,7 +12,9 @@ import com.medilinktunisia.authservice.dto.response.PatientListDto;
 import com.medilinktunisia.authservice.dto.response.UserDto;
 import com.medilinktunisia.authservice.model.enums.Gender;
 import com.medilinktunisia.authservice.security.CustomUserDetailsService;
+import com.medilinktunisia.authservice.security.JwtAuthenticationFilter;
 import com.medilinktunisia.authservice.security.JwtService;
+import com.medilinktunisia.authservice.security.SecurityConfig;
 import com.medilinktunisia.authservice.service.AuthService;
 import com.medilinktunisia.authservice.service.PasswordResetService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,11 +23,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -44,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
 @ActiveProfiles("test")
 class AuthControllerTest {
 
@@ -65,6 +65,8 @@ class AuthControllerTest {
 
     @MockBean
     private CustomUserDetailsService customUserDetailsService;
+
+
 
     @Test
     void register_shouldReturn201() throws Exception {
@@ -163,9 +165,6 @@ class AuthControllerTest {
     @Test
     @WithMockUser(username = "test@test.com")
     void me_shouldReturn200() throws Exception {
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("test@test.com", null,
-                        List.of(new SimpleGrantedAuthority("ROLE_USER"))));
         UserDto userDto = UserDto.builder()
                 .id(1L)
                 .email("test@test.com")
@@ -217,9 +216,6 @@ class AuthControllerTest {
     @Test
     @WithMockUser(username = "test@test.com")
     void requestEmailVerification_shouldReturn200() throws Exception {
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("test@test.com", null,
-                        List.of(new SimpleGrantedAuthority("ROLE_USER"))));
         doNothing().when(authService).requestEmailVerification("test@test.com");
 
         mockMvc.perform(post("/api/auth/verify-email/request")
@@ -231,9 +227,6 @@ class AuthControllerTest {
     @Test
     @WithMockUser(username = "test@test.com")
     void verifyEmail_shouldReturn200() throws Exception {
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("test@test.com", null,
-                        List.of(new SimpleGrantedAuthority("ROLE_USER"))));
         OtpVerificationRequest request = new OtpVerificationRequest();
         request.setCode("123456");
 
