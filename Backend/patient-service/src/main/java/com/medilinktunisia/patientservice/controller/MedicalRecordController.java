@@ -39,4 +39,13 @@ public class MedicalRecordController {
         log.info("GET /api/patients/me/medical-record - userId={}", userId);
         return ResponseEntity.ok(service.getByUserId(userId));
     }
+
+    /**
+     * Consultation du dossier médical d'un patient par un médecin.
+     * L'accès est restreint aux utilisateurs ayant le rôle DOCTOR (vérifié par l'API Gateway / le filtre sécurité).
+     */
+    @GetMapping("/{userId}/medical-record")
+    public ResponseEntity<MedicalRecordDto> getPatientMedicalRecord(@PathVariable Long userId) {
+        return ResponseEntity.ok(service.getByUserId(userId));
+    }
 }

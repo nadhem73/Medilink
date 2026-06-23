@@ -34,7 +34,14 @@ build/
 
 ### Logs ###
 logs/
+log/
 *.log
+*.log.gz
+*.log.*
+spring.log
+spring.log.*
+access.log.*
+gc-*.log
 
 ### OS ###
 .DS_Store

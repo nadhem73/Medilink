@@ -57,14 +57,14 @@ class MedicalRecordServiceTest {
     }
 
     @Test
-    void createMedicalRecord_withNullUserId_shouldDoNothing() {
+    void createMedicalRecord_whenNullUserId_shouldDoNothing() {
         MedicalRecordRequest request = new MedicalRecordRequest();
         request.setUserId(null);
 
         service.createMedicalRecord(request);
 
-        verify(repository, never()).save(any());
         verify(repository, never()).existsByUserId(any());
+        verify(repository, never()).save(any());
     }
 
     @Test
@@ -80,33 +80,78 @@ class MedicalRecordServiceTest {
     }
 
     @Test
-    void getByUserId_whenFound_shouldReturnDto() {
+    void createMedicalRecord_whenNewRecord_shouldSaveSuccessfully() {
+        MedicalRecordRequest request = new MedicalRecordRequest();
+        request.setUserId(1L);
+        request.setBloodGroup("A+");
+        request.setHeight(175.0);
+        request.setWeight(70.5);
+        request.setAllergies("Pollen");
+        request.setChronicDiseases("Asthma");
+        request.setCurrentTreatments("Inhaler");
+        request.setEmergencyContactName("Jane Doe");
+        request.setEmergencyContactPhone("+21698765432");
+        request.setInsuranceCompany("Assurance Tunis");
+        request.setInsuranceNumber("AT-123456");
+        when(repository.existsByUserId(1L)).thenReturn(false);
+
+        service.createMedicalRecord(request);
+
+        verify(repository).save(argThat(record ->
+            record.getUserId().equals(1L) &&
+            record.getBloodGroup().equals("A+") &&
+            record.getHeight().equals(175.0) &&
+            record.getWeight().equals(70.5) &&
+            record.getAllergies().equals("Pollen") &&
+            record.getChronicDiseases().equals("Asthma") &&
+            record.getCurrentTreatments().equals("Inhaler") &&
+            record.getEmergencyContactName().equals("Jane Doe") &&
+            record.getEmergencyContactPhone().equals("+21698765432") &&
+            record.getInsuranceCompany().equals("Assurance Tunis") &&
+            record.getInsuranceNumber().equals("AT-123456")
+        ));
+    }
+
+    @Test
+    void getByUserId_whenFound_shouldReturnMappedDto() {
         MedicalRecord record = new MedicalRecord();
-        record.setId(1L);
         record.setUserId(1L);
-        record.setBloodGroup("B-");
+        record.setBloodGroup("B+");
         record.setHeight(180.0);
         record.setWeight(80.0);
+        record.setAllergies("None");
+        record.setChronicDiseases("None");
+        record.setCurrentTreatments("None");
+        record.setEmergencyContactName("John Doe");
+        record.setEmergencyContactPhone("+21612345678");
+        record.setInsuranceCompany("Company");
+        record.setInsuranceNumber("12345");
 
         when(repository.findByUserId(1L)).thenReturn(Optional.of(record));
 
         MedicalRecordDto result = service.getByUserId(1L);
 
         assertThat(result.getUserId()).isEqualTo(1L);
-        assertThat(result.getBloodGroup()).isEqualTo("B-");
+        assertThat(result.getBloodGroup()).isEqualTo("B+");
         assertThat(result.getHeight()).isEqualTo(180.0);
         assertThat(result.getWeight()).isEqualTo(80.0);
+        assertThat(result.getAllergies()).isEqualTo("None");
+        assertThat(result.getChronicDiseases()).isEqualTo("None");
+        assertThat(result.getCurrentTreatments()).isEqualTo("None");
+        assertThat(result.getEmergencyContactName()).isEqualTo("John Doe");
+        assertThat(result.getEmergencyContactPhone()).isEqualTo("+21612345678");
+        assertThat(result.getInsuranceCompany()).isEqualTo("Company");
+        assertThat(result.getInsuranceNumber()).isEqualTo("12345");
     }
 
     @Test
-    void getByUserId_whenNotFound_shouldReturnEmptyDto() {
-        when(repository.findByUserId(99L)).thenReturn(Optional.empty());
+    void getByUserId_whenNotFound_shouldReturnEmptyDtoWithUserId() {
+        when(repository.findByUserId(1L)).thenReturn(Optional.empty());
 
-        MedicalRecordDto result = service.getByUserId(99L);
+        MedicalRecordDto result = service.getByUserId(1L);
 
-        assertThat(result.getUserId()).isEqualTo(99L);
+        assertThat(result.getUserId()).isEqualTo(1L);
         assertThat(result.getBloodGroup()).isNull();
-        assertThat(result.getHeight()).isNull();
-        assertThat(result.getWeight()).isNull();
+        assertThat(result.getAllergies()).isNull();
     }
 }

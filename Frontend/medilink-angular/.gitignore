@@ -6,10 +6,17 @@
 /out-tsc
 /bazel-out
 
-# Node
-/node_modules
-npm-debug.log
-yarn-error.log
+# Logs
+*.log
+*.log.gz
+logs/
+log/
+npm-debug.log*
+yarn-error.log*
+yarn-debug.log*
+yarn-*.log*
+/testem.log
+/libpeerconnection.log
 
 # IDEs and editors
 .idea/
@@ -33,12 +40,6 @@ yarn-error.log
 .sass-cache/
 /connect.lock
 /coverage
-
-# Logs
-*.log
-logs/
-/libpeerconnection.log
-testem.log
 /typings
 
 # System files

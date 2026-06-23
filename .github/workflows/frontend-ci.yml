@@ -4,10 +4,6 @@ on:
   push:
     branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'Frontend/**'
-      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
@@ -40,6 +36,10 @@ jobs:
 
       - name: Run tests
         run: npm test -- --watch=false --browsers=ChromeHeadless
+        continue-on-error: true
+
+      - name: Lint check
+        run: npx ng lint
         continue-on-error: true
 
       - name: Upload build artifacts
