@@ -27,6 +27,36 @@ class MedicalRecordServiceTest {
     private MedicalRecordService service;
 
     @Test
+    void createMedicalRecord_withNewUser_shouldSave() {
+        MedicalRecordRequest request = new MedicalRecordRequest();
+        request.setUserId(1L);
+        request.setBloodGroup("A+");
+        request.setHeight(175.0);
+        request.setWeight(70.0);
+        request.setAllergies("Pollen");
+        request.setChronicDiseases("None");
+        request.setCurrentTreatments("None");
+        request.setEmergencyContactName("John Doe");
+        request.setEmergencyContactPhone("+21612345678");
+        request.setInsuranceCompany("XYZ");
+        request.setInsuranceNumber("12345");
+
+        when(repository.existsByUserId(1L)).thenReturn(false);
+        when(repository.save(any(MedicalRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.createMedicalRecord(request);
+
+        ArgumentCaptor<MedicalRecord> captor = ArgumentCaptor.forClass(MedicalRecord.class);
+        verify(repository).save(captor.capture());
+
+        MedicalRecord saved = captor.getValue();
+        assertThat(saved.getUserId()).isEqualTo(1L);
+        assertThat(saved.getBloodGroup()).isEqualTo("A+");
+        assertThat(saved.getHeight()).isEqualTo(175.0);
+        assertThat(saved.getAllergies()).isEqualTo("Pollen");
+    }
+
+    @Test
     void createMedicalRecord_whenNullUserId_shouldDoNothing() {
         MedicalRecordRequest request = new MedicalRecordRequest();
         request.setUserId(null);

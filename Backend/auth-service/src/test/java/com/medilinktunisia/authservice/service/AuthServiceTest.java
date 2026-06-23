@@ -283,6 +283,7 @@ class AuthServiceTest {
         assertThat(result).extracting(PatientListDto::getEmail)
                 .containsExactlyInAnyOrder("active1@test.com", "active2@test.com");
     }
+    }
 
     @Test
     void getAllActiveDoctors_shouldReturnOnlyActiveDoctors() {

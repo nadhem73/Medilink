@@ -40,6 +40,8 @@ class AppointmentControllerTest {
     @MockBean
     private JwtService jwtService;
 
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
     @Test
     void createAppointment_shouldReturn201() throws Exception {
         AppointmentDto dto = AppointmentDto.builder()

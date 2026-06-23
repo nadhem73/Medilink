@@ -67,7 +67,6 @@ class AuthControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
 
-
     @Test
     void register_shouldReturn201() throws Exception {
         RegisterRequest request = new RegisterRequest();

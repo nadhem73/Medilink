@@ -1,4 +1,4 @@
-package com.smarthealthtunisia.configserver;
+package com.medilinktunisia.eurekaservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,8 +9,8 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-@ActiveProfiles("native")
-class ConfigServerApplicationTest {
+@ActiveProfiles("test")
+class EurekaServiceApplicationTests {
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -18,5 +18,11 @@ class ConfigServerApplicationTest {
     @Test
     void contextLoads() {
         assertThat(applicationContext).isNotNull();
+    }
+
+    @Test
+    void eurekaServerStarts() {
+        assertThat(applicationContext.getBeanNamesForType(
+                com.netflix.eureka.EurekaServerConfig.class)).isNotEmpty();
     }
 }

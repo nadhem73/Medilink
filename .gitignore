@@ -1,3 +1,16 @@
+# ===== Logs =====
+*.log
+*.log.gz
+*.log.*
+logs/
+log/
+**/logs/
+**/log/
+spring.log
+spring.log.*
+access.log.*
+gc-*.log
+
 # ===== Java / Maven (Backend microservices) =====
 target/
 *.class

@@ -4,10 +4,6 @@ on:
   push:
     branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'Backend/**'
-      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
