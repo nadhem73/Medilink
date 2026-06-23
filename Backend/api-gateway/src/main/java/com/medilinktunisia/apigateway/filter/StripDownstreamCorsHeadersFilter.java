@@ -1,5 +1,6 @@
 package com.medilinktunisia.apigateway.filter;
 
+import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -19,6 +20,7 @@ import reactor.core.publisher.Mono;
  * et provoquait des erreurs CORS côté navigateur.
  */
 @Component
+@Slf4j
 public class StripDownstreamCorsHeadersFilter implements GlobalFilter, Ordered {
 
     @Override

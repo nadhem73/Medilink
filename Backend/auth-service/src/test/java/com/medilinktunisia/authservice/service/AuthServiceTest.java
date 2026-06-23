@@ -12,7 +12,6 @@ import com.medilinktunisia.authservice.exception.DuplicateResourceException;
 import com.medilinktunisia.authservice.exception.EmailAlreadyExistsException;
 import com.medilinktunisia.authservice.model.entity.Doctor;
 import com.medilinktunisia.authservice.model.entity.Patient;
-import com.medilinktunisia.authservice.model.entity.User;
 import com.medilinktunisia.authservice.model.enums.Gender;
 import com.medilinktunisia.authservice.model.enums.Role;
 import com.medilinktunisia.authservice.model.enums.UserStatus;
@@ -20,6 +19,7 @@ import com.medilinktunisia.authservice.repository.DoctorRepository;
 import com.medilinktunisia.authservice.repository.PatientRepository;
 import com.medilinktunisia.authservice.repository.UserRepository;
 import com.medilinktunisia.authservice.security.JwtService;
+import com.medilinktunisia.authservice.service.EmailVerificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +36,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +59,7 @@ class AuthServiceTest {
     @InjectMocks private AuthService authService;
 
     @Captor private ArgumentCaptor<Patient> patientCaptor;
+    @Captor private ArgumentCaptor<MedicalRecordRequest> medicalRecordCaptor;
 
     private RegisterRequest registerRequest;
     private Patient testPatient;
@@ -89,7 +91,7 @@ class AuthServiceTest {
         testPatient.setRole(Role.PATIENT);
         testPatient.setStatus(UserStatus.ACTIVE);
         testPatient.setEmailVerified(false);
-        testPatient.setCreatedAt(LocalDateTime.now());
+        testPatient.setCreatedAt(LocalDateTime.of(2025, 1, 1, 0, 0));
     }
 
     @Test
@@ -113,7 +115,9 @@ class AuthServiceTest {
         assertThat(saved.getRole()).isEqualTo(Role.PATIENT);
         assertThat(saved.getStatus()).isEqualTo(UserStatus.ACTIVE);
 
-        verify(patientServiceClient).createMedicalRecord(any(MedicalRecordRequest.class));
+        verify(patientServiceClient).createMedicalRecord(medicalRecordCaptor.capture());
+        MedicalRecordRequest captured = medicalRecordCaptor.getValue();
+        assertThat(captured.getUserId()).isEqualTo(testPatient.getId());
     }
 
     @Test
@@ -211,6 +215,9 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(BadCredentialsException.class);
+
+        verify(authenticationManager).authenticate(any());
+        verify(userRepository, never()).findByEmail(any());
     }
 
     @Test
@@ -259,7 +266,7 @@ class AuthServiceTest {
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authService.getCurrentUser(email))
-                .isInstanceOf(Exception.class);
+                .isInstanceOf(NoSuchElementException.class);
     }
 
     @Test
@@ -301,7 +308,7 @@ class AuthServiceTest {
         p.setPhone("+216" + id);
         p.setStatus(status);
         p.setRole(Role.PATIENT);
-        p.setCreatedAt(LocalDateTime.now());
+        p.setCreatedAt(LocalDateTime.of(2025, 1, 1, 0, 0));
         if (gender != null) {
             p.setGender(Gender.valueOf(gender));
         }
@@ -320,7 +327,7 @@ class AuthServiceTest {
         d.setSpecialty("Cardiology");
         d.setHospital("Hospital " + id);
         d.setLicenseNumber("LIC" + id);
-        d.setCreatedAt(LocalDateTime.now());
+        d.setCreatedAt(LocalDateTime.of(2025, 1, 1, 0, 0));
         return d;
     }
 }

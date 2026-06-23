@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface AppointmentRequest {
   doctorId: number;
@@ -25,7 +26,7 @@ export interface AppointmentDto {
   providedIn: 'root'
 })
 export class AppointmentService {
-  private readonly API_URL = 'http://localhost:8765/api/patients/appointments';
+  private readonly API_URL = `${environment.apiBaseUrl}/patients/appointments`;
 
   constructor(private http: HttpClient) {}
 

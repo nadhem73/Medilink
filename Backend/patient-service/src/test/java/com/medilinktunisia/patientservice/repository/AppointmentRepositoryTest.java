@@ -3,10 +3,11 @@ package com.medilinktunisia.patientservice.repository;
 import com.medilinktunisia.patientservice.model.Appointment;
 import com.medilinktunisia.patientservice.model.AppointmentMode;
 import com.medilinktunisia.patientservice.model.AppointmentStatus;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,6 +15,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test")
 class AppointmentRepositoryTest {
 
     @Autowired
@@ -21,43 +24,21 @@ class AppointmentRepositoryTest {
 
     private final LocalDateTime now = LocalDateTime.of(2026, 6, 17, 10, 0);
 
-    @BeforeEach
-    void setUp() {
-        Appointment a1 = new Appointment();
-        a1.setPatientId(1L);
-        a1.setDoctorId(10L);
-        a1.setDateTime(now.plusDays(1));
-        a1.setMode(AppointmentMode.PRESENTIEL);
-        a1.setStatus(AppointmentStatus.PENDING);
-        repository.saveAndFlush(a1);
-
-        Appointment a2 = new Appointment();
-        a2.setPatientId(1L);
-        a2.setDoctorId(20L);
-        a2.setDateTime(now);
-        a2.setMode(AppointmentMode.TELECONSULTATION);
-        a2.setStatus(AppointmentStatus.CONFIRMED);
-        repository.saveAndFlush(a2);
-
-        Appointment a3 = new Appointment();
-        a3.setPatientId(2L);
-        a3.setDoctorId(10L);
-        a3.setDateTime(now.plusHours(2));
-        a3.setMode(AppointmentMode.PRESENTIEL);
-        a3.setStatus(AppointmentStatus.CANCELLED);
-        repository.saveAndFlush(a3);
-
-        Appointment a4 = new Appointment();
-        a4.setPatientId(2L);
-        a4.setDoctorId(10L);
-        a4.setDateTime(now.plusHours(3));
-        a4.setMode(AppointmentMode.PRESENTIEL);
-        a4.setStatus(AppointmentStatus.PENDING);
-        repository.saveAndFlush(a4);
+    private Appointment createAppointment(Long patientId, Long doctorId, LocalDateTime dateTime, AppointmentMode mode, AppointmentStatus status) {
+        Appointment appointment = new Appointment();
+        appointment.setPatientId(patientId);
+        appointment.setDoctorId(doctorId);
+        appointment.setDateTime(dateTime);
+        appointment.setMode(mode);
+        appointment.setStatus(status);
+        return repository.saveAndFlush(appointment);
     }
 
     @Test
     void findByPatientIdOrderByDateTimeDesc_shouldReturnPatientAppointmentsDesc() {
+        createAppointment(1L, 10L, now.plusDays(1), AppointmentMode.PRESENTIEL, AppointmentStatus.PENDING);
+        createAppointment(1L, 20L, now, AppointmentMode.TELECONSULTATION, AppointmentStatus.CONFIRMED);
+
         List<Appointment> result = repository.findByPatientIdOrderByDateTimeDesc(1L);
 
         assertThat(result).hasSize(2);
@@ -73,17 +54,24 @@ class AppointmentRepositoryTest {
 
     @Test
     void findByDoctorIdOrderByDateTimeDesc_shouldReturnDoctorAppointmentsDesc() {
+        createAppointment(1L, 10L, now.plusDays(1), AppointmentMode.PRESENTIEL, AppointmentStatus.PENDING);
+        createAppointment(1L, 20L, now, AppointmentMode.TELECONSULTATION, AppointmentStatus.CONFIRMED);
+        createAppointment(2L, 10L, now.plusHours(2), AppointmentMode.PRESENTIEL, AppointmentStatus.CANCELLED);
+
         List<Appointment> result = repository.findByDoctorIdOrderByDateTimeDesc(10L);
 
-        assertThat(result).hasSize(3);
-        assertThat(result.get(0).getDateTime()).isAfterOrEqualTo(result.get(1).getDateTime());
-        assertThat(result.get(1).getDateTime()).isAfterOrEqualTo(result.get(2).getDateTime());
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getDateTime()).isAfter(result.get(1).getDateTime());
     }
 
     @Test
     void findByDoctorIdAndDateTimeBetween_shouldReturnAppointmentsInRange() {
-        LocalDateTime start = now.minusHours(1);
-        LocalDateTime end = now.plusMinutes(181);
+        createAppointment(1L, 10L, now.plusHours(1), AppointmentMode.PRESENTIEL, AppointmentStatus.PENDING);
+        createAppointment(2L, 10L, now.plusHours(2), AppointmentMode.PRESENTIEL, AppointmentStatus.CANCELLED);
+        createAppointment(3L, 20L, now.plusHours(1), AppointmentMode.PRESENTIEL, AppointmentStatus.PENDING);
+
+        LocalDateTime start = now;
+        LocalDateTime end = now.plusHours(3);
 
         List<Appointment> result = repository.findByDoctorIdAndDateTimeBetweenOrderByDateTimeAsc(10L, start, end);
 
@@ -93,6 +81,8 @@ class AppointmentRepositoryTest {
 
     @Test
     void findByDoctorIdAndDateTimeBetween_whenOutsideRange_shouldReturnEmpty() {
+        createAppointment(1L, 10L, now.plusHours(1), AppointmentMode.PRESENTIEL, AppointmentStatus.PENDING);
+
         LocalDateTime start = now.plusDays(10);
         LocalDateTime end = now.plusDays(11);
 

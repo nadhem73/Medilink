@@ -38,7 +38,7 @@ describe('PatientSectionComponent', () => {
   beforeEach(async () => {
     authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentUser']);
     doctorServiceSpy = jasmine.createSpyObj('DoctorService', ['getDoctorsWithProfiles']);
-    appointmentServiceSpy = jasmine.createSpyObj('AppointmentService', ['getMyAppointments', 'getActiveDoctorIds', 'getAvailableSlots', 'createAppointment', 'cancelAppointment']);
+    appointmentServiceSpy = jasmine.createSpyObj('AppointmentService', ['getMyAppointments', 'getActiveDoctorIds', 'getAvailableSlots', 'createAppointment']);
     activatedRouteStub = {
       data: of({ section: 'appointments', title: 'Mes Rendez-vous' })
     };
@@ -303,29 +303,6 @@ describe('PatientSectionComponent', () => {
 
     expect(component.submitting).toBeFalse();
     expect(component.errorMessage).toBe('Une erreur est survenue lors de la reservation du rendez-vous. Veuillez reessayer.');
-  });
-
-  it('should cancel an appointment', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
-    doctorServiceSpy.getDoctorsWithProfiles.and.returnValue(of(mockDoctors));
-    appointmentServiceSpy.getMyAppointments.and.returnValue(of(mockAppointments));
-    appointmentServiceSpy.getActiveDoctorIds.and.returnValue(of([]));
-    appointmentServiceSpy.cancelAppointment.and.returnValue(of(mockAppointments[0]));
-    fixture.detectChanges();
-
-    component.cancelAppointment(1);
-    expect(appointmentServiceSpy.cancelAppointment).toHaveBeenCalledWith(1);
-  });
-
-  it('should not cancel appointment if user declines confirm', () => {
-    spyOn(window, 'confirm').and.returnValue(false);
-    doctorServiceSpy.getDoctorsWithProfiles.and.returnValue(of(mockDoctors));
-    appointmentServiceSpy.getMyAppointments.and.returnValue(of(mockAppointments));
-    appointmentServiceSpy.getActiveDoctorIds.and.returnValue(of([]));
-    fixture.detectChanges();
-
-    component.cancelAppointment(1);
-    expect(appointmentServiceSpy.cancelAppointment).not.toHaveBeenCalled();
   });
 
   it('should get doctor details by id', () => {

@@ -7,6 +7,7 @@ import com.medilinktunisia.patientservice.model.AppointmentMode;
 import com.medilinktunisia.patientservice.model.AppointmentStatus;
 import com.medilinktunisia.patientservice.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentService {
 
     private final AppointmentRepository repository;
@@ -22,6 +24,8 @@ public class AppointmentService {
      * Crée un nouveau rendez-vous pour le patient.
      */
     public AppointmentDto createAppointment(Long patientId, AppointmentRequest request) {
+        log.info("Creating appointment for patientId={} with doctorId={} at {}", patientId, request.getDoctorId(), request.getDateTime());
+
         // Vérifier que le patient n'a pas déjà un rendez-vous actif chez ce médecin
         boolean alreadyBooked = repository.existsByPatientIdAndDoctorIdAndStatusIn(
                 patientId,
@@ -29,6 +33,7 @@ public class AppointmentService {
                 List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
         );
         if (alreadyBooked) {
+            log.warn("PatientId={} already has an active appointment with doctorId={}", patientId, request.getDoctorId());
             throw new IllegalStateException("Vous avez déjà un rendez-vous en cours avec ce médecin. Veuillez annuler ou attendre la consultation.");
         }
 
@@ -44,12 +49,15 @@ public class AppointmentService {
         try {
             appointment.setMode(AppointmentMode.valueOf(request.getMode().toUpperCase()));
         } catch (Exception e) {
+            log.error("Invalid appointment mode '{}' for patientId={}", request.getMode(), patientId);
             throw new IllegalArgumentException("Mode de consultation invalide. Valeurs possibles: PRESENTIEL, TELECONSULTATION");
         }
 
         appointment.setStatus(AppointmentStatus.PENDING);
 
-        return toDto(repository.save(appointment));
+        AppointmentDto saved = toDto(repository.save(appointment));
+        log.info("Appointment created successfully with id={} for patientId={}", saved.getId(), patientId);
+        return saved;
     }
 
     /**
@@ -101,49 +109,71 @@ public class AppointmentService {
      * Annule un rendez-vous si le patient en est le propriétaire.
      */
     public AppointmentDto cancelAppointment(Long patientId, Long appointmentId) {
+        log.info("PatientId={} cancelling appointment id={}", patientId, appointmentId);
         Appointment appointment = repository.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Rendez-vous introuvable"));
+                .orElseThrow(() -> {
+                    log.error("Appointment id={} not found for cancellation by patientId={}", appointmentId, patientId);
+                    return new IllegalArgumentException("Rendez-vous introuvable");
+                });
 
         if (!appointment.getPatientId().equals(patientId)) {
+            log.warn("PatientId={} not authorized to cancel appointment id={}", patientId, appointmentId);
             throw new IllegalStateException("Vous n'êtes pas autorisé à annuler ce rendez-vous");
         }
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        return toDto(repository.save(appointment));
+        AppointmentDto cancelled = toDto(repository.save(appointment));
+        log.info("Appointment id={} cancelled by patientId={}", appointmentId, patientId);
+        return cancelled;
     }
 
     /**
      * Confirme un rendez-vous si le médecin en est le destinataire.
      */
     public AppointmentDto confirmAppointment(Long doctorId, Long appointmentId) {
+        log.info("DoctorId={} confirming appointment id={}", doctorId, appointmentId);
         Appointment appointment = repository.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Rendez-vous introuvable"));
+                .orElseThrow(() -> {
+                    log.error("Appointment id={} not found for confirmation by doctorId={}", appointmentId, doctorId);
+                    return new IllegalArgumentException("Rendez-vous introuvable");
+                });
 
         if (!appointment.getDoctorId().equals(doctorId)) {
+            log.warn("DoctorId={} not authorized to confirm appointment id={}", doctorId, appointmentId);
             throw new IllegalStateException("Vous n'êtes pas autorisé à confirmer ce rendez-vous");
         }
 
         if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            log.warn("Cannot confirm cancelled appointment id={} by doctorId={}", appointmentId, doctorId);
             throw new IllegalStateException("Impossible de confirmer un rendez-vous annulé");
         }
 
         appointment.setStatus(AppointmentStatus.CONFIRMED);
-        return toDto(repository.save(appointment));
+        AppointmentDto confirmed = toDto(repository.save(appointment));
+        log.info("Appointment id={} confirmed by doctorId={}", appointmentId, doctorId);
+        return confirmed;
     }
 
     /**
      * Annule un rendez-vous par le médecin (depuis le panel médecin).
      */
     public AppointmentDto cancelAppointmentByDoctor(Long doctorId, Long appointmentId) {
+        log.info("DoctorId={} cancelling appointment id={}", doctorId, appointmentId);
         Appointment appointment = repository.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Rendez-vous introuvable"));
+                .orElseThrow(() -> {
+                    log.error("Appointment id={} not found for doctor-cancellation by doctorId={}", appointmentId, doctorId);
+                    return new IllegalArgumentException("Rendez-vous introuvable");
+                });
 
         if (!appointment.getDoctorId().equals(doctorId)) {
+            log.warn("DoctorId={} not authorized to cancel appointment id={}", doctorId, appointmentId);
             throw new IllegalStateException("Vous n'êtes pas autorisé à annuler ce rendez-vous");
         }
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        return toDto(repository.save(appointment));
+        AppointmentDto cancelled = toDto(repository.save(appointment));
+        log.info("Appointment id={} cancelled by doctorId={}", appointmentId, doctorId);
+        return cancelled;
     }
 
     /**

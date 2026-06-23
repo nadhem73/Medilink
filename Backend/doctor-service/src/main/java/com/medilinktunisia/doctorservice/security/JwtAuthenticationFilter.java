@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,6 +22,7 @@ import java.util.List;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -40,14 +42,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String email = jwtService.extractEmail(token);
                     Long userId = jwtService.extractUserId(token);
                     request.setAttribute("userId", userId);
+                    log.debug("Validating JWT token for request: {} {} - userId: {}", request.getMethod(), request.getRequestURI(), userId);
 
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     email, null, List.of(new SimpleGrantedAuthority("ROLE_DOCTOR")));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    log.warn("Invalid JWT token for request: {} {}", request.getMethod(), request.getRequestURI());
                 }
-            } catch (Exception ignored) {
-                // Token invalide -> requête anonyme
+            } catch (Exception e) {
+                log.error("JWT authentication failed for request: {} {} - {}", request.getMethod(), request.getRequestURI(), e.getMessage());
             }
         }
 

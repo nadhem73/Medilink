@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -53,10 +55,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             new UsernamePasswordAuthenticationToken(
                                     email, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                    log.debug("Authenticated user: email={}, userId={}", email, userId);
                 }
-            } catch (Exception ignored) {
-                // Token invalide -> requête anonyme
+            } catch (Exception e) {
+                log.warn("Invalid JWT token: {}", e.getMessage());
             }
+        } else {
+            log.debug("No Bearer token found in request to {}", request.getRequestURI());
         }
 
         filterChain.doFilter(request, response);

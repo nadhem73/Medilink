@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 export interface Doctor {
   id: number;
@@ -39,8 +40,8 @@ export interface DoctorWithProfile extends Doctor {
   providedIn: 'root'
 })
 export class DoctorService {
-  private readonly AUTH_API_URL = 'http://localhost:8765/api/auth';
-  private readonly DOCTOR_API_URL = 'http://localhost:8765/api/doctors';
+  private readonly AUTH_API_URL = `${environment.apiBaseUrl}/auth`;
+  private readonly DOCTOR_API_URL = `${environment.apiBaseUrl}/doctors`;
 
   constructor(private http: HttpClient) {}
 

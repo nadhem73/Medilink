@@ -1,44 +1,38 @@
-import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
 import { roleGuard } from './role.guard';
+import { setupGuardTest } from './guard-test-helpers';
 
 describe('roleGuard', () => {
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockRouter: jasmine.SpyObj<Router>;
+  const { mockAuthService, mockRouter, executeGuard, configureTestBed } = setupGuardTest(roleGuard, ['getUserRole']);
 
-  const mockRoute = { data: { roles: ['DOCTOR'] } } as any;
-  const mockState = {} as any;
+  beforeEach(() => configureTestBed());
 
-  beforeEach(() => {
-    mockAuthService = jasmine.createSpyObj('AuthService', ['getUserRole']);
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+  it('should return true when user has expected role from route data', () => {
+    const roles = ['ADMIN'];
+    mockAuthService.getUserRole.and.returnValue(roles);
 
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: mockAuthService },
-        { provide: Router, useValue: mockRouter }
-      ]
-    });
-  });
+    const route = { data: { roles } } as any;
+    const result = executeGuard(route, { url: '/admin' } as any);
 
-  it('should allow access when user has expected role', () => {
-    mockAuthService.getUserRole.and.returnValue(['DOCTOR']);
-    const result = TestBed.runInInjectionContext(() => roleGuard(mockRoute, mockState));
     expect(result).toBeTrue();
     expect(mockRouter.navigate).not.toHaveBeenCalled();
   });
 
-  it('should deny access when user does not have expected role', () => {
+  it('should return false and navigate to / when user does not have the required role', () => {
     mockAuthService.getUserRole.and.returnValue(['PATIENT']);
-    const result = TestBed.runInInjectionContext(() => roleGuard(mockRoute, mockState));
+
+    const route = { data: { roles: ['ADMIN'] } } as any;
+    const result = executeGuard(route, { url: '/admin' } as any);
+
     expect(result).toBeFalse();
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
   });
 
-  it('should deny access when user role is empty', () => {
+  it('should return false when user role is empty', () => {
     mockAuthService.getUserRole.and.returnValue([]);
-    const result = TestBed.runInInjectionContext(() => roleGuard(mockRoute, mockState));
+
+    const route = { data: { roles: ['ADMIN'] } } as any;
+    const result = executeGuard(route, { url: '/admin' } as any);
+
     expect(result).toBeFalse();
   });
 });

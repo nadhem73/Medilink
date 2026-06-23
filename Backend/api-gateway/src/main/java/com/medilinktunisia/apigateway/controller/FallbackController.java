@@ -1,5 +1,6 @@
 package com.medilinktunisia.apigateway.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,10 +18,12 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/fallback")
+@Slf4j
 public class FallbackController {
 
     @GetMapping("/{service}")
     public ResponseEntity<Map<String, Object>> serviceFallback(@PathVariable String service) {
+        log.warn("Fallback invoked for service: {}", service);
         Map<String, Object> response = new HashMap<>();
         response.put("timestamp", LocalDateTime.now());
         response.put("status", HttpStatus.SERVICE_UNAVAILABLE.value());
@@ -33,31 +36,36 @@ public class FallbackController {
 
     @GetMapping("/auth")
     public ResponseEntity<Map<String, Object>> authServiceFallback() {
-        return createFallbackResponse("Authentication Service", 
+        log.warn("Fallback invoked for Authentication Service");
+        return createFallbackResponse("Authentication Service",
                 "Le service d'authentification est temporairement indisponible.");
     }
 
     @GetMapping("/patient")
     public ResponseEntity<Map<String, Object>> patientServiceFallback() {
-        return createFallbackResponse("Patient Service", 
+        log.warn("Fallback invoked for Patient Service");
+        return createFallbackResponse("Patient Service",
                 "Le service patients est temporairement indisponible.");
     }
 
     @GetMapping("/doctor")
     public ResponseEntity<Map<String, Object>> doctorServiceFallback() {
-        return createFallbackResponse("Doctor Service", 
+        log.warn("Fallback invoked for Doctor Service");
+        return createFallbackResponse("Doctor Service",
                 "Le service médecins est temporairement indisponible.");
     }
 
     @GetMapping("/appointment")
     public ResponseEntity<Map<String, Object>> appointmentServiceFallback() {
-        return createFallbackResponse("Appointment Service", 
+        log.warn("Fallback invoked for Appointment Service");
+        return createFallbackResponse("Appointment Service",
                 "Le service de rendez-vous est temporairement indisponible.");
     }
 
     @GetMapping("/payment")
     public ResponseEntity<Map<String, Object>> paymentServiceFallback() {
-        return createFallbackResponse("Payment Service", 
+        log.warn("Fallback invoked for Payment Service");
+        return createFallbackResponse("Payment Service",
                 "Le service de paiement est temporairement indisponible. Vos données sont sécurisées.");
     }
 

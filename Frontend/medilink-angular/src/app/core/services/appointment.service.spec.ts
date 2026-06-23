@@ -1,15 +1,67 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AppointmentService, AppointmentRequest, AppointmentDto } from './appointment.service';
+import { AppointmentService, AppointmentDto } from './appointment.service';
+
+function testGetMethod(
+  methodName: string,
+  urlPath: string,
+  getService: () => AppointmentService,
+  getHttpMock: () => HttpTestingController,
+  buildResponse: () => any
+) {
+  describe(`${methodName}()`, () => {
+    it(`should GET ${urlPath}`, () => {
+      const service = getService();
+      const httpMock = getHttpMock();
+      const response = buildResponse();
+      (service as any)[methodName]().subscribe((res: any) => {
+        expect(res).toEqual(response);
+      });
+      const req = httpMock.expectOne(`http://localhost:8765${urlPath}`);
+      expect(req.request.method).toBe('GET');
+      req.flush(response);
+    });
+  });
+}
+
+function testPutMethod(
+  methodName: string,
+  urlPath: string,
+  status: string,
+  getService: () => AppointmentService,
+  getHttpMock: () => HttpTestingController
+) {
+  describe(`${methodName}()`, () => {
+    it(`should PUT ${urlPath}`, () => {
+      const service = getService();
+      const httpMock = getHttpMock();
+      const response: AppointmentDto = {
+        id: 1, patientId: 1, doctorId: 2, dateTime: '2025-01-15T10:00:00',
+        status, mode: 'PRESENTIEL', createdAt: '2025-01-10T00:00:00'
+      };
+      (service as any)[methodName](1).subscribe((res: any) => {
+        expect(res).toEqual(response);
+      });
+      const req = httpMock.expectOne(`http://localhost:8765${urlPath}`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({});
+      req.flush(response);
+    });
+  });
+}
 
 describe('AppointmentService', () => {
   let service: AppointmentService;
   let httpMock: HttpTestingController;
 
+  const baseResponse: AppointmentDto = {
+    id: 1, patientId: 1, doctorId: 2, dateTime: '2025-01-15T10:00:00',
+    status: 'PENDING', mode: 'PRESENTIEL', createdAt: '2025-01-10T00:00:00'
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [AppointmentService]
+      imports: [HttpClientTestingModule]
     });
     service = TestBed.inject(AppointmentService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -23,76 +75,69 @@ describe('AppointmentService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should create an appointment', () => {
-    const dto: AppointmentRequest = { doctorId: 1, dateTime: '2026-06-20T10:00:00', mode: 'PRESENTIEL' };
-    const mock: AppointmentDto = { id: 1, patientId: 1, doctorId: 1, dateTime: '2026-06-20T10:00:00', status: 'PENDING', mode: 'PRESENTIEL', createdAt: '2026-06-18T12:00:00' };
+  describe('createAppointment()', () => {
+    it('should POST to /api/patients/appointments', () => {
+      const request = { doctorId: 1, dateTime: '2025-01-15T10:00:00', mode: 'PRESENTIEL' as const, notes: 'Checkup' };
+      const response = { ...baseResponse, doctorId: 1 };
 
-    service.createAppointment(dto).subscribe(res => expect(res).toEqual(mock));
-    const req = httpMock.expectOne('http://localhost:8765/api/patients/appointments');
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual(dto);
-    req.flush(mock);
+      service.createAppointment(request).subscribe(res => {
+        expect(res).toEqual(response);
+      });
+
+      const req = httpMock.expectOne('http://localhost:8765/api/patients/appointments');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(request);
+      req.flush(response);
+    });
   });
 
-  it('should get my appointments', () => {
-    const mock: AppointmentDto[] = [{ id: 1, patientId: 1, doctorId: 1, dateTime: '2026-06-20T10:00:00', status: 'PENDING', mode: 'PRESENTIEL', createdAt: '2026-06-18T12:00:00' }];
+  testGetMethod('getMyAppointments', '/api/patients/appointments', () => service, () => httpMock, () => [baseResponse]);
+  testGetMethod('getDoctorAppointments', '/api/patients/appointments/doctor', () => service, () => httpMock, () => [{ ...baseResponse, status: 'CONFIRMED', mode: 'TELECONSULTATION' as const }]);
 
-    service.getMyAppointments().subscribe(res => expect(res).toEqual(mock));
-    const req = httpMock.expectOne('http://localhost:8765/api/patients/appointments');
-    expect(req.request.method).toBe('GET');
-    req.flush(mock);
+  testPutMethod('cancelAppointment', '/api/patients/appointments/1/cancel', 'CANCELLED', () => service, () => httpMock);
+  testPutMethod('confirmAppointment', '/api/patients/appointments/1/confirm', 'CONFIRMED', () => service, () => httpMock);
+  testPutMethod('cancelByDoctor', '/api/patients/appointments/1/doctor-cancel', 'CANCELLED', () => service, () => httpMock);
+
+  describe('getAvailableSlots()', () => {
+    it('should GET with query params', () => {
+      const slots = ['08:00', '08:30', '09:00'];
+      service.getAvailableSlots(1, '2025-01-15', '08:00', '13:00', '15:00', '19:00').subscribe(res => {
+        expect(res).toEqual(slots);
+      });
+      const req = httpMock.expectOne(r => r.url === 'http://localhost:8765/api/patients/appointments/available-slots');
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('doctorId')).toBe('1');
+      expect(req.request.params.get('date')).toBe('2025-01-15');
+      expect(req.request.params.get('debutMatin')).toBe('08:00');
+      expect(req.request.params.get('finMatin')).toBe('13:00');
+      expect(req.request.params.get('debutApresMidi')).toBe('15:00');
+      expect(req.request.params.get('finApresMidi')).toBe('19:00');
+      req.flush(slots);
+    });
   });
 
-  it('should get doctor appointments', () => {
-    service.getDoctorAppointments().subscribe();
-    const req = httpMock.expectOne('http://localhost:8765/api/patients/appointments/doctor');
-    expect(req.request.method).toBe('GET');
-    req.flush([]);
+  describe('checkAvailability()', () => {
+    it('should GET with query params for doctorId and dateTime', () => {
+      service.checkAvailability(1, '2025-01-15T10:00:00').subscribe(res => {
+        expect(res).toBeTrue();
+      });
+      const req = httpMock.expectOne(r => r.url === 'http://localhost:8765/api/patients/appointments/check-availability');
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('doctorId')).toBe('1');
+      expect(req.request.params.get('dateTime')).toBe('2025-01-15T10:00:00');
+      req.flush(true);
+    });
   });
 
-  it('should cancel an appointment', () => {
-    const mock: AppointmentDto = { id: 1, patientId: 1, doctorId: 1, dateTime: '2026-06-20T10:00:00', status: 'CANCELLED', mode: 'PRESENTIEL', createdAt: '2026-06-18T12:00:00' };
-
-    service.cancelAppointment(1).subscribe(res => expect(res).toEqual(mock));
-    const req = httpMock.expectOne('http://localhost:8765/api/patients/appointments/1/cancel');
-    expect(req.request.method).toBe('PUT');
-    req.flush(mock);
-  });
-
-  it('should get active doctor ids', () => {
-    service.getActiveDoctorIds().subscribe(res => expect(res).toEqual([1, 2]));
-    const req = httpMock.expectOne('http://localhost:8765/api/patients/appointments/active-doctor-ids');
-    expect(req.request.method).toBe('GET');
-    req.flush([1, 2]);
-  });
-
-  it('should get available slots', () => {
-    service.getAvailableSlots(1, '2026-06-20', '08:00', '13:00', '15:00', '19:00').subscribe(res => expect(res).toEqual(['08:00', '08:30']));
-    const req = httpMock.expectOne(r => r.url.includes('available-slots'));
-    expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('doctorId')).toBe('1');
-    expect(req.request.params.get('date')).toBe('2026-06-20');
-    req.flush(['08:00', '08:30']);
-  });
-
-  it('should check availability', () => {
-    service.checkAvailability(1, '2026-06-20T10:00:00').subscribe(res => expect(res).toBeTrue());
-    const req = httpMock.expectOne(r => r.url.includes('check-availability'));
-    expect(req.request.method).toBe('GET');
-    req.flush(true);
-  });
-
-  it('should confirm an appointment', () => {
-    service.confirmAppointment(1).subscribe();
-    const req = httpMock.expectOne('http://localhost:8765/api/patients/appointments/1/confirm');
-    expect(req.request.method).toBe('PUT');
-    req.flush({});
-  });
-
-  it('should cancel by doctor', () => {
-    service.cancelByDoctor(1).subscribe();
-    const req = httpMock.expectOne('http://localhost:8765/api/patients/appointments/1/doctor-cancel');
-    expect(req.request.method).toBe('PUT');
-    req.flush({});
+  describe('getActiveDoctorIds()', () => {
+    it('should GET /api/patients/appointments/active-doctor-ids', () => {
+      const ids = [1, 2, 3];
+      service.getActiveDoctorIds().subscribe(res => {
+        expect(res).toEqual(ids);
+      });
+      const req = httpMock.expectOne('http://localhost:8765/api/patients/appointments/active-doctor-ids');
+      expect(req.request.method).toBe('GET');
+      req.flush(ids);
+    });
   });
 });

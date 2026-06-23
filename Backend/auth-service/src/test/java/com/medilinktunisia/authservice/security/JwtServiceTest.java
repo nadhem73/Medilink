@@ -11,10 +11,10 @@ import org.junit.jupiter.api.Test;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JwtServiceTest {
 
@@ -23,87 +23,107 @@ class JwtServiceTest {
     private static final long REFRESH_EXPIRATION = 604800000L;
 
     private JwtService jwtService;
-    private Patient testUser;
 
     @BeforeEach
     void setUp() {
         jwtService = new JwtService(SECRET, EXPIRATION, REFRESH_EXPIRATION);
+    }
 
-        testUser = new Patient();
-        testUser.setId(1L);
-        testUser.setEmail("john.doe@example.com");
-        testUser.setFirstName("John");
-        testUser.setLastName("Doe");
-        testUser.setRole(Role.PATIENT);
-        testUser.setStatus(UserStatus.ACTIVE);
-        testUser.setCreatedAt(LocalDateTime.now());
+    private Patient createTestUser() {
+        Patient user = new Patient();
+        user.setId(1L);
+        user.setEmail("test@example.com");
+        user.setRole(Role.PATIENT);
+        user.setStatus(UserStatus.ACTIVE);
+        return user;
     }
 
     @Test
     void generateAccessToken_shouldReturnValidJwtString() {
-        String token = jwtService.generateAccessToken(testUser);
+        Patient user = createTestUser();
+        String token = jwtService.generateAccessToken(user);
 
         assertThat(token).isNotNull().isNotBlank();
         assertThat(token.split("\\.")).hasSize(3);
+        assertThat(jwtService.extractEmail(token)).isEqualTo("test@example.com");
+        assertThat(jwtService.extractUserId(token)).isEqualTo("1");
+        assertThat(jwtService.isTokenValid(token)).isTrue();
     }
 
     @Test
     void generateRefreshToken_shouldReturnValidJwtString() {
-        String token = jwtService.generateRefreshToken(testUser);
+        Patient user = createTestUser();
+        String token = jwtService.generateRefreshToken(user);
 
         assertThat(token).isNotNull().isNotBlank();
         assertThat(token.split("\\.")).hasSize(3);
+        assertThat(jwtService.isTokenValid(token)).isTrue();
     }
 
     @Test
     void extractEmail_shouldReturnCorrectEmail() {
-        String token = jwtService.generateAccessToken(testUser);
+        Patient user = createTestUser();
+        String token = jwtService.generateAccessToken(user);
 
-        String email = jwtService.extractEmail(token);
-
-        assertThat(email).isEqualTo("john.doe@example.com");
+        assertThat(jwtService.extractEmail(token)).isEqualTo("test@example.com");
     }
 
     @Test
     void extractUserId_shouldReturnCorrectUserId() {
-        String token = jwtService.generateAccessToken(testUser);
+        Patient user = createTestUser();
+        String token = jwtService.generateAccessToken(user);
 
-        String userId = jwtService.extractUserId(token);
-
-        assertThat(userId).isEqualTo("1");
+        assertThat(jwtService.extractUserId(token)).isEqualTo("1");
     }
 
     @Test
     void isTokenValid_withValidToken_shouldReturnTrue() {
-        String token = jwtService.generateAccessToken(testUser);
+        Patient user = createTestUser();
+        String token = jwtService.generateAccessToken(user);
 
-        boolean valid = jwtService.isTokenValid(token);
-
-        assertThat(valid).isTrue();
+        assertThat(jwtService.isTokenValid(token)).isTrue();
     }
 
     @Test
     void isTokenValid_withExpiredToken_shouldReturnFalse() {
         SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
         String expiredToken = Jwts.builder()
-                .subject("john.doe@example.com")
+                .subject("test@example.com")
+                .claim("userId", "1")
                 .issuedAt(new Date(System.currentTimeMillis() - 100000))
                 .expiration(new Date(System.currentTimeMillis() - 50000))
                 .signWith(key)
                 .compact();
 
-        boolean valid = jwtService.isTokenValid(expiredToken);
-
-        assertThat(valid).isFalse();
+        assertThat(jwtService.isTokenValid(expiredToken)).isFalse();
     }
 
     @Test
     void isTokenValid_withTamperedToken_shouldReturnFalse() {
-        String validToken = jwtService.generateAccessToken(testUser);
-        String tamperedToken = validToken.substring(0, validToken.length() - 5) + "XXXXX";
+        Patient user = createTestUser();
+        String validToken = jwtService.generateAccessToken(user);
+        String tamperedToken = validToken + "tampered";
 
-        boolean valid = jwtService.isTokenValid(tamperedToken);
+        assertThat(jwtService.isTokenValid(tamperedToken)).isFalse();
+    }
 
-        assertThat(valid).isFalse();
+    @Test
+    void isTokenValid_withNullToken_shouldReturnFalse() {
+        assertThat(jwtService.isTokenValid(null)).isFalse();
+    }
+
+    @Test
+    void extractEmail_withExpiredToken_shouldThrow() {
+        SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+        String token = Jwts.builder()
+                .subject("test@example.com")
+                .claim("userId", "1")
+                .issuedAt(new Date(System.currentTimeMillis() - 100000))
+                .expiration(new Date(System.currentTimeMillis() - 1000))
+                .signWith(key)
+                .compact();
+
+        assertThatThrownBy(() -> jwtService.extractEmail(token))
+                .isInstanceOf(ExpiredJwtException.class);
     }
 }

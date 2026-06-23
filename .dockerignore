@@ -1,0 +1,24 @@
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Dependencies =====
+**/node_modules
+**/target
+
+# ===== Coverage =====
+coverage/
+.nyc_output/
+
+# ===== Temp files =====
+tmp/
+temp/
+*.tmp
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Environment =====
+.env
+.env.local

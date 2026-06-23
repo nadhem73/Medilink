@@ -80,14 +80,17 @@ feign:
 
 # Logging
 logging:
+  file:
+    name: logs/patient-service.log
+    max-size: 10MB
+    max-history: 30
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   level:
     com.medilinktunisia: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-  file:
-    name: logs/patient-service.log
 
 # Management Endpoints
 management:

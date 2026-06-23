@@ -1,5 +1,6 @@
 package com.medilinktunisia.eurekaservice.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
@@ -7,6 +8,7 @@ import org.springframework.context.annotation.Profile;
  * Configuration personnalisée pour Eureka Server
  * Permet des configurations spécifiques par environnement
  */
+@Slf4j
 @Configuration
 public class EurekaConfig {
 

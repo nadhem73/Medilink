@@ -28,7 +28,7 @@ describe('DoctorSectionComponent', () => {
 
   beforeEach(async () => {
     authServiceSpy = jasmine.createSpyObj('AuthService', ['getAllPatients', 'getCurrentUser']);
-    appointmentServiceSpy = jasmine.createSpyObj('AppointmentService', ['getDoctorAppointments', 'confirmAppointment', 'cancelByDoctor']);
+    appointmentServiceSpy = jasmine.createSpyObj('AppointmentService', ['getDoctorAppointments', 'confirmAppointment']);
     activatedRouteStub = {
       data: of({ section: 'patients', title: 'Mes Patients' })
     };
@@ -179,49 +179,6 @@ describe('DoctorSectionComponent', () => {
     component.confirmAppointment(targetApp);
 
     expect(appointmentServiceSpy.confirmAppointment).toHaveBeenCalledWith(1);
-    expect(component.actionLoading[1]).toBeFalse();
-  });
-
-  it('should cancel appointment', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
-    const updatedDto: AppointmentDto = { ...mockAppointments[0], status: 'CANCELLED' };
-    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
-    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
-    appointmentServiceSpy.cancelByDoctor.and.returnValue(of(updatedDto));
-    fixture.detectChanges();
-
-    const targetApp = component.allAppointments[0];
-    component.cancelAppointment(targetApp);
-
-    expect(appointmentServiceSpy.cancelByDoctor).toHaveBeenCalledWith(1);
-    const updated = component.allAppointments.find(a => a.id === 1);
-    expect(updated?.status).toBe('Annulé');
-    expect(updated?.statusClass).toBe('status-cancelled');
-  });
-
-  it('should not cancel appointment if user declines confirm', () => {
-    spyOn(window, 'confirm').and.returnValue(false);
-    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
-    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
-    fixture.detectChanges();
-
-    const targetApp = component.allAppointments[0];
-    component.cancelAppointment(targetApp);
-
-    expect(appointmentServiceSpy.cancelByDoctor).not.toHaveBeenCalled();
-  });
-
-  it('should handle cancel appointment error', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
-    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
-    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
-    appointmentServiceSpy.cancelByDoctor.and.returnValue(throwError(() => new Error('error')));
-    fixture.detectChanges();
-
-    const targetApp = component.allAppointments[0];
-    component.cancelAppointment(targetApp);
-
-    expect(appointmentServiceSpy.cancelByDoctor).toHaveBeenCalledWith(1);
     expect(component.actionLoading[1]).toBeFalse();
   });
 

@@ -6,6 +6,7 @@ import com.medilinktunisia.patientservice.service.AppointmentService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/patients/appointments")
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentController {
 
     private final AppointmentService service;
@@ -28,6 +30,7 @@ public class AppointmentController {
             HttpServletRequest request,
             @Valid @RequestBody AppointmentRequest body) {
         Long patientId = (Long) request.getAttribute("userId");
+        log.info("POST /api/patients/appointments - patientId={}, doctorId={}", patientId, body.getDoctorId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(service.createAppointment(patientId, body));
     }
@@ -51,6 +54,7 @@ public class AppointmentController {
     @GetMapping
     public ResponseEntity<List<AppointmentDto>> getMyAppointments(HttpServletRequest request) {
         Long patientId = (Long) request.getAttribute("userId");
+        log.info("GET /api/patients/appointments - patientId={}", patientId);
         return ResponseEntity.ok(service.getPatientAppointments(patientId));
     }
 
@@ -60,6 +64,7 @@ public class AppointmentController {
     @GetMapping("/doctor")
     public ResponseEntity<List<AppointmentDto>> getMyDoctorAppointments(HttpServletRequest request) {
         Long doctorId = (Long) request.getAttribute("userId");
+        log.info("GET /api/patients/appointments/doctor - doctorId={}", doctorId);
         return ResponseEntity.ok(service.getDoctorAppointments(doctorId));
     }
 
@@ -70,6 +75,7 @@ public class AppointmentController {
     @GetMapping("/active-doctor-ids")
     public ResponseEntity<List<Long>> getActiveDoctorIds(HttpServletRequest request) {
         Long patientId = (Long) request.getAttribute("userId");
+        log.info("GET /api/patients/appointments/active-doctor-ids - patientId={}", patientId);
         return ResponseEntity.ok(service.getActiveDoctorIdsForPatient(patientId));
     }
 
@@ -80,6 +86,7 @@ public class AppointmentController {
     public ResponseEntity<Boolean> checkAvailability(
             @RequestParam Long doctorId,
             @RequestParam String dateTime) {
+        log.info("GET /api/patients/appointments/check-availability - doctorId={}, dateTime={}", doctorId, dateTime);
         try {
             service.validateTimeSlot(doctorId, LocalDateTime.parse(dateTime));
             return ResponseEntity.ok(true);
@@ -99,6 +106,7 @@ public class AppointmentController {
             @RequestParam String finMatin,
             @RequestParam String debutApresMidi,
             @RequestParam String finApresMidi) {
+        log.info("GET /api/patients/appointments/available-slots - doctorId={}, date={}", doctorId, date);
         return ResponseEntity.ok(service.getAvailableSlots(
                 doctorId, date, debutMatin, finMatin, debutApresMidi, finApresMidi));
     }
@@ -111,6 +119,7 @@ public class AppointmentController {
             HttpServletRequest request,
             @PathVariable Long id) {
         Long patientId = (Long) request.getAttribute("userId");
+        log.info("PUT /api/patients/appointments/{}/cancel - patientId={}", id, patientId);
         return ResponseEntity.ok(service.cancelAppointment(patientId, id));
     }
 
@@ -122,6 +131,7 @@ public class AppointmentController {
             HttpServletRequest request,
             @PathVariable Long id) {
         Long doctorId = (Long) request.getAttribute("userId");
+        log.info("PUT /api/patients/appointments/{}/confirm - doctorId={}", id, doctorId);
         return ResponseEntity.ok(service.confirmAppointment(doctorId, id));
     }
 
@@ -144,6 +154,7 @@ public class AppointmentController {
             HttpServletRequest request,
             @PathVariable Long id) {
         Long doctorId = (Long) request.getAttribute("userId");
+        log.info("PUT /api/patients/appointments/{}/doctor-cancel - doctorId={}", id, doctorId);
         return ResponseEntity.ok(service.cancelAppointmentByDoctor(doctorId, id));
     }
 }

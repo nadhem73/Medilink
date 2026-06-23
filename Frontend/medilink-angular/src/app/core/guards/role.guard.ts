@@ -13,7 +13,6 @@ export const roleGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  // Rediriger vers une page d'accès refusé ou la page d'accueil
   router.navigate(['/']);
   return false;
 };

@@ -111,7 +111,6 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
         <!-- H2 Database for Testing -->
         <dependency>
             <groupId>com.h2database</groupId>

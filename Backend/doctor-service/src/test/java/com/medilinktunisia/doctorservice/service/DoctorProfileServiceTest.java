@@ -50,7 +50,7 @@ class DoctorProfileServiceTest {
         assertThat(saved.getUserId()).isEqualTo(userId);
         assertThat(saved.getAvailable()).isTrue();
         assertThat(saved.getBiography()).isEqualTo("Test bio");
-        assertThat(saved.getFee()).isEqualTo(new BigDecimal("50.00"));
+        assertThat(saved.getFee()).isEqualByComparingTo(new BigDecimal("50.00"));
         assertThat(saved.getDebutMatin()).isEqualTo("08:00");
         assertThat(saved.getFinMatin()).isEqualTo("13:00");
         assertThat(saved.getDebutApresMidi()).isEqualTo("15:00");
@@ -93,7 +93,7 @@ class DoctorProfileServiceTest {
         assertThat(result.getUserId()).isEqualTo(userId);
         assertThat(result.getAvailable()).isTrue();
         assertThat(result.getBiography()).isEqualTo("Bio");
-        assertThat(result.getFee()).isEqualTo(new BigDecimal("50.00"));
+        assertThat(result.getFee()).isEqualByComparingTo(new BigDecimal("50.00"));
     }
 
     @Test
@@ -127,6 +127,15 @@ class DoctorProfileServiceTest {
     }
 
     @Test
+    void getAllProfiles_emptyList_returnsEmptyList() {
+        when(repository.findAll()).thenReturn(List.of());
+
+        List<DoctorProfileDto> result = service.getAllProfiles();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     void updateByUserId_existingProfile_updatesFields() {
         DoctorProfile existing = new DoctorProfile();
         existing.setUserId(userId);
@@ -144,7 +153,7 @@ class DoctorProfileServiceTest {
 
         assertThat(result.getAvailable()).isFalse();
         assertThat(result.getBiography()).isEqualTo("Updated bio");
-        assertThat(result.getFee()).isEqualTo(new BigDecimal("75.00"));
+        assertThat(result.getFee()).isEqualByComparingTo(new BigDecimal("75.00"));
         verify(repository).save(existing);
     }
 
@@ -251,14 +260,5 @@ class DoctorProfileServiceTest {
 
         assertThat(result.getBiography()).isNull();
         assertThat(result.getFee()).isNull();
-    }
-
-    @Test
-    void getAllProfiles_emptyList_returnsEmptyList() {
-        when(repository.findAll()).thenReturn(List.of());
-
-        List<DoctorProfileDto> result = service.getAllProfiles();
-
-        assertThat(result).isEmpty();
     }
 }

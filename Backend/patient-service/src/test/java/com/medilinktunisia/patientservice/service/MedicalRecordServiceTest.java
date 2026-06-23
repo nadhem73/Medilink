@@ -6,6 +6,7 @@ import com.medilinktunisia.patientservice.model.MedicalRecord;
 import com.medilinktunisia.patientservice.repository.MedicalRecordRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -14,7 +15,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,6 +41,7 @@ class MedicalRecordServiceTest {
     void createMedicalRecord_whenExistingRecord_shouldDoNothing() {
         MedicalRecordRequest request = new MedicalRecordRequest();
         request.setUserId(1L);
+
         when(repository.existsByUserId(1L)).thenReturn(true);
 
         service.createMedicalRecord(request);
@@ -62,28 +63,33 @@ class MedicalRecordServiceTest {
         request.setEmergencyContactPhone("+21698765432");
         request.setInsuranceCompany("Assurance Tunis");
         request.setInsuranceNumber("AT-123456");
+
         when(repository.existsByUserId(1L)).thenReturn(false);
+        when(repository.save(any(MedicalRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.createMedicalRecord(request);
 
-        verify(repository).save(argThat(record ->
-            record.getUserId().equals(1L) &&
-            record.getBloodGroup().equals("A+") &&
-            record.getHeight().equals(175.0) &&
-            record.getWeight().equals(70.5) &&
-            record.getAllergies().equals("Pollen") &&
-            record.getChronicDiseases().equals("Asthma") &&
-            record.getCurrentTreatments().equals("Inhaler") &&
-            record.getEmergencyContactName().equals("Jane Doe") &&
-            record.getEmergencyContactPhone().equals("+21698765432") &&
-            record.getInsuranceCompany().equals("Assurance Tunis") &&
-            record.getInsuranceNumber().equals("AT-123456")
-        ));
+        ArgumentCaptor<MedicalRecord> captor = ArgumentCaptor.forClass(MedicalRecord.class);
+        verify(repository).save(captor.capture());
+
+        MedicalRecord saved = captor.getValue();
+        assertThat(saved.getUserId()).isEqualTo(1L);
+        assertThat(saved.getBloodGroup()).isEqualTo("A+");
+        assertThat(saved.getHeight()).isEqualTo(175.0);
+        assertThat(saved.getWeight()).isEqualTo(70.5);
+        assertThat(saved.getAllergies()).isEqualTo("Pollen");
+        assertThat(saved.getChronicDiseases()).isEqualTo("Asthma");
+        assertThat(saved.getCurrentTreatments()).isEqualTo("Inhaler");
+        assertThat(saved.getEmergencyContactName()).isEqualTo("Jane Doe");
+        assertThat(saved.getEmergencyContactPhone()).isEqualTo("+21698765432");
+        assertThat(saved.getInsuranceCompany()).isEqualTo("Assurance Tunis");
+        assertThat(saved.getInsuranceNumber()).isEqualTo("AT-123456");
     }
 
     @Test
     void getByUserId_whenFound_shouldReturnMappedDto() {
         MedicalRecord record = new MedicalRecord();
+        record.setId(1L);
         record.setUserId(1L);
         record.setBloodGroup("B+");
         record.setHeight(180.0);
@@ -95,6 +101,7 @@ class MedicalRecordServiceTest {
         record.setEmergencyContactPhone("+21612345678");
         record.setInsuranceCompany("Company");
         record.setInsuranceNumber("12345");
+
         when(repository.findByUserId(1L)).thenReturn(Optional.of(record));
 
         MedicalRecordDto result = service.getByUserId(1L);
