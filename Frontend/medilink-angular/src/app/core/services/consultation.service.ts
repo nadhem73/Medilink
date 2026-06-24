@@ -61,6 +61,10 @@ export class ConsultationService {
     return this.http.get<ConsultationResponse[]>(this.API_URL, { params });
   }
 
+  getPatientConsultations(patientId: number): Observable<ConsultationResponse[]> {
+    return this.http.get<ConsultationResponse[]>(`${this.API_URL}/patient/${patientId}`);
+  }
+
   getConsultation(id: number): Observable<ConsultationResponse> {
     return this.http.get<ConsultationResponse>(`${this.API_URL}/${id}`);
   }

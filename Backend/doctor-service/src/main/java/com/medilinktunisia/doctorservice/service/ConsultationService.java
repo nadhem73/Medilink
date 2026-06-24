@@ -144,6 +144,13 @@ public class ConsultationService {
         return toDto(repository.save(consultation));
     }
 
+    public List<ConsultationResponse> getConsultationsByPatient(Long doctorId, Long patientId) {
+        return repository.findByDoctorIdAndPatientIdOrderByStartTimeDesc(doctorId, patientId)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
     public void cancelConsultation(Long id, Long doctorId) {
         Consultation consultation = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Consultation not found: " + id));

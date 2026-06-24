@@ -238,6 +238,9 @@ public class AuthService {
                 .email(patient.getEmail())
                 .phone(patient.getPhone())
                 .gender(patient.getGender() != null ? patient.getGender().name() : null)
+                .address(patient.getAddress())
+                .birthDate(patient.getBirthDate() != null ? patient.getBirthDate().toString() : null)
+                .cin(patient.getCin())
                 .build();
     }
 }
