@@ -18,9 +18,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = MedicalRecordController.class,
@@ -126,5 +128,55 @@ class MedicalRecordControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(999L))
                 .andExpect(jsonPath("$.bloodGroup").isEmpty());
+    }
+
+    @Test
+    void updatePatientMedicalRecord_shouldReturn200() throws Exception {
+        MedicalRecordDto dto = MedicalRecordDto.builder()
+                .userId(1L).bloodGroup("A+")
+                .height(175.0).weight(70.0)
+                .allergies("None").build();
+
+        when(service.updateMedicalRecord(eq(1L), any(MedicalRecordRequest.class)))
+                .thenReturn(dto);
+
+        String body = """
+                {
+                    "bloodGroup": "A+",
+                    "height": 175.0,
+                    "weight": 70.0,
+                    "allergies": "None"
+                }
+                """;
+
+        mockMvc.perform(put("/api/patients/{userId}/medical-record", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId", is(1)))
+                .andExpect(jsonPath("$.bloodGroup", is("A+")))
+                .andExpect(jsonPath("$.height", is(175.0)))
+                .andExpect(jsonPath("$.weight", is(70.0)))
+                .andExpect(jsonPath("$.allergies", is("None")));
+
+        verify(service).updateMedicalRecord(eq(1L), any(MedicalRecordRequest.class));
+    }
+
+    @Test
+    void updatePatientMedicalRecord_shouldSetUserIdFromPath() throws Exception {
+        when(service.updateMedicalRecord(eq(5L), any(MedicalRecordRequest.class)))
+                .thenReturn(MedicalRecordDto.builder().userId(5L).build());
+
+        String body = """
+                { "bloodGroup": "AB-" }
+                """;
+
+        mockMvc.perform(put("/api/patients/{userId}/medical-record", 5L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId", is(5)));
+
+        verify(service).updateMedicalRecord(eq(5L), any(MedicalRecordRequest.class));
     }
 }

@@ -100,6 +100,8 @@ describe('DoctorSectionComponent', () => {
     appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
     fixture.detectChanges();
 
+    component.selectedDate = null;
+
     component.statusFilter = 'PENDING';
     expect(component.filteredAppointments.length).toBe(1);
 
@@ -339,5 +341,79 @@ describe('DoctorSectionComponent', () => {
 
     component.selectPatient(component.patients[0]);
     expect(component.medicalLoading).toBeFalse();
+  });
+
+  // ── Additional fiche patient tests ──────────────────────────────────────
+
+  it('should get patient name from registeredPatients', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    fixture.detectChanges();
+
+    expect(component.getPatientName(1)).toBe('Mohamed Aloui');
+    expect(component.getPatientName(2)).toBe('Fatma Khelifi');
+    expect(component.getPatientName(999)).toBe('Patient #999');
+  });
+
+  it('should format date in French locale', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    fixture.detectChanges();
+
+    const result = component.formatDate('2026-06-18T09:30:00');
+    expect(result).toContain('juin');
+    expect(result).toContain('18');
+    expect(component.formatDate('')).toBe('');
+  });
+
+  it('should format hour as HH:mm', () => {
+    expect(component.formatHour('2026-06-18T09:30:00')).toBe('09:30');
+    expect(component.formatHour('2026-06-18T14:05:00')).toBe('14:05');
+    expect(component.formatHour('')).toBe('');
+  });
+
+  it('should detect if appointment is today', () => {
+    const today = new Date();
+    const todayStr = today.toISOString();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    expect(component.isAppointmentToday({ rawDateTime: todayStr } as any)).toBeTrue();
+    expect(component.isAppointmentToday({ rawDateTime: tomorrow.toISOString() } as any)).toBeFalse();
+  });
+
+  it('should return insurance label from number only', () => {
+    component.patientMedicalRecord = { insuranceNumber: '12345' } as MedicalRecord;
+    expect(component.insuranceLabel).toBe('12345');
+  });
+
+  it('should return fallback insurance label when both empty', () => {
+    component.patientMedicalRecord = {} as MedicalRecord;
+    expect(component.insuranceLabel).toBe('Non renseignée');
+  });
+
+  it('should handle falsy height and weight in medical getters', () => {
+    component.patientMedicalRecord = { height: undefined, weight: undefined } as MedicalRecord;
+    expect(component.medicalHeight).toBe('—');
+    expect(component.medicalWeight).toBe('—');
+  });
+
+  it('should filter appointments by search query', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    fixture.detectChanges();
+
+    component.selectedDate = null;
+    component.searchQuery = 'Aloui';
+    expect(component.filteredAppointments.length).toBe(2);
+
+    component.searchQuery = 'Suivi';
+    expect(component.filteredAppointments.length).toBe(1);
+
+    component.searchQuery = 'nonexistent';
+    expect(component.filteredAppointments.length).toBe(0);
+
+    component.searchQuery = '';
+    expect(component.filteredAppointments.length).toBe(3);
   });
 });
