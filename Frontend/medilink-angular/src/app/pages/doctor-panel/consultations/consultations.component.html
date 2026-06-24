@@ -1,0 +1,355 @@
+<section class="dp-page">
+  <header class="dp-header">
+    <div>
+      <p class="dp-kicker">Panel medecin</p>
+      <h1>Mes consultations</h1>
+      <p class="dp-copy">Consultez et gérez vos consultations en cours et terminées.</p>
+    </div>
+    <a routerLink="/dashboard/doctor" class="dp-back">← Retour au tableau de bord</a>
+  </header>
+
+  <ng-container *ngIf="!selectedConsultation; else detailView">
+
+    <!-- Filtres -->
+    <div class="consult-filters">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input #searchField type="text" (input)="onSearchChange(searchField.value)" placeholder="Rechercher un patient ou un motif..." class="search-input" />
+      </div>
+      <div class="filter-btns">
+        <button type="button" class="filter-btn" [class.active]="!filterStatus" (click)="filterByStatus('')">Toutes</button>
+        <button type="button" class="filter-btn" [class.active]="filterStatus === 'PENDING'" (click)="filterByStatus('PENDING')">
+          <span class="status-dot pending"></span> En attente
+        </button>
+        <button type="button" class="filter-btn" [class.active]="filterStatus === 'IN_PROGRESS'" (click)="filterByStatus('IN_PROGRESS')">
+          <span class="status-dot progress"></span> En cours
+        </button>
+        <button type="button" class="filter-btn" [class.active]="filterStatus === 'COMPLETED'" (click)="filterByStatus('COMPLETED')">
+          <span class="status-dot completed"></span> Terminées
+        </button>
+      </div>
+    </div>
+
+    <!-- Rendez-vous du jour -->
+    <article class="card" *ngIf="todayAppointments.length > 0 && (!filterStatus || filterStatus === 'PENDING')">
+      <div class="card-header">
+        <h2>Rendez-vous du jour à démarrer</h2>
+        <span class="badge accent-orange">{{ todayAppointments.length }} en attente</span>
+      </div>
+      <div class="appt-list">
+        <div class="appt-card" *ngFor="let appt of todayAppointments">
+          <div class="appt-time-col">
+            <span class="appt-hour">{{ appt.hour }}</span>
+            <span class="appt-mode-tag">{{ appt.mode === 'Téléconsultation' ? '📹' : '🏥' }}</span>
+          </div>
+          <div class="appt-info-col">
+            <div class="appt-patient-row">
+              <span class="patient-badge">{{ getPatientInitials(appt.patientId) }}</span>
+              <div>
+                <strong class="appt-patient">{{ getPatientName(appt.patientId) }}</strong>
+                <span class="appt-reason">{{ appt.reason }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="appt-action-col">
+            <button type="button" class="appt-btn btn-start" [disabled]="startingId === appt.id" (click)="startConsultationFromAppointment(appt)">
+              <span *ngIf="startingId !== appt.id">🩺 Démarrer</span>
+              <span *ngIf="startingId === appt.id" class="btn-spinner"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement des consultations...</p>
+    </div>
+
+    <!-- Liste des consultations -->
+    <article class="card" *ngIf="!loading && filteredConsultations.length > 0">
+      <div class="card-header">
+        <h2>Liste des consultations</h2>
+        <span class="badge accent-purple">{{ filteredConsultations.length }} résultat(s)</span>
+      </div>
+      <div class="appt-list">
+        <div class="appt-card clickable" *ngFor="let c of filteredConsultations" (click)="selectConsultation(c)">
+          <div class="appt-time-col">
+            <span class="appt-hour">{{ c.startTime | date:'HH:mm' }}</span>
+            <span class="appt-mode-tag">{{ c.type === 'TELECONSULTATION' ? '📹' : '🏥' }}</span>
+          </div>
+          <div class="appt-info-col">
+            <div class="appt-patient-row">
+              <span class="patient-badge" [ngClass]="'badge-' + getStatusClass(c.status)">{{ getPatientInitials(c.patientId) }}</span>
+              <div>
+                <strong class="appt-patient">{{ getPatientName(c.patientId) }}</strong>
+                <span class="appt-reason">{{ c.reason || 'Motif non renseigné' }}</span>
+                <span class="appt-date">{{ c.startTime | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="appt-action-col">
+            <span class="status" [ngClass]="'status-' + getStatusClass(c.status)">{{ getStatusLabel(c.status) }}</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Empty state -->
+    <div *ngIf="!loading && filteredConsultations.length === 0 && !(todayAppointments.length > 0 && (!filterStatus || filterStatus === 'PENDING'))" class="empty-state">
+      <span class="empty-icon">📋</span>
+      <h3>Aucune consultation</h3>
+      <p>Aucune consultation trouvée pour ce filtre.</p>
+    </div>
+  </ng-container>
+
+  <ng-template #detailView>
+    <div class="consult-detail" *ngIf="selectedConsultation">
+      <div class="detail-top-bar">
+        <button type="button" class="back-link" (click)="backToList()">← Retour à la liste</button>
+        <div class="detail-title-row">
+          <h2>Consultation #{{ selectedConsultation.id }}</h2>
+          <span class="status" [ngClass]="'status-' + getStatusClass(selectedConsultation.status)">{{ getStatusLabel(selectedConsultation.status) }}</span>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <article class="card">
+          <div class="card-header">
+            <h2>Informations</h2>
+          </div>
+          <div class="info-holo-row">
+            <div class="info-fields">
+              <div class="profile-grid">
+                <div class="profile-item">
+                  <span>Patient</span>
+                  <strong>{{ getPatientName(selectedConsultation.patientId) }}</strong>
+                </div>
+                <div class="profile-item">
+                  <span>Début</span>
+                  <strong>{{ selectedConsultation.startTime | date:'dd/MM/yyyy HH:mm' }}</strong>
+                </div>
+                <div class="profile-item" *ngIf="selectedConsultation.endTime">
+                  <span>Fin</span>
+                  <strong>{{ selectedConsultation.endTime | date:'dd/MM/yyyy HH:mm' }}</strong>
+                </div>
+                <div class="profile-item">
+                  <span>Type</span>
+                  <strong>{{ selectedConsultation.type === 'TELECONSULTATION' ? 'Téléconsultation' : 'Présentiel' }}</strong>
+                </div>
+                <div class="profile-item" style="grid-column: 1 / -1;">
+                  <span>Motif</span>
+                  <strong>{{ selectedConsultation.reason || 'Non renseigné' }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="holo-card" *ngIf="getPatientGender(selectedConsultation.patientId)">
+              <div class="holo-scene">
+                <div class="holo-screen">
+                  <div class="holo-rings"><span></span><span></span><span></span></div>
+                  <app-medical-hologram
+                    class="holo-canvas show"
+                    [gender]="getPatientGender(selectedConsultation.patientId)">
+                  </app-medical-hologram>
+                </div>
+              </div>
+              <div class="holo-gender-label">
+                {{ getPatientGender(selectedConsultation.patientId) === 'MALE' ? '♂ Homme' : '♀ Femme' }}
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dossier médical du patient (éditable) -->
+        <div *ngIf="medicalLoading" class="loading-state" style="padding: 24px;">
+          <div class="spinner"></div>
+          <p>Chargement du dossier médical...</p>
+        </div>
+        <article class="card" [class.readonly]="isCompleted" *ngIf="patientMedicalRecord && !medicalLoading">
+          <div class="card-header">
+            <h2>Dossier médical — {{ getPatientName(selectedConsultation.patientId) }}</h2>
+            <button type="button" class="appt-btn btn-confirm" [disabled]="isCompleted" (click)="saveMedicalRecord()">💾 Enregistrer</button>
+          </div>
+          <div class="readonly-banner" *ngIf="isCompleted">🔒 Consultation terminée — le dossier est en lecture seule</div>
+
+          <!-- Infos générales -->
+          <div class="section-block">
+            <h3 class="section-title">🆔 Informations générales</h3>
+            <div class="medical-grid">
+              <div class="profile-item">
+                <span>Groupe sanguin</span>
+                <input class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.bloodGroup" placeholder="A+, O-..." />
+              </div>
+              <div class="profile-item">
+                <span>Taille (cm)</span>
+                <input class="editable-text" [readonly]="isCompleted" type="number" step="0.1" [(ngModel)]="editingMedicalRecord.height" placeholder="175" />
+              </div>
+              <div class="profile-item">
+                <span>Poids (kg)</span>
+                <input class="editable-text" [readonly]="isCompleted" type="number" step="0.1" [(ngModel)]="editingMedicalRecord.weight" placeholder="70" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Antécédents & traitements -->
+          <div class="section-block">
+            <h3 class="section-title">🏥 Antécédents & traitements</h3>
+            <div class="medical-grid">
+              <div class="profile-item full-width">
+                <span>Allergies</span>
+                <textarea class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.allergies" rows="2" placeholder="Aucune"></textarea>
+              </div>
+              <div class="profile-item full-width">
+                <span>Maladies chroniques</span>
+                <textarea class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.chronicDiseases" rows="2" placeholder="Aucune"></textarea>
+              </div>
+              <div class="profile-item full-width">
+                <span>Traitements en cours</span>
+                <textarea class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.currentTreatments" rows="2" placeholder="Aucun"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact d'urgence -->
+          <div class="section-block">
+            <h3 class="section-title">📞 Contact d'urgence</h3>
+            <div class="medical-grid">
+              <div class="profile-item">
+                <span>Nom</span>
+                <input class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.emergencyContactName" placeholder="Nom complet" />
+              </div>
+              <div class="profile-item">
+                <span>Téléphone</span>
+                <input class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.emergencyContactPhone" placeholder="+216 XX XXX XXX" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Assurance CNAM -->
+          <div class="section-block">
+            <h3 class="section-title">🛡️ Assurance CNAM</h3>
+            <div class="medical-grid">
+              <div class="profile-item">
+                <span>CNAM</span>
+                <strong>CNAM</strong>
+              </div>
+              <div class="profile-item">
+                <span>N° CNAM</span>
+                <input class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.insuranceNumber" placeholder="Numéro CNAM" />
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Données cliniques -->
+        <article class="card" [class.readonly]="isCompleted" *ngIf="selectedConsultation.status !== 'CANCELLED'">
+          <div class="card-header">
+            <h2>Données cliniques</h2>
+          </div>
+          <div class="readonly-banner" *ngIf="isCompleted">🔒 Consultation terminée — modification impossible</div>
+
+          <div class="section-block">
+            <h3 class="section-title">Diagnostic & observations</h3>
+            <div class="medical-grid">
+              <div class="profile-item full-width">
+                <span>Diagnostic</span>
+                <textarea class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingConsultation.diagnosis" rows="2" placeholder="Saisissez le diagnostic..."></textarea>
+              </div>
+              <div class="profile-item full-width">
+                <span>Observations</span>
+                <textarea class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingConsultation.observations" rows="2" placeholder="Notes cliniques..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Signes vitaux</h3>
+            <div class="medical-grid">
+              <div class="profile-item">
+                <span>TA (mmHg)</span>
+                <input class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingConsultation.bloodPressure" placeholder="ex: 12/8" />
+              </div>
+              <div class="profile-item">
+                <span>Pouls (bpm)</span>
+                <input class="editable-text" [readonly]="isCompleted" type="number" [(ngModel)]="editingConsultation.pulse" placeholder="72" />
+              </div>
+              <div class="profile-item">
+                <span>Température (°C)</span>
+                <input class="editable-text" [readonly]="isCompleted" type="number" step="0.1" [(ngModel)]="editingConsultation.temperature" placeholder="36.6" />
+              </div>
+            </div>
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Mesures</h3>
+            <div class="medical-grid">
+              <div class="profile-item">
+                <span>Poids (kg)</span>
+                <input class="editable-text" [readonly]="isCompleted" type="number" step="0.1" [(ngModel)]="editingConsultation.weight" placeholder="70" />
+              </div>
+              <div class="profile-item">
+                <span>Taille (cm)</span>
+                <input class="editable-text" [readonly]="isCompleted" type="number" step="0.1" [(ngModel)]="editingConsultation.height" placeholder="175" />
+              </div>
+              <div class="profile-item">
+                <span>IMC</span>
+                <input class="editable-text imc-display" readonly [value]="editingConsultation.height && editingConsultation.weight ? (editingConsultation.weight / ((editingConsultation.height/100) * (editingConsultation.height/100)) | number:'1.1') : ''" placeholder="Calculé automatiquement" />
+              </div>
+            </div>
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Examens d'analyse</h3>
+            <div class="analysis-grid">
+              <label class="analysis-chip" *ngFor="let type of analysisTypes"
+                     [class.selected]="hasAnalysis(type)"
+                     [class.disabled]="isCompleted">
+                <input type="checkbox" [disabled]="isCompleted" [checked]="hasAnalysis(type)" (change)="toggleAnalysis(type, $any($event.target).checked)" />
+                <span>{{ type }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Suivi</h3>
+            <div class="suivi-toggle">
+              <label class="toggle-label">
+                <input type="checkbox" [disabled]="isCompleted" [ngModel]="editingConsultation.followUpDate != null && editingConsultation.followUpDate !== ''" (ngModelChange)="toggleFollowUp($event)" />
+                <span>Programmer une consultation de suivi</span>
+              </label>
+            </div>
+            <div class="medical-grid" *ngIf="editingConsultation.followUpDate != null && editingConsultation.followUpDate !== ''">
+              <div class="profile-item">
+                <span>Date de la prochaine consultation</span>
+                <input class="editable-text" type="date" [disabled]="isCompleted" [(ngModel)]="editingConsultation.followUpDate" (ngModelChange)="onFollowUpDateChange()" />
+              </div>
+              <div class="profile-item slots-group">
+                <span>Créneaux disponibles</span>
+                <div *ngIf="isCompleted && editingConsultation.followUpTime" class="slots-selected">
+                  🕐 {{ editingConsultation.followUpTime }}
+                </div>
+                <ng-container *ngIf="!isCompleted">
+                  <div *ngIf="loadingSlots" class="slots-loading">⏳ Chargement...</div>
+                  <div *ngIf="!loadingSlots && availableSlots.length === 0" class="slots-empty">Aucun créneau disponible</div>
+                  <div *ngIf="!loadingSlots && availableSlots.length > 0" class="slots-grid">
+                    <button type="button" class="slot-btn" *ngFor="let slot of availableSlots"
+                      [class.selected]="editingConsultation.followUpTime === slot"
+                      (click)="editingConsultation.followUpTime = slot">
+                      {{ slot }}
+                    </button>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions" *ngIf="selectedConsultation.status !== 'COMPLETED'">
+            <button type="button" class="appt-btn btn-start" (click)="completeConsultation()">✅ Finaliser la consultation</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </ng-template>
+</section>

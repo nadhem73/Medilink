@@ -68,7 +68,7 @@ class MedicalRecordServiceTest {
     }
 
     @Test
-    void createMedicalRecord_withExistingUserId_shouldDoNothing() {
+    void createMedicalRecord_whenExistingRecord_shouldDoNothing() {
         MedicalRecordRequest request = new MedicalRecordRequest();
         request.setUserId(1L);
 
@@ -93,28 +93,33 @@ class MedicalRecordServiceTest {
         request.setEmergencyContactPhone("+21698765432");
         request.setInsuranceCompany("Assurance Tunis");
         request.setInsuranceNumber("AT-123456");
+
         when(repository.existsByUserId(1L)).thenReturn(false);
+        when(repository.save(any(MedicalRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.createMedicalRecord(request);
 
-        verify(repository).save(argThat(record ->
-            record.getUserId().equals(1L) &&
-            record.getBloodGroup().equals("A+") &&
-            record.getHeight().equals(175.0) &&
-            record.getWeight().equals(70.5) &&
-            record.getAllergies().equals("Pollen") &&
-            record.getChronicDiseases().equals("Asthma") &&
-            record.getCurrentTreatments().equals("Inhaler") &&
-            record.getEmergencyContactName().equals("Jane Doe") &&
-            record.getEmergencyContactPhone().equals("+21698765432") &&
-            record.getInsuranceCompany().equals("Assurance Tunis") &&
-            record.getInsuranceNumber().equals("AT-123456")
-        ));
+        ArgumentCaptor<MedicalRecord> captor = ArgumentCaptor.forClass(MedicalRecord.class);
+        verify(repository).save(captor.capture());
+
+        MedicalRecord saved = captor.getValue();
+        assertThat(saved.getUserId()).isEqualTo(1L);
+        assertThat(saved.getBloodGroup()).isEqualTo("A+");
+        assertThat(saved.getHeight()).isEqualTo(175.0);
+        assertThat(saved.getWeight()).isEqualTo(70.5);
+        assertThat(saved.getAllergies()).isEqualTo("Pollen");
+        assertThat(saved.getChronicDiseases()).isEqualTo("Asthma");
+        assertThat(saved.getCurrentTreatments()).isEqualTo("Inhaler");
+        assertThat(saved.getEmergencyContactName()).isEqualTo("Jane Doe");
+        assertThat(saved.getEmergencyContactPhone()).isEqualTo("+21698765432");
+        assertThat(saved.getInsuranceCompany()).isEqualTo("Assurance Tunis");
+        assertThat(saved.getInsuranceNumber()).isEqualTo("AT-123456");
     }
 
     @Test
     void getByUserId_whenFound_shouldReturnMappedDto() {
         MedicalRecord record = new MedicalRecord();
+        record.setId(1L);
         record.setUserId(1L);
         record.setBloodGroup("B+");
         record.setHeight(180.0);

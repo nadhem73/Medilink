@@ -8,7 +8,12 @@
   ],
   "overrides": [
     {
-      "files": ["*.ts"],
+      "files": ["src/**/*.ts"],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "project": ["tsconfig.json"],
+        "createDefaultProgram": true
+      },
       "extends": [
         "plugin:@angular-eslint/recommended"
       ],
@@ -20,15 +25,19 @@
         "@angular-eslint/component-selector": [
           "error",
           { "type": "element", "prefix": "app", "style": "kebab-case" }
-        ]
+        ],
+        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/no-unused-vars": "warn"
       }
     },
     {
-      "files": ["*.html"],
+      "files": ["src/**/*.html"],
       "extends": [
         "plugin:@angular-eslint/template/recommended"
       ],
-      "rules": {}
+      "rules": {
+        "@angular-eslint/template/eqeqeq": "warn"
+      }
     }
   ]
 }

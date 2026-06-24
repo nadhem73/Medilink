@@ -137,7 +137,7 @@ export class PatientSectionComponent implements OnInit {
     this.loadingAppointments = true;
     this.appointmentService.getMyAppointments().subscribe({
       next: (data) => {
-        this.appointments = data;
+        this.appointments = data.filter(a => a.status !== 'COMPLETED');
         this.loadingAppointments = false;
       },
       error: (err) => {
@@ -303,21 +303,6 @@ export class PatientSectionComponent implements OnInit {
         this.submitting = false;
       }
     });
-  }
-
-  // Cancel an existing appointment
-  cancelAppointment(id: number): void {
-    if (confirm('Etes-vous sur de vouloir annuler ce rendez-vous ?')) {
-      this.appointmentService.cancelAppointment(id).subscribe({
-        next: () => {
-          this.loadAppointments();
-        },
-        error: (err) => {
-          console.error('Erreur lors de lannulation', err);
-          alert('Impossible d\'annuler ce rendez-vous.');
-        }
-      });
-    }
   }
 
   // Helper method to resolve doctor details in appointments list

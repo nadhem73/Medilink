@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -33,6 +34,12 @@ public class JwtService {
     public Long extractUserId(String token) {
         Object userId = extractClaim(token, claims -> claims.get("userId"));
         return userId == null ? null : Long.valueOf(userId.toString());
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        List<String> roles = extractClaim(token, claims -> claims.get("roles", List.class));
+        return roles != null ? roles : List.of();
     }
 
     public boolean isTokenValid(String token) {

@@ -61,6 +61,24 @@ public class AppointmentService {
     }
 
     /**
+     * Crée un rendez-vous de suivi (initié par le médecin).
+     * Contourne la vérification de double réservation.
+     */
+    public AppointmentDto createFollowUpAppointment(Long doctorId, Long patientId, LocalDateTime dateTime) {
+        validateTimeSlot(doctorId, dateTime);
+
+        Appointment appointment = new Appointment();
+        appointment.setPatientId(patientId);
+        appointment.setDoctorId(doctorId);
+        appointment.setDateTime(dateTime);
+        appointment.setMode(AppointmentMode.PRESENTIEL);
+        appointment.setNotes("Consultation de suivi");
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
+
+        return toDto(repository.save(appointment));
+    }
+
+    /**
      * Liste tous les rendez-vous d'un patient donné, triés par date décroissante.
      */
     public List<AppointmentDto> getPatientAppointments(Long patientId) {
@@ -156,6 +174,25 @@ public class AppointmentService {
         AppointmentDto cancelled = toDto(repository.save(appointment));
         log.info("Appointment id={} cancelled by doctorId={}", appointmentId, doctorId);
         return cancelled;
+    }
+
+    /**
+     * Marque un rendez-vous comme terminé après la finalisation de la consultation.
+     */
+    public AppointmentDto completeAppointment(Long doctorId, Long appointmentId) {
+        Appointment appointment = repository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Rendez-vous introuvable"));
+
+        if (!appointment.getDoctorId().equals(doctorId)) {
+            throw new IllegalStateException("Vous n'êtes pas autorisé à modifier ce rendez-vous");
+        }
+
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new IllegalStateException("Impossible de terminer un rendez-vous annulé");
+        }
+
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        return toDto(repository.save(appointment));
     }
 
     /**

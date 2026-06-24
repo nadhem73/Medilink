@@ -25,7 +25,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = AppointmentController.class, properties = {"jwt.secret=testSecretKeyForJWTTokenGenerationAndValidationThatIsLongEnough"})
+@WebMvcTest(controllers = AppointmentController.class,
+        properties = {"jwt.secret=testSecretKeyForJWTTokenGenerationAndValidationThatIsLongEnough"})
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class AppointmentControllerTest {
@@ -34,7 +35,7 @@ class AppointmentControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private AppointmentService appointmentService;
+    private AppointmentService service;
 
     @MockBean
     private JwtService jwtService;
@@ -44,15 +45,12 @@ class AppointmentControllerTest {
     @Test
     void createAppointment_shouldReturn201() throws Exception {
         AppointmentDto dto = AppointmentDto.builder()
-                .id(1L)
-                .patientId(1L)
-                .doctorId(2L)
+                .id(1L).patientId(1L).doctorId(2L)
                 .dateTime(LocalDateTime.parse("2025-06-20T10:00:00"))
-                .status("PENDING")
-                .mode("PRESENTIEL")
+                .status("PENDING").mode("PRESENTIEL")
                 .build();
 
-        when(appointmentService.createAppointment(eq(1L), any())).thenReturn(dto);
+        when(service.createAppointment(eq(1L), any(AppointmentRequest.class))).thenReturn(dto);
 
         mockMvc.perform(post("/api/patients/appointments")
                         .requestAttr("userId", 1L)
@@ -69,7 +67,7 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.patientId", is(1)))
                 .andExpect(jsonPath("$.status", is("PENDING")));
 
-        verify(appointmentService).createAppointment(eq(1L), any());
+        verify(service).createAppointment(eq(1L), any(AppointmentRequest.class));
     }
 
     @Test
@@ -79,7 +77,7 @@ class AppointmentControllerTest {
                 .status("PENDING").mode("PRESENTIEL")
                 .build();
 
-        when(appointmentService.getPatientAppointments(1L)).thenReturn(List.of(dto));
+        when(service.getPatientAppointments(1L)).thenReturn(List.of(dto));
 
         mockMvc.perform(get("/api/patients/appointments")
                         .requestAttr("userId", 1L))
@@ -87,17 +85,17 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id", is(1)));
 
-        verify(appointmentService).getPatientAppointments(1L);
+        verify(service).getPatientAppointments(1L);
     }
 
     @Test
-    void getDoctorAppointments_shouldReturn200() throws Exception {
+    void getMyDoctorAppointments_shouldReturn200() throws Exception {
         AppointmentDto dto = AppointmentDto.builder()
                 .id(2L).patientId(3L).doctorId(1L)
                 .status("CONFIRMED").mode("TELECONSULTATION")
                 .build();
 
-        when(appointmentService.getDoctorAppointments(1L)).thenReturn(List.of(dto));
+        when(service.getDoctorAppointments(1L)).thenReturn(List.of(dto));
 
         mockMvc.perform(get("/api/patients/appointments/doctor")
                         .requestAttr("userId", 1L))
@@ -105,12 +103,12 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].doctorId", is(1)));
 
-        verify(appointmentService).getDoctorAppointments(1L);
+        verify(service).getDoctorAppointments(1L);
     }
 
     @Test
     void getActiveDoctorIds_shouldReturn200() throws Exception {
-        when(appointmentService.getActiveDoctorIdsForPatient(1L)).thenReturn(List.of(2L, 3L));
+        when(service.getActiveDoctorIdsForPatient(1L)).thenReturn(List.of(2L, 3L));
 
         mockMvc.perform(get("/api/patients/appointments/active-doctor-ids")
                         .requestAttr("userId", 1L))
@@ -119,12 +117,12 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$[0]", is(2)))
                 .andExpect(jsonPath("$[1]", is(3)));
 
-        verify(appointmentService).getActiveDoctorIdsForPatient(1L);
+        verify(service).getActiveDoctorIdsForPatient(1L);
     }
 
     @Test
     void getAvailableSlots_shouldReturn200() throws Exception {
-        when(appointmentService.getAvailableSlots(
+        when(service.getAvailableSlots(
                 eq(1L), eq("2025-06-20"), eq("09:00"), eq("12:00"),
                 eq("14:00"), eq("17:00")))
                 .thenReturn(List.of("09:00", "09:30", "10:00"));
@@ -140,9 +138,20 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$", hasSize(3)))
                 .andExpect(jsonPath("$[0]", is("09:00")));
 
-        verify(appointmentService).getAvailableSlots(
+        verify(service).getAvailableSlots(
                 eq(1L), eq("2025-06-20"), eq("09:00"), eq("12:00"),
                 eq("14:00"), eq("17:00"));
+    }
+
+    @Test
+    void checkAvailability_whenSlotFree_shouldReturnTrue() throws Exception {
+        doNothing().when(service).validateTimeSlot(anyLong(), any(LocalDateTime.class));
+
+        mockMvc.perform(get("/api/patients/appointments/check-availability")
+                        .param("doctorId", "1")
+                        .param("dateTime", "2025-06-20T10:00:00"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(true));
     }
 
     @Test
@@ -152,14 +161,31 @@ class AppointmentControllerTest {
                 .status("CANCELLED").mode("PRESENTIEL")
                 .build();
 
-        when(appointmentService.cancelAppointment(1L, 1L)).thenReturn(dto);
+        when(service.cancelAppointment(1L, 1L)).thenReturn(dto);
 
         mockMvc.perform(put("/api/patients/appointments/1/cancel")
                         .requestAttr("userId", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CANCELLED")));
 
-        verify(appointmentService).cancelAppointment(1L, 1L);
+        verify(service).cancelAppointment(1L, 1L);
+    }
+
+    @Test
+    void cancelAppointmentByDoctor_shouldReturn200() throws Exception {
+        AppointmentDto dto = AppointmentDto.builder()
+                .id(5L).patientId(1L).doctorId(2L)
+                .status("CANCELLED").mode("TELECONSULTATION")
+                .build();
+
+        when(service.cancelAppointmentByDoctor(1L, 5L)).thenReturn(dto);
+
+        mockMvc.perform(put("/api/patients/appointments/5/doctor-cancel")
+                        .requestAttr("userId", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("CANCELLED")));
+
+        verify(service).cancelAppointmentByDoctor(1L, 5L);
     }
 
     @Test
@@ -169,13 +195,13 @@ class AppointmentControllerTest {
                 .status("CONFIRMED").mode("PRESENTIEL")
                 .build();
 
-        when(appointmentService.confirmAppointment(2L, 1L)).thenReturn(dto);
+        when(service.confirmAppointment(2L, 1L)).thenReturn(dto);
 
         mockMvc.perform(put("/api/patients/appointments/1/confirm")
                         .requestAttr("userId", 2L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CONFIRMED")));
 
-        verify(appointmentService).confirmAppointment(2L, 1L);
+        verify(service).confirmAppointment(2L, 1L);
     }
 }

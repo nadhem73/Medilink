@@ -4,11 +4,12 @@ import com.medilinktunisia.doctorservice.dto.DoctorProfileDto;
 import com.medilinktunisia.doctorservice.dto.DoctorProfileRequest;
 import com.medilinktunisia.doctorservice.model.DoctorProfile;
 import com.medilinktunisia.doctorservice.repository.DoctorProfileRepository;
-import org.junit.jupiter.api.BeforeEach;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -26,34 +27,31 @@ class DoctorProfileServiceTest {
     @Mock
     private DoctorProfileRepository repository;
 
+    @InjectMocks
     private DoctorProfileService service;
 
     @Captor
     private ArgumentCaptor<DoctorProfile> profileCaptor;
 
-    @BeforeEach
-    void setUp() {
-        service = new DoctorProfileService(repository);
-    }
+    private final Long userId = 1L;
 
     @Test
-    void createDoctorProfile_withValidRequest_shouldSave() {
+    void createDoctorProfile_newProfile_savesWithDefaults() {
         DoctorProfileRequest request = new DoctorProfileRequest();
-        request.setUserId(1L);
-        request.setAvailable(true);
-        request.setBiography("Experienced doctor");
-        request.setFee(BigDecimal.valueOf(100));
+        request.setUserId(userId);
+        request.setBiography("Test bio");
+        request.setFee(new BigDecimal("50.00"));
 
-        when(repository.existsByUserId(1L)).thenReturn(false);
+        when(repository.existsByUserId(userId)).thenReturn(false);
 
         service.createDoctorProfile(request);
 
         verify(repository).save(profileCaptor.capture());
         DoctorProfile saved = profileCaptor.getValue();
-        assertThat(saved.getUserId()).isEqualTo(1L);
+        assertThat(saved.getUserId()).isEqualTo(userId);
         assertThat(saved.getAvailable()).isTrue();
-        assertThat(saved.getBiography()).isEqualTo("Experienced doctor");
-        assertThat(saved.getFee()).isEqualByComparingTo(BigDecimal.valueOf(100));
+        assertThat(saved.getBiography()).isEqualTo("Test bio");
+        assertThat(saved.getFee()).isEqualByComparingTo(new BigDecimal("50.00"));
         assertThat(saved.getDebutMatin()).isEqualTo("08:00");
         assertThat(saved.getFinMatin()).isEqualTo("13:00");
         assertThat(saved.getDebutApresMidi()).isEqualTo("15:00");
@@ -61,11 +59,11 @@ class DoctorProfileServiceTest {
     }
 
     @Test
-    void createDoctorProfile_withExistingUserId_shouldSkip() {
+    void createDoctorProfile_existingUserId_doesNothing() {
         DoctorProfileRequest request = new DoctorProfileRequest();
-        request.setUserId(1L);
+        request.setUserId(userId);
 
-        when(repository.existsByUserId(1L)).thenReturn(true);
+        when(repository.existsByUserId(userId)).thenReturn(true);
 
         service.createDoctorProfile(request);
 
@@ -73,9 +71,8 @@ class DoctorProfileServiceTest {
     }
 
     @Test
-    void createDoctorProfile_withNullUserId_shouldSkip() {
+    void createDoctorProfile_nullUserId_doesNothing() {
         DoctorProfileRequest request = new DoctorProfileRequest();
-        request.setUserId(null);
 
         service.createDoctorProfile(request);
 
@@ -83,72 +80,149 @@ class DoctorProfileServiceTest {
     }
 
     @Test
-    void getByUserId_whenFound_shouldReturnDto() {
+    void getByUserId_found_returnsDto() {
         DoctorProfile profile = new DoctorProfile();
-        profile.setId(1L);
-        profile.setUserId(1L);
+        profile.setUserId(userId);
         profile.setAvailable(true);
-        profile.setBiography("Expert");
-        profile.setFee(BigDecimal.valueOf(200));
-        profile.setDebutMatin("09:00");
-        profile.setFinMatin("14:00");
-        profile.setDebutApresMidi("16:00");
-        profile.setFinApresMidi("20:00");
+        profile.setBiography("Bio");
+        profile.setFee(new BigDecimal("50.00"));
 
-        when(repository.findByUserId(1L)).thenReturn(Optional.of(profile));
+        when(repository.findByUserId(userId)).thenReturn(Optional.of(profile));
 
-        DoctorProfileDto result = service.getByUserId(1L);
+        DoctorProfileDto result = service.getByUserId(userId);
 
-        assertThat(result.getUserId()).isEqualTo(1L);
+        assertThat(result.getUserId()).isEqualTo(userId);
         assertThat(result.getAvailable()).isTrue();
-        assertThat(result.getBiography()).isEqualTo("Expert");
-        assertThat(result.getFee()).isEqualByComparingTo(BigDecimal.valueOf(200));
-        assertThat(result.getDebutMatin()).isEqualTo("09:00");
-        assertThat(result.getFinMatin()).isEqualTo("14:00");
-        assertThat(result.getDebutApresMidi()).isEqualTo("16:00");
-        assertThat(result.getFinApresMidi()).isEqualTo("20:00");
+        assertThat(result.getBiography()).isEqualTo("Bio");
+        assertThat(result.getFee()).isEqualByComparingTo(new BigDecimal("50.00"));
     }
 
     @Test
-    void getByUserId_whenNotFound_shouldReturnEmptyDto() {
-        when(repository.findByUserId(99L)).thenReturn(Optional.empty());
+    void getByUserId_notFound_returnsEmptyDtoWithDefaultAvailable() {
+        when(repository.findByUserId(userId)).thenReturn(Optional.empty());
 
-        DoctorProfileDto result = service.getByUserId(99L);
+        DoctorProfileDto result = service.getByUserId(userId);
 
-        assertThat(result.getUserId()).isEqualTo(99L);
+        assertThat(result.getUserId()).isEqualTo(userId);
         assertThat(result.getAvailable()).isTrue();
+        assertThat(result.getBiography()).isNull();
         assertThat(result.getFee()).isNull();
     }
 
     @Test
-    void getAllProfiles_shouldReturnAllDtos() {
-        DoctorProfile profile1 = new DoctorProfile();
-        profile1.setId(1L);
-        profile1.setUserId(1L);
-        profile1.setAvailable(true);
+    void getAllProfiles_returnsAllProfiles() {
+        DoctorProfile p1 = new DoctorProfile();
+        p1.setUserId(1L);
+        p1.setAvailable(true);
 
-        DoctorProfile profile2 = new DoctorProfile();
-        profile2.setId(2L);
-        profile2.setUserId(2L);
-        profile2.setAvailable(false);
+        DoctorProfile p2 = new DoctorProfile();
+        p2.setUserId(2L);
+        p2.setAvailable(false);
 
-        when(repository.findAll()).thenReturn(List.of(profile1, profile2));
+        when(repository.findAll()).thenReturn(List.of(p1, p2));
 
         List<DoctorProfileDto> result = service.getAllProfiles();
 
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getUserId()).isEqualTo(1L);
-        assertThat(result.get(1).getUserId()).isEqualTo(2L);
+        assertThat(result).extracting(DoctorProfileDto::getUserId).containsExactly(1L, 2L);
     }
 
     @Test
-    void updateByUserId_whenExists_shouldUpdate() {
+    void getAllProfiles_emptyList_returnsEmptyList() {
+        when(repository.findAll()).thenReturn(List.of());
+
+        List<DoctorProfileDto> result = service.getAllProfiles();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void updateByUserId_existingProfile_updatesFields() {
         DoctorProfile existing = new DoctorProfile();
-        existing.setId(1L);
-        existing.setUserId(1L);
+        existing.setUserId(userId);
         existing.setAvailable(true);
-        existing.setBiography("Old bio");
-        existing.setFee(BigDecimal.valueOf(100));
+
+        DoctorProfileRequest request = new DoctorProfileRequest();
+        request.setAvailable(false);
+        request.setBiography("Updated bio");
+        request.setFee(new BigDecimal("75.00"));
+
+        when(repository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        DoctorProfileDto result = service.updateByUserId(userId, request);
+
+        assertThat(result.getAvailable()).isFalse();
+        assertThat(result.getBiography()).isEqualTo("Updated bio");
+        assertThat(result.getFee()).isEqualByComparingTo(new BigDecimal("75.00"));
+        verify(repository).save(existing);
+    }
+
+    @Test
+    void updateByUserId_nonExisting_createsThenUpdates() {
+        DoctorProfileRequest request = new DoctorProfileRequest();
+        request.setAvailable(false);
+        request.setBiography("New bio");
+
+        when(repository.findByUserId(userId)).thenReturn(Optional.empty());
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        DoctorProfileDto result = service.updateByUserId(userId, request);
+
+        assertThat(result.getUserId()).isEqualTo(userId);
+        assertThat(result.getAvailable()).isFalse();
+        assertThat(result.getBiography()).isEqualTo("New bio");
+        verify(repository).save(any(DoctorProfile.class));
+    }
+
+    @Test
+    void createDoctorProfile_customTimes_savesWithCustomTimes() {
+        DoctorProfileRequest request = new DoctorProfileRequest();
+        request.setUserId(userId);
+        request.setAvailable(false);
+        request.setDebutMatin("09:00");
+        request.setFinMatin("12:00");
+        request.setDebutApresMidi("14:00");
+        request.setFinApresMidi("18:00");
+
+        when(repository.existsByUserId(userId)).thenReturn(false);
+
+        service.createDoctorProfile(request);
+
+        verify(repository).save(profileCaptor.capture());
+        DoctorProfile saved = profileCaptor.getValue();
+        assertThat(saved.getAvailable()).isFalse();
+        assertThat(saved.getDebutMatin()).isEqualTo("09:00");
+        assertThat(saved.getFinMatin()).isEqualTo("12:00");
+        assertThat(saved.getDebutApresMidi()).isEqualTo("14:00");
+        assertThat(saved.getFinApresMidi()).isEqualTo("18:00");
+    }
+
+    @Test
+    void updateByUserId_nullAvailable_keepsExistingValue() {
+        DoctorProfile existing = new DoctorProfile();
+        existing.setUserId(userId);
+        existing.setAvailable(true);
+        existing.setBiography("Original bio");
+        existing.setFee(new BigDecimal("50.00"));
+
+        DoctorProfileRequest request = new DoctorProfileRequest();
+        request.setBiography("Updated bio");
+
+        when(repository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        DoctorProfileDto result = service.updateByUserId(userId, request);
+
+        assertThat(result.getAvailable()).isTrue();
+        assertThat(result.getBiography()).isEqualTo("Updated bio");
+    }
+
+    @Test
+    void updateByUserId_nullTimeFields_keepsExistingTimes() {
+        DoctorProfile existing = new DoctorProfile();
+        existing.setUserId(userId);
+        existing.setAvailable(true);
         existing.setDebutMatin("08:00");
         existing.setFinMatin("13:00");
         existing.setDebutApresMidi("15:00");
@@ -156,62 +230,35 @@ class DoctorProfileServiceTest {
 
         DoctorProfileRequest request = new DoctorProfileRequest();
         request.setAvailable(false);
-        request.setBiography("Updated bio");
-        request.setFee(BigDecimal.valueOf(150));
-        request.setDebutMatin("09:00");
 
-        when(repository.findByUserId(1L)).thenReturn(Optional.of(existing));
-        when(repository.save(any(DoctorProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        DoctorProfileDto result = service.updateByUserId(1L, request);
+        DoctorProfileDto result = service.updateByUserId(userId, request);
 
         assertThat(result.getAvailable()).isFalse();
-        assertThat(result.getBiography()).isEqualTo("Updated bio");
-        assertThat(result.getFee()).isEqualByComparingTo(BigDecimal.valueOf(150));
-        assertThat(result.getDebutMatin()).isEqualTo("09:00");
+        assertThat(result.getDebutMatin()).isEqualTo("08:00");
         assertThat(result.getFinMatin()).isEqualTo("13:00");
+        assertThat(result.getDebutApresMidi()).isEqualTo("15:00");
+        assertThat(result.getFinApresMidi()).isEqualTo("19:00");
     }
 
     @Test
-    void updateByUserId_whenNotExists_shouldCreate() {
-        DoctorProfileRequest request = new DoctorProfileRequest();
-        request.setUserId(1L);
-        request.setAvailable(true);
-        request.setBiography("New profile");
-        request.setFee(BigDecimal.valueOf(200));
-
-        when(repository.findByUserId(1L)).thenReturn(Optional.empty());
-        when(repository.save(any(DoctorProfile.class))).thenAnswer(invocation -> {
-            DoctorProfile p = invocation.getArgument(0);
-            p.setId(1L);
-            return p;
-        });
-
-        DoctorProfileDto result = service.updateByUserId(1L, request);
-
-        assertThat(result.getUserId()).isEqualTo(1L);
-        assertThat(result.getAvailable()).isTrue();
-        assertThat(result.getBiography()).isEqualTo("New profile");
-    }
-
-    @Test
-    void updateByUserId_withNullOptionalFields_shouldKeepDefaults() {
+    void updateByUserId_nullBiographyAndFee_setsThemToNull() {
         DoctorProfile existing = new DoctorProfile();
-        existing.setId(1L);
-        existing.setUserId(1L);
+        existing.setUserId(userId);
         existing.setAvailable(true);
+        existing.setBiography("Old bio");
+        existing.setFee(new BigDecimal("50.00"));
 
         DoctorProfileRequest request = new DoctorProfileRequest();
-        request.setAvailable(null);
-        request.setBiography(null);
-        request.setFee(null);
+        request.setAvailable(false);
 
-        when(repository.findByUserId(1L)).thenReturn(Optional.of(existing));
-        when(repository.save(any(DoctorProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        DoctorProfileDto result = service.updateByUserId(1L, request);
+        DoctorProfileDto result = service.updateByUserId(userId, request);
 
-        assertThat(result.getAvailable()).isTrue();
         assertThat(result.getBiography()).isNull();
         assertThat(result.getFee()).isNull();
     }

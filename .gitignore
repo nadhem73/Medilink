@@ -20,6 +20,7 @@ target/
 *.log
 *.tmp
 logs/
+log/
 **/logs/
 .mvn/wrapper/maven-wrapper.jar
 hs_err_pid*

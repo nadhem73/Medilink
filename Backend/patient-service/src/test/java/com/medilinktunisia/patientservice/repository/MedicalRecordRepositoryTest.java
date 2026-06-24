@@ -1,7 +1,6 @@
 package com.medilinktunisia.patientservice.repository;
 
 import com.medilinktunisia.patientservice.model.MedicalRecord;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -20,10 +19,9 @@ class MedicalRecordRepositoryTest {
     @Autowired
     private MedicalRecordRepository repository;
 
-    @BeforeEach
-    void setUp() {
+    private MedicalRecord createRecord(Long userId) {
         MedicalRecord record = new MedicalRecord();
-        record.setUserId(10L);
+        record.setUserId(userId);
         record.setBloodGroup("O+");
         record.setHeight(170.0);
         record.setWeight(65.0);
@@ -34,11 +32,13 @@ class MedicalRecordRepositoryTest {
         record.setEmergencyContactPhone("+21600000000");
         record.setInsuranceCompany("Ins");
         record.setInsuranceNumber("000");
-        repository.saveAndFlush(record);
+        return repository.saveAndFlush(record);
     }
 
     @Test
     void findByUserId_whenExists_shouldReturnRecord() {
+        createRecord(10L);
+
         Optional<MedicalRecord> result = repository.findByUserId(10L);
 
         assertThat(result).isPresent();
@@ -55,15 +55,13 @@ class MedicalRecordRepositoryTest {
 
     @Test
     void existsByUserId_whenExists_shouldReturnTrue() {
-        boolean exists = repository.existsByUserId(10L);
+        createRecord(10L);
 
-        assertThat(exists).isTrue();
+        assertThat(repository.existsByUserId(10L)).isTrue();
     }
 
     @Test
     void existsByUserId_whenNotExists_shouldReturnFalse() {
-        boolean exists = repository.existsByUserId(999L);
-
-        assertThat(exists).isFalse();
+        assertThat(repository.existsByUserId(999L)).isFalse();
     }
 }

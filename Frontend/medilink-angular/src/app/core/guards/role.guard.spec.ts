@@ -26,4 +26,13 @@ describe('roleGuard', () => {
     expect(result).toBeFalse();
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
   });
+
+  it('should return false when user role is empty', () => {
+    mockAuthService.getUserRole.and.returnValue([]);
+
+    const route = { data: { roles: ['ADMIN'] } } as any;
+    const result = executeGuard(route, { url: '/admin' } as any);
+
+    expect(result).toBeFalse();
+  });
 });

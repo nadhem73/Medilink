@@ -20,43 +20,48 @@ class PatientRepositoryTest {
     @Autowired
     private PatientRepository patientRepository;
 
-    @Test
-    void saveAndFindByCin() {
+    private Patient createPatient(String cin) {
         Patient patient = new Patient();
-        patient.setCin("12345678");
-        patient.setEmail("test@example.com");
-        patient.setFirstName("John");
-        patient.setLastName("Doe");
-        patient.setPassword("encoded");
+        patient.setEmail("patient_" + cin + "@test.com");
+        patient.setPassword("encodedPassword");
+        patient.setFirstName("Test");
+        patient.setLastName("User");
+        patient.setPhone("+21650123456");
+        patient.setCin(cin);
         patient.setRole(Role.PATIENT);
         patient.setStatus(UserStatus.ACTIVE);
         patient.setGender(Gender.MALE);
+        return patientRepository.save(patient);
+    }
 
-        patientRepository.save(patient);
+    @Test
+    void findByCin_whenExists_shouldReturnPatient() {
+        Patient saved = createPatient("98765432");
 
-        Optional<Patient> found = patientRepository.findByCin("12345678");
+        Optional<Patient> found = patientRepository.findByCin("98765432");
+
         assertThat(found).isPresent();
-        assertThat(found.get().getEmail()).isEqualTo("test@example.com");
+        assertThat(found.get().getId()).isEqualTo(saved.getId());
+        assertThat(found.get().getEmail()).isEqualTo(saved.getEmail());
+        assertThat(found.get().getCin()).isEqualTo("98765432");
     }
 
     @Test
-    void existsByCin_returnsTrue_whenExists() {
-        Patient patient = new Patient();
-        patient.setCin("87654321");
-        patient.setEmail("exists@example.com");
-        patient.setFirstName("Jane");
-        patient.setLastName("Doe");
-        patient.setPassword("encoded");
-        patient.setRole(Role.PATIENT);
-        patient.setStatus(UserStatus.ACTIVE);
+    void findByCin_whenNotExists_shouldReturnEmpty() {
+        Optional<Patient> found = patientRepository.findByCin("00000000");
 
-        patientRepository.save(patient);
-
-        assertThat(patientRepository.existsByCin("87654321")).isTrue();
+        assertThat(found).isEmpty();
     }
 
     @Test
-    void existsByCin_returnsFalse_whenNotExists() {
+    void existsByCin_whenExists_shouldReturnTrue() {
+        createPatient("98765432");
+
+        assertThat(patientRepository.existsByCin("98765432")).isTrue();
+    }
+
+    @Test
+    void existsByCin_whenNotExists_shouldReturnFalse() {
         assertThat(patientRepository.existsByCin("00000000")).isFalse();
     }
 }

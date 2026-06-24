@@ -36,6 +36,19 @@ public class AppointmentController {
     }
 
     /**
+     * Crée un rendez-vous de suivi par le médecin pour un patient.
+     */
+    @PostMapping("/follow-up")
+    public ResponseEntity<AppointmentDto> createFollowUpAppointment(
+            HttpServletRequest request,
+            @RequestParam Long patientId,
+            @RequestBody AppointmentRequest body) {
+        Long doctorId = (Long) request.getAttribute("userId");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.createFollowUpAppointment(doctorId, patientId, body.getDateTime()));
+    }
+
+    /**
      * Liste tous les rendez-vous du patient connecté.
      */
     @GetMapping
@@ -123,7 +136,18 @@ public class AppointmentController {
     }
 
     /**
-     * Annule un rendez-vous depuis le panel médecin.
+     * Marque un rendez-vous comme terminé (après finalisation de la consultation).
+     */
+    @PutMapping("/{appointmentId}/complete")
+    public ResponseEntity<AppointmentDto> completeAppointment(
+            HttpServletRequest request,
+            @PathVariable Long appointmentId) {
+        Long doctorId = (Long) request.getAttribute("userId");
+        return ResponseEntity.ok(service.completeAppointment(doctorId, appointmentId));
+    }
+
+    /**
+     * Annule un rendez-vous par le médecin (depuis le panel médecin).
      */
     @PutMapping("/{id}/doctor-cancel")
     public ResponseEntity<AppointmentDto> cancelAppointmentByDoctor(

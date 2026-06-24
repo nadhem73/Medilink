@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Valide le JWT, place l'utilisateur dans le SecurityContext et expose
@@ -43,9 +44,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     Long userId = jwtService.extractUserId(token);
                     request.setAttribute("userId", userId);
 
+                    List<String> roles = jwtService.extractRoles(token);
+                    if (roles.isEmpty()) {
+                        roles = List.of("PATIENT");
+                    }
+                    List<SimpleGrantedAuthority> authorities = roles.stream()
+                            .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                            .collect(Collectors.toList());
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
-                                    email, null, List.of(new SimpleGrantedAuthority("ROLE_PATIENT")));
+                                    email, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(authToken);
 
                     log.debug("Authenticated user: email={}, userId={}", email, userId);

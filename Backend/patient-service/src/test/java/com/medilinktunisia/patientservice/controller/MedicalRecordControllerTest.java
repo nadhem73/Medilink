@@ -34,7 +34,10 @@ class MedicalRecordControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private MedicalRecordService medicalRecordService;
+    private MedicalRecordService service;
+
+    @MockBean
+    private JwtService jwtService;
 
     @Test
     void createMedicalRecord_shouldReturn201() throws Exception {
@@ -59,20 +62,17 @@ class MedicalRecordControllerTest {
                         .content(body))
                 .andExpect(status().isCreated());
 
-        verify(medicalRecordService).createMedicalRecord(any());
+        verify(service).createMedicalRecord(any(MedicalRecordRequest.class));
     }
 
     @Test
     void getMyMedicalRecord_shouldReturn200() throws Exception {
         MedicalRecordDto dto = MedicalRecordDto.builder()
-                .userId(1L)
-                .bloodGroup("A+")
-                .height(175.0)
-                .weight(70.0)
-                .allergies("None")
-                .build();
+                .userId(1L).bloodGroup("A+")
+                .height(175.0).weight(70.0)
+                .allergies("None").build();
 
-        when(medicalRecordService.getByUserId(1L)).thenReturn(dto);
+        when(service.getByUserId(1L)).thenReturn(dto);
 
         mockMvc.perform(get("/api/patients/me/medical-record")
                         .with(request -> {
@@ -85,22 +85,26 @@ class MedicalRecordControllerTest {
                 .andExpect(jsonPath("$.height", is(175.0)))
                 .andExpect(jsonPath("$.weight", is(70.0)))
                 .andExpect(jsonPath("$.allergies", is("None")));
+
+        verify(service).getByUserId(1L);
     }
 
     @Test
     void getPatientMedicalRecord_shouldReturn200() throws Exception {
-        when(medicalRecordService.getByUserId(2L))
+        when(service.getByUserId(2L))
                 .thenReturn(MedicalRecordDto.builder().userId(2L).bloodGroup("B+").build());
 
         mockMvc.perform(get("/api/patients/{userId}/medical-record", 2L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(2L))
-                .andExpect(jsonPath("$.bloodGroup").value("B+"));
+                .andExpect(jsonPath("$.userId", is(2)))
+                .andExpect(jsonPath("$.bloodGroup", is("B+")));
+
+        verify(service).getByUserId(2L);
     }
 
     @Test
     void getMyMedicalRecord_whenRecordNotFound_shouldReturnEmptyDto() throws Exception {
-        when(medicalRecordService.getByUserId(1L))
+        when(service.getByUserId(1L))
                 .thenReturn(MedicalRecordDto.builder().userId(1L).build());
 
         mockMvc.perform(get("/api/patients/me/medical-record")
@@ -115,7 +119,7 @@ class MedicalRecordControllerTest {
 
     @Test
     void getPatientMedicalRecord_whenNotFound_shouldReturnEmptyDto() throws Exception {
-        when(medicalRecordService.getByUserId(999L))
+        when(service.getByUserId(999L))
                 .thenReturn(MedicalRecordDto.builder().userId(999L).build());
 
         mockMvc.perform(get("/api/patients/{userId}/medical-record", 999L))

@@ -5,6 +5,12 @@ spring:
   application:
     name: patient-service
   
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db-init.sql
+      continue-on-error: true
+  
   # Configuration PostgreSQL avec AUTO-CREATION
   datasource:
     url: jdbc:postgresql://localhost:5432/medilink_patients

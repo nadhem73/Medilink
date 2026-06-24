@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JwtUtilTest {
 
@@ -66,10 +65,9 @@ class JwtUtilTest {
     }
 
     @Test
-    void isTokenExpired_WithExpiredToken_ShouldThrowException() {
+    void isTokenExpired_WithExpiredToken_ShouldReturnTrue() {
         String token = createToken("testuser", "user123", List.of("DOCTOR"), -1000);
-        assertThatThrownBy(() -> jwtUtil.isTokenExpired(token))
-                .isInstanceOf(io.jsonwebtoken.ExpiredJwtException.class);
+        assertThat(jwtUtil.isTokenExpired(token)).isTrue();
     }
 
     @Test

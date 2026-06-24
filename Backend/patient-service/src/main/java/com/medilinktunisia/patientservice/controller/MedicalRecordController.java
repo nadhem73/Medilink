@@ -42,10 +42,21 @@ public class MedicalRecordController {
 
     /**
      * Consultation du dossier médical d'un patient par un médecin.
-     * L'accès est restreint aux utilisateurs ayant le rôle DOCTOR (vérifié par l'API Gateway / le filtre sécurité).
      */
     @GetMapping("/{userId}/medical-record")
     public ResponseEntity<MedicalRecordDto> getPatientMedicalRecord(@PathVariable Long userId) {
         return ResponseEntity.ok(service.getByUserId(userId));
+    }
+
+    /**
+     * Mise à jour du dossier médical d'un patient par un médecin.
+     * Seuls les champs non-nuls dans la requête sont mis à jour.
+     */
+    @PutMapping("/{userId}/medical-record")
+    public ResponseEntity<MedicalRecordDto> updatePatientMedicalRecord(
+            @PathVariable Long userId,
+            @RequestBody MedicalRecordRequest request) {
+        request.setUserId(userId);
+        return ResponseEntity.ok(service.updateMedicalRecord(userId, request));
     }
 }

@@ -51,6 +51,30 @@ public class MedicalRecordService {
                 });
     }
 
+    /** Met à jour les champs non-nuls du dossier médical d'un patient. */
+    public MedicalRecordDto updateMedicalRecord(Long userId, MedicalRecordRequest request) {
+        MedicalRecord record = repository.findByUserId(userId)
+                .orElseGet(() -> {
+                    MedicalRecord newRecord = new MedicalRecord();
+                    newRecord.setUserId(userId);
+                    return newRecord;
+                });
+
+        if (request.getBloodGroup() != null) record.setBloodGroup(request.getBloodGroup());
+        if (request.getHeight() != null) record.setHeight(request.getHeight());
+        if (request.getWeight() != null) record.setWeight(request.getWeight());
+        if (request.getAllergies() != null) record.setAllergies(request.getAllergies());
+        if (request.getChronicDiseases() != null) record.setChronicDiseases(request.getChronicDiseases());
+        if (request.getCurrentTreatments() != null) record.setCurrentTreatments(request.getCurrentTreatments());
+        if (request.getEmergencyContactName() != null) record.setEmergencyContactName(request.getEmergencyContactName());
+        if (request.getEmergencyContactPhone() != null) record.setEmergencyContactPhone(request.getEmergencyContactPhone());
+        if (request.getInsuranceCompany() != null) record.setInsuranceCompany(request.getInsuranceCompany());
+        if (request.getInsuranceNumber() != null) record.setInsuranceNumber(request.getInsuranceNumber());
+
+        repository.save(record);
+        return toDto(record);
+    }
+
     private MedicalRecordDto toDto(MedicalRecord r) {
         return MedicalRecordDto.builder()
                 .userId(r.getUserId())
