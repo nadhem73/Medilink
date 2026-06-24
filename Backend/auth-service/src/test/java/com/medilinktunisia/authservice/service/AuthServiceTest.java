@@ -285,6 +285,24 @@ class AuthServiceTest {
     }
 
     @Test
+    void getAllActivePatients_shouldMapAddressBirthDateAndCin() {
+        Patient patient = createPatient(1L, "test@test.com", UserStatus.ACTIVE, "MALE");
+        patient.setAddress("Rue de la Liberté, Tunis");
+        patient.setBirthDate(LocalDate.of(1990, 5, 15));
+        patient.setCin("87654321");
+
+        when(patientRepository.findAll()).thenReturn(List.of(patient));
+
+        List<PatientListDto> result = authService.getAllActivePatients();
+
+        assertThat(result).hasSize(1);
+        PatientListDto dto = result.getFirst();
+        assertThat(dto.getAddress()).isEqualTo("Rue de la Liberté, Tunis");
+        assertThat(dto.getBirthDate()).isEqualTo("1990-05-15");
+        assertThat(dto.getCin()).isEqualTo("87654321");
+    }
+
+    @Test
     void getAllActiveDoctors_shouldReturnOnlyActiveDoctors() {
         Doctor activeDoctor1 = createDoctor(1L, "active1@test.com", UserStatus.ACTIVE);
         Doctor activeDoctor2 = createDoctor(2L, "active2@test.com", UserStatus.ACTIVE);

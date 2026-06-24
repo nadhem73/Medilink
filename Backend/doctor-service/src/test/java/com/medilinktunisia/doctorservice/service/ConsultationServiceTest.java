@@ -255,6 +255,31 @@ class ConsultationServiceTest {
     }
 
     @Test
+    void getConsultationsByPatient_returnsList() {
+        Consultation c1 = createConsultation(1L, ConsultationStatus.COMPLETED);
+        Consultation c2 = createConsultation(2L, ConsultationStatus.PENDING);
+        c1.setPatientId(10L);
+        c2.setPatientId(10L);
+        when(repository.findByDoctorIdAndPatientIdOrderByStartTimeDesc(doctorId, 10L))
+                .thenReturn(List.of(c1, c2));
+
+        List<ConsultationResponse> result = service.getConsultationsByPatient(doctorId, 10L);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.getFirst().getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void getConsultationsByPatient_emptyList_returnsEmpty() {
+        when(repository.findByDoctorIdAndPatientIdOrderByStartTimeDesc(doctorId, 99L))
+                .thenReturn(List.of());
+
+        List<ConsultationResponse> result = service.getConsultationsByPatient(doctorId, 99L);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     void startConsultation_invalidType_fallsBackToPresentiel() {
         ConsultationRequest request = new ConsultationRequest();
         request.setPatientId(10L);

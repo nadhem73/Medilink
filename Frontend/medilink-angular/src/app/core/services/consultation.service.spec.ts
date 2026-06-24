@@ -114,6 +114,21 @@ describe('ConsultationService', () => {
     req.flush(mockResponse);
   });
 
+  it('should fetch consultations by patient', () => {
+    const mockResponse: ConsultationResponse[] = [
+      { id: 1, patientId: 10, doctorId: 1, startTime: '2026-06-17T10:00:00', status: 'COMPLETED', type: 'PRESENTIEL', diagnosis: 'Migraine', createdAt: '2026-06-17T09:00:00' },
+      { id: 2, patientId: 10, doctorId: 1, startTime: '2026-06-18T14:00:00', status: 'PENDING', type: 'TELECONSULTATION', createdAt: '2026-06-18T13:00:00' }
+    ];
+
+    service.getPatientConsultations(10).subscribe(res => {
+      expect(res).toEqual(mockResponse);
+    });
+
+    const req = httpMock.expectOne(`${API_URL}/patient/10`);
+    expect(req.request.method).toBe('GET');
+    req.flush(mockResponse);
+  });
+
   it('should cancel a consultation', () => {
     service.cancelConsultation(1).subscribe();
 

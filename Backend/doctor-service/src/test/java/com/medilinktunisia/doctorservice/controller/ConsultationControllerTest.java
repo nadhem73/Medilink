@@ -168,6 +168,17 @@ class ConsultationControllerTest {
     }
 
     @Test
+    void getConsultationsByPatient_returns200() throws Exception {
+        when(service.getConsultationsByPatient(doctorId, 10L))
+                .thenReturn(List.of(createResponse(1L, "COMPLETED"), createResponse(2L, "PENDING")));
+
+        mockMvc.perform(get("/api/doctors/consultations/patient/10")
+                        .requestAttr("userId", doctorId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
     void cancelConsultation_returns204() throws Exception {
         doNothing().when(service).cancelConsultation(1L, doctorId);
 
