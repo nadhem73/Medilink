@@ -51,8 +51,9 @@ describe('ConsultationsComponent', () => {
     mockAuthService = jasmine.createSpyObj('AuthService', ['getAllPatients']);
     mockAuthService.getAllPatients.and.returnValue(of([]));
 
-    mockPatientService = jasmine.createSpyObj('PatientService', ['getPatientMedicalRecord']);
+    mockPatientService = jasmine.createSpyObj('PatientService', ['getPatientMedicalRecord', 'updatePatientMedicalRecord']);
     mockPatientService.getPatientMedicalRecord.and.returnValue(of(null as any));
+    mockPatientService.updatePatientMedicalRecord.and.returnValue(of({} as any));
 
     await TestBed.configureTestingModule({
       declarations: [ConsultationsComponent],
@@ -97,13 +98,13 @@ describe('ConsultationsComponent', () => {
     expect(component.selectedConsultation).toBeNull();
   });
 
-  it('should save draft', () => {
-    const updated = { ...mockConsultations[0], diagnosis: 'Tension' };
-    mockConsultationService.updateConsultation.and.returnValue(of(updated));
+  it('should save medical record', () => {
+    const mockRecord = { userId: 10, height: 175, weight: 70 };
+    mockPatientService.updatePatientMedicalRecord.and.returnValue(of(mockRecord as any));
     component.selectedConsultation = mockConsultations[0];
-    component.editingConsultation = { diagnosis: 'Tension' };
-    component.saveDraft();
-    expect(mockConsultationService.updateConsultation).toHaveBeenCalledWith(1, { diagnosis: 'Tension' });
+    component.editingMedicalRecord = { height: 175, weight: 70 };
+    component.saveMedicalRecord();
+    expect(mockPatientService.updatePatientMedicalRecord).toHaveBeenCalledWith(10, jasmine.objectContaining({ height: 175, weight: 70 }));
   });
 
   it('should complete consultation', () => {

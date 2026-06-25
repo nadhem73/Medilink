@@ -159,4 +159,106 @@ class MedicalRecordServiceTest {
         assertThat(result.getBloodGroup()).isNull();
         assertThat(result.getAllergies()).isNull();
     }
+
+    // ── updateMedicalRecord ──────────────────────────────────────────────────
+
+    @Test
+    void updateMedicalRecord_whenExistingRecord_shouldUpdateAllFields() {
+        MedicalRecord existing = new MedicalRecord();
+        existing.setId(1L);
+        existing.setUserId(1L);
+        existing.setBloodGroup("A+");
+        existing.setHeight(175.0);
+        existing.setWeight(70.0);
+        existing.setAllergies("None");
+        existing.setChronicDiseases("None");
+        existing.setCurrentTreatments("None");
+        existing.setEmergencyContactName("Old Contact");
+        existing.setEmergencyContactPhone("+21611111111");
+        existing.setInsuranceCompany("Old Ins");
+        existing.setInsuranceNumber("OLD");
+
+        MedicalRecordRequest request = new MedicalRecordRequest();
+        request.setUserId(1L);
+        request.setBloodGroup("B+");
+        request.setHeight(180.0);
+        request.setWeight(80.0);
+        request.setAllergies("Pollen");
+        request.setChronicDiseases("Asthma");
+        request.setCurrentTreatments("Inhaler");
+        request.setEmergencyContactName("New Contact");
+        request.setEmergencyContactPhone("+21622222222");
+        request.setInsuranceCompany("New Ins");
+        request.setInsuranceNumber("NEW");
+
+        when(repository.findByUserId(1L)).thenReturn(Optional.of(existing));
+        when(repository.save(any(MedicalRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MedicalRecordDto result = service.updateMedicalRecord(1L, request);
+
+        assertThat(result.getBloodGroup()).isEqualTo("B+");
+        assertThat(result.getHeight()).isEqualTo(180.0);
+        assertThat(result.getWeight()).isEqualTo(80.0);
+        assertThat(result.getAllergies()).isEqualTo("Pollen");
+        assertThat(result.getChronicDiseases()).isEqualTo("Asthma");
+        assertThat(result.getCurrentTreatments()).isEqualTo("Inhaler");
+        assertThat(result.getEmergencyContactName()).isEqualTo("New Contact");
+        assertThat(result.getEmergencyContactPhone()).isEqualTo("+21622222222");
+        assertThat(result.getInsuranceCompany()).isEqualTo("New Ins");
+        assertThat(result.getInsuranceNumber()).isEqualTo("NEW");
+
+        verify(repository).save(any(MedicalRecord.class));
+    }
+
+    @Test
+    void updateMedicalRecord_whenPartialUpdate_shouldOnlyUpdateNonNullFields() {
+        MedicalRecord existing = new MedicalRecord();
+        existing.setId(1L);
+        existing.setUserId(1L);
+        existing.setBloodGroup("A+");
+        existing.setHeight(175.0);
+        existing.setWeight(70.0);
+        existing.setAllergies("None");
+
+        MedicalRecordRequest request = new MedicalRecordRequest();
+        request.setUserId(1L);
+        request.setHeight(180.0);
+        request.setInsuranceCompany("CNAM");
+
+        when(repository.findByUserId(1L)).thenReturn(Optional.of(existing));
+        when(repository.save(any(MedicalRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MedicalRecordDto result = service.updateMedicalRecord(1L, request);
+
+        assertThat(result.getBloodGroup()).isEqualTo("A+");
+        assertThat(result.getHeight()).isEqualTo(180.0);
+        assertThat(result.getWeight()).isEqualTo(70.0);
+        assertThat(result.getAllergies()).isEqualTo("None");
+        assertThat(result.getInsuranceCompany()).isEqualTo("CNAM");
+        assertThat(result.getChronicDiseases()).isNull();
+
+        verify(repository).save(any(MedicalRecord.class));
+    }
+
+    @Test
+    void updateMedicalRecord_whenNotFound_shouldCreateNewRecord() {
+        MedicalRecordRequest request = new MedicalRecordRequest();
+        request.setUserId(1L);
+        request.setBloodGroup("O+");
+        request.setHeight(170.0);
+        request.setWeight(65.0);
+
+        when(repository.findByUserId(1L)).thenReturn(Optional.empty());
+        when(repository.save(any(MedicalRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MedicalRecordDto result = service.updateMedicalRecord(1L, request);
+
+        assertThat(result.getUserId()).isEqualTo(1L);
+        assertThat(result.getBloodGroup()).isEqualTo("O+");
+        assertThat(result.getHeight()).isEqualTo(170.0);
+        assertThat(result.getWeight()).isEqualTo(65.0);
+
+        verify(repository).findByUserId(1L);
+        verify(repository).save(any(MedicalRecord.class));
+    }
 }

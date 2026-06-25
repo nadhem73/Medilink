@@ -12,6 +12,9 @@ export interface PatientListDto {
   email: string;
   phone: string;
   gender?: string;
+  address?: string;
+  birthDate?: string;
+  cin?: string;
 }
 
 export interface LoginRequest {

@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, PatientListDto } from '../../../core/services/auth.service';
 import { AppointmentService, AppointmentDto } from '../../../core/services/appointment.service';
-import { ConsultationService, ConsultationRequest } from '../../../core/services/consultation.service';
+import { ConsultationService, ConsultationRequest, ConsultationResponse } from '../../../core/services/consultation.service';
+import { PatientService, MedicalRecord } from '../../../core/services/patient.service';
+
 
 type DoctorSectionKey = 'patients' | 'appointments' | 'consultations' | 'prescriptions' | 'labs' | 'profile';
 
@@ -46,6 +48,22 @@ export class DoctorSectionComponent implements OnInit {
   // ── Patients ────────────────────────────────────────────────────────────
   patients: any[] = [];
   registeredPatients: PatientListDto[] = [];
+  selectedPatient: any = null;
+  patientSearch = '';
+
+  get filteredPatients(): any[] {
+    if (!this.patientSearch.trim()) return this.patients;
+    const q = this.patientSearch.toLowerCase().trim();
+    return this.patients.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.reason.toLowerCase().includes(q)
+    );
+  }
+  patientConsultations: ConsultationResponse[] = [];
+  loadingPatientConsultations = false;
+  patientMedicalRecord: MedicalRecord | null = null;
+  medicalLoading = false;
+  today = new Date();
 
   // ── Agenda ──────────────────────────────────────────────────────────────
   allAppointments: AgendaAppointment[] = [];
@@ -94,7 +112,8 @@ export class DoctorSectionComponent implements OnInit {
     private router: Router,
     private authService: AuthService,
     private appointmentService: AppointmentService,
-    private consultationService: ConsultationService
+    private consultationService: ConsultationService,
+    private patientService: PatientService
   ) {
     this.currentUser = this.authService.getCurrentUser();
     this.profileCards = [
@@ -121,6 +140,95 @@ export class DoctorSectionComponent implements OnInit {
     });
   }
 
+  // ── Actions patients ─────────────────────────────────────────────────────
+
+  get patientDetails(): PatientListDto | undefined {
+    return this.registeredPatients.find(p => p.id === this.selectedPatient?.id);
+  }
+
+  selectPatient(patient: any): void {
+    if (this.selectedPatient?.id === patient.id) {
+      this.backToPatientList();
+      return;
+    }
+    this.selectedPatient = patient;
+    this.loadPatientConsultations(patient.id);
+    this.loadPatientMedicalRecord(patient.id);
+  }
+
+  backToPatientList(): void {
+    this.selectedPatient = null;
+    this.patientConsultations = [];
+    this.patientMedicalRecord = null;
+  }
+
+  exportPDF(): void {
+    const ficheEl = document.querySelector<HTMLElement>('.fiche-patient');
+    if (!ficheEl) return;
+
+    const clone = ficheEl.cloneNode(true) as HTMLElement;
+    this.inlineStyles(ficheEl, clone);
+
+    const name = this.selectedPatient?.name?.replace(/\s+/g, '_') || 'patient';
+    const html = `<html><head><title>Fiche_${name}</title><style>
+      @page { margin: 15mm; }
+      body { margin: 0; font-family: Arial, sans-serif; color: #1a2b3c; }
+      .appt-btn { display: none !important; }
+    </style></head><body>${clone.outerHTML}</body></html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.onload = () => { win.print(); win.close(); };
+    }
+  }
+
+  private inlineStyles(source: HTMLElement, target: HTMLElement): void {
+    const computed = getComputedStyle(source);
+    const skipProps = ['animation', 'transition', 'content', 'cursor', 'user-select'];
+    for (let i = 0; i < computed.length; i++) {
+      const prop = computed[i];
+      if (skipProps.some(p => prop.startsWith(p))) continue;
+      target.style.setProperty(prop, computed.getPropertyValue(prop), computed.getPropertyPriority(prop));
+    }
+    if (source.children.length && target.children.length) {
+      for (let i = 0; i < source.children.length; i++) {
+        const s = source.children[i] as HTMLElement;
+        const t = target.children[i] as HTMLElement;
+        if (s && t) this.inlineStyles(s, t);
+      }
+    }
+  }
+
+  private loadPatientConsultations(patientId: number): void {
+    this.loadingPatientConsultations = true;
+    this.patientConsultations = [];
+    this.consultationService.getPatientConsultations(patientId).subscribe({
+      next: (data) => {
+        this.patientConsultations = data;
+        this.loadingPatientConsultations = false;
+      },
+      error: () => {
+        this.loadingPatientConsultations = false;
+      }
+    });
+  }
+
+  private loadPatientMedicalRecord(patientId: number): void {
+    this.medicalLoading = true;
+    this.patientMedicalRecord = null;
+    this.patientService.getPatientMedicalRecord(patientId).subscribe({
+      next: (record) => {
+        this.patientMedicalRecord = record;
+        this.medicalLoading = false;
+      },
+      error: () => {
+        this.medicalLoading = false;
+      }
+    });
+  }
+
   // ── Chargement données ────────────────────────────────────────────────────
 
   loadPatients(): void {
@@ -128,6 +236,7 @@ export class DoctorSectionComponent implements OnInit {
       next: (data) => {
         this.registeredPatients = data;
         this.patients = data.map(p => ({
+          id: p.id,
           name: `${p.firstName} ${p.lastName}`,
           reason: 'Dossier médical',
           age: p.phone ? `Tél: ${p.phone}` : 'Patient MediLink',
@@ -383,6 +492,43 @@ export class DoctorSectionComponent implements OnInit {
         && apptDate.getDate() === today.getDate();
     } catch {
       return false;
+    }
+  }
+
+  get medicalHeight(): string {
+    return this.patientMedicalRecord?.height ? this.patientMedicalRecord.height + ' cm' : '—';
+  }
+
+  get medicalWeight(): string {
+    return this.patientMedicalRecord?.weight ? this.patientMedicalRecord.weight + ' kg' : '—';
+  }
+
+  get insuranceLabel(): string {
+    const company = this.patientMedicalRecord?.insuranceCompany;
+    const number = this.patientMedicalRecord?.insuranceNumber;
+    if (company && number) return company + ' — ' + number;
+    if (company) return company;
+    if (number) return number;
+    return 'Non renseignée';
+  }
+
+  getConsultationStatusLabel(status: string): string {
+    switch (status) {
+      case 'PENDING': return 'En attente';
+      case 'IN_PROGRESS': return 'En cours';
+      case 'COMPLETED': return 'Terminée';
+      case 'CANCELLED': return 'Annulée';
+      default: return status;
+    }
+  }
+
+  getConsultationStatusClass(status: string): string {
+    switch (status) {
+      case 'PENDING': return 'status-pending';
+      case 'IN_PROGRESS': return 'status-progress';
+      case 'COMPLETED': return 'status-completed';
+      case 'CANCELLED': return 'status-cancelled';
+      default: return '';
     }
   }
 

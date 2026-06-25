@@ -151,12 +151,15 @@ describe('AuthService', () => {
   describe('getAllPatients()', () => {
     it('should GET /api/auth/patients', () => {
       const patients: PatientListDto[] = [
-        { id: 1, firstName: 'John', lastName: 'Doe', email: 'john@test.com', phone: '123' },
+        { id: 1, firstName: 'John', lastName: 'Doe', email: 'john@test.com', phone: '123', address: 'Tunis', birthDate: '1990-01-01', cin: '12345678' },
         { id: 2, firstName: 'Jane', lastName: 'Doe', email: 'jane@test.com', phone: '456' }
       ];
 
       service.getAllPatients().subscribe(res => {
         expect(res).toEqual(patients);
+        expect(res[0].address).toBe('Tunis');
+        expect(res[0].birthDate).toBe('1990-01-01');
+        expect(res[0].cin).toBe('12345678');
       });
 
       const req = httpMock.expectOne('http://localhost:8765/api/auth/patients');

@@ -5,16 +5,20 @@ import { ActivatedRoute } from '@angular/router';
 import { DoctorSectionComponent } from './doctor-section.component';
 import { AuthService, PatientListDto } from '../../../core/services/auth.service';
 import { AppointmentService, AppointmentDto } from '../../../core/services/appointment.service';
+import { ConsultationService, ConsultationResponse } from '../../../core/services/consultation.service';
+import { PatientService, MedicalRecord } from '../../../core/services/patient.service';
 
 describe('DoctorSectionComponent', () => {
   let component: DoctorSectionComponent;
   let fixture: ComponentFixture<DoctorSectionComponent>;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
   let appointmentServiceSpy: jasmine.SpyObj<AppointmentService>;
+  let consultationServiceSpy: jasmine.SpyObj<ConsultationService>;
+  let patientServiceSpy: jasmine.SpyObj<PatientService>;
   let activatedRouteStub: Partial<ActivatedRoute>;
 
   const mockPatients: PatientListDto[] = [
-    { id: 1, firstName: 'Mohamed', lastName: 'Aloui', email: 'm@test.com', phone: '20123456' },
+    { id: 1, firstName: 'Mohamed', lastName: 'Aloui', email: 'm@test.com', phone: '20123456', address: 'Tunis', birthDate: '1985-03-15', cin: '12345678' },
     { id: 2, firstName: 'Fatma', lastName: 'Khelifi', email: 'f@test.com', phone: '20987654' }
   ];
 
@@ -29,6 +33,8 @@ describe('DoctorSectionComponent', () => {
   beforeEach(async () => {
     authServiceSpy = jasmine.createSpyObj('AuthService', ['getAllPatients', 'getCurrentUser']);
     appointmentServiceSpy = jasmine.createSpyObj('AppointmentService', ['getDoctorAppointments', 'confirmAppointment']);
+    consultationServiceSpy = jasmine.createSpyObj('ConsultationService', ['getPatientConsultations']);
+    patientServiceSpy = jasmine.createSpyObj('PatientService', ['getPatientMedicalRecord']);
     activatedRouteStub = {
       data: of({ section: 'patients', title: 'Mes Patients' })
     };
@@ -40,7 +46,9 @@ describe('DoctorSectionComponent', () => {
       providers: [
         { provide: ActivatedRoute, useValue: activatedRouteStub },
         { provide: AuthService, useValue: authServiceSpy },
-        { provide: AppointmentService, useValue: appointmentServiceSpy }
+        { provide: AppointmentService, useValue: appointmentServiceSpy },
+        { provide: ConsultationService, useValue: consultationServiceSpy },
+        { provide: PatientService, useValue: patientServiceSpy }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -91,6 +99,8 @@ describe('DoctorSectionComponent', () => {
     authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
     appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
     fixture.detectChanges();
+
+    component.selectedDate = null;
 
     component.statusFilter = 'PENDING';
     expect(component.filteredAppointments.length).toBe(1);
@@ -208,5 +218,202 @@ describe('DoctorSectionComponent', () => {
 
     component.clearDateFilter();
     expect(component.selectedDate).toBeNull();
+  });
+
+  // ── Fiche patient tests ────────────────────────────────────────────────
+
+  it('should select and deselect a patient', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    consultationServiceSpy.getPatientConsultations.and.returnValue(of([]));
+    patientServiceSpy.getPatientMedicalRecord.and.returnValue(of({} as MedicalRecord));
+    fixture.detectChanges();
+
+    component.selectPatient(component.patients[0]);
+    expect(component.selectedPatient).toBe(component.patients[0]);
+    expect(consultationServiceSpy.getPatientConsultations).toHaveBeenCalledWith(1);
+    expect(patientServiceSpy.getPatientMedicalRecord).toHaveBeenCalledWith(1);
+
+    // Re-clicking the same patient deselects
+    component.selectPatient(component.patients[0]);
+    expect(component.selectedPatient).toBeNull();
+  });
+
+  it('should return to patient list', () => {
+    component.selectedPatient = component.patients[0];
+    component.patientConsultations = [{ id: 1 } as ConsultationResponse];
+    component.patientMedicalRecord = {} as MedicalRecord;
+
+    component.backToPatientList();
+
+    expect(component.selectedPatient).toBeNull();
+    expect(component.patientConsultations).toEqual([]);
+    expect(component.patientMedicalRecord).toBeNull();
+  });
+
+  it('should filter patients by search query', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    fixture.detectChanges();
+
+    component.patientSearch = 'Aloui';
+    expect(component.filteredPatients.length).toBe(1);
+    expect(component.filteredPatients[0].name).toContain('Aloui');
+
+    component.patientSearch = 'nonexistent';
+    expect(component.filteredPatients.length).toBe(0);
+
+    component.patientSearch = '';
+    expect(component.filteredPatients.length).toBe(2);
+  });
+
+  it('should return patient details from registeredPatients', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    fixture.detectChanges();
+
+    component.selectedPatient = { id: 1 };
+    const details = component.patientDetails;
+    expect(details?.firstName).toBe('Mohamed');
+    expect(details?.address).toBe('Tunis');
+    expect(details?.birthDate).toBe('1985-03-15');
+    expect(details?.cin).toBe('12345678');
+  });
+
+  it('should return medical record getters', () => {
+    component.patientMedicalRecord = {
+      height: 175,
+      weight: 70,
+      insuranceCompany: 'CNAM',
+      insuranceNumber: '12345'
+    } as MedicalRecord;
+
+    expect(component.medicalHeight).toBe('175 cm');
+    expect(component.medicalWeight).toBe('70 kg');
+    expect(component.insuranceLabel).toBe('CNAM — 12345');
+  });
+
+  it('should return fallback values when medical record is null', () => {
+    component.patientMedicalRecord = null;
+    expect(component.medicalHeight).toBe('—');
+    expect(component.medicalWeight).toBe('—');
+    expect(component.insuranceLabel).toBe('Non renseignée');
+  });
+
+  it('should return insurance label from company only', () => {
+    component.patientMedicalRecord = { insuranceCompany: 'CNAM' } as MedicalRecord;
+    expect(component.insuranceLabel).toBe('CNAM');
+  });
+
+  it('should return correct consultation status labels', () => {
+    expect(component.getConsultationStatusLabel('PENDING')).toBe('En attente');
+    expect(component.getConsultationStatusLabel('IN_PROGRESS')).toBe('En cours');
+    expect(component.getConsultationStatusLabel('COMPLETED')).toBe('Terminée');
+    expect(component.getConsultationStatusLabel('CANCELLED')).toBe('Annulée');
+    expect(component.getConsultationStatusLabel('UNKNOWN')).toBe('UNKNOWN');
+  });
+
+  it('should return correct consultation status classes', () => {
+    expect(component.getConsultationStatusClass('PENDING')).toBe('status-pending');
+    expect(component.getConsultationStatusClass('IN_PROGRESS')).toBe('status-progress');
+    expect(component.getConsultationStatusClass('COMPLETED')).toBe('status-completed');
+    expect(component.getConsultationStatusClass('CANCELLED')).toBe('status-cancelled');
+    expect(component.getConsultationStatusClass('UNKNOWN')).toBe('');
+  });
+
+  it('should handle patient consultations load error', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    consultationServiceSpy.getPatientConsultations.and.returnValue(throwError(() => new Error('error')));
+    patientServiceSpy.getPatientMedicalRecord.and.returnValue(of({} as MedicalRecord));
+    fixture.detectChanges();
+
+    component.selectPatient(component.patients[0]);
+    expect(component.loadingPatientConsultations).toBeFalse();
+  });
+
+  it('should handle medical record load error', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    consultationServiceSpy.getPatientConsultations.and.returnValue(of([]));
+    patientServiceSpy.getPatientMedicalRecord.and.returnValue(throwError(() => new Error('error')));
+    fixture.detectChanges();
+
+    component.selectPatient(component.patients[0]);
+    expect(component.medicalLoading).toBeFalse();
+  });
+
+  // ── Additional fiche patient tests ──────────────────────────────────────
+
+  it('should get patient name from registeredPatients', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    fixture.detectChanges();
+
+    expect(component.getPatientName(1)).toBe('Mohamed Aloui');
+    expect(component.getPatientName(2)).toBe('Fatma Khelifi');
+    expect(component.getPatientName(999)).toBe('Patient #999');
+  });
+
+  it('should format date in French locale', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    fixture.detectChanges();
+
+    const result = component.formatDate('2026-06-18T09:30:00');
+    expect(result).toContain('juin');
+    expect(result).toContain('18');
+    expect(component.formatDate('')).toBe('');
+  });
+
+  it('should format hour as HH:mm', () => {
+    expect(component.formatHour('2026-06-18T09:30:00')).toBe('09:30');
+    expect(component.formatHour('2026-06-18T14:05:00')).toBe('14:05');
+    expect(component.formatHour('')).toBe('');
+  });
+
+  it('should detect if appointment is today', () => {
+    const today = new Date();
+    const todayStr = today.toISOString();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    expect(component.isAppointmentToday({ rawDateTime: todayStr } as any)).toBeTrue();
+    expect(component.isAppointmentToday({ rawDateTime: tomorrow.toISOString() } as any)).toBeFalse();
+  });
+
+  it('should return insurance label from number only', () => {
+    component.patientMedicalRecord = { insuranceNumber: '12345' } as MedicalRecord;
+    expect(component.insuranceLabel).toBe('12345');
+  });
+
+  it('should return fallback insurance label when both empty', () => {
+    component.patientMedicalRecord = {} as MedicalRecord;
+    expect(component.insuranceLabel).toBe('Non renseignée');
+  });
+
+  it('should handle falsy height and weight in medical getters', () => {
+    component.patientMedicalRecord = { height: undefined, weight: undefined } as MedicalRecord;
+    expect(component.medicalHeight).toBe('—');
+    expect(component.medicalWeight).toBe('—');
+  });
+
+  it('should filter appointments by search query', () => {
+    authServiceSpy.getAllPatients.and.returnValue(of(mockPatients));
+    appointmentServiceSpy.getDoctorAppointments.and.returnValue(of(mockAppointments));
+    fixture.detectChanges();
+
+    component.selectedDate = null;
+    component.searchQuery = 'Aloui';
+    expect(component.filteredAppointments.length).toBe(2);
+
+    component.searchQuery = 'Suivi';
+    expect(component.filteredAppointments.length).toBe(1);
+
+    component.searchQuery = 'nonexistent';
+    expect(component.filteredAppointments.length).toBe(0);
+
+    component.searchQuery = '';
+    expect(component.filteredAppointments.length).toBe(3);
   });
 });
