@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { PatientService, MedicalRecord } from '../../../core/services/patient.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-patient-medical-records',
@@ -8,29 +9,32 @@ import { PatientService, MedicalRecord } from '../../../core/services/patient.se
 })
 export class MedicalRecordsComponent implements OnInit {
   loading = true;
+  currentUser: any;
 
-  // Informations sanitaires (alimentees par le dossier medical du patient).
-  vitals: { label: string; value: string }[] = [];
+  record: MedicalRecord | null = null;
 
-  // Traitements en cours (derives du dossier medical, sinon donnees de demo).
-  treatments = [
-    { name: 'Amlodipine 5 mg', detail: 'Traitement cardiovasculaire en cours', status: 'Actif' },
-    { name: 'Vitamine D', detail: 'Complement, 1 capsule / soir', status: 'Suivi' }
-  ];
+  bloodGroup = 'Non renseigne';
+  height: number | null = null;
+  weight: number | null = null;
+  bmi: number | null = null;
 
-  vaccinations = [
-    { name: 'COVID-19 (rappel)', detail: 'Administre le 12 mars 2025', status: 'A jour' },
-    { name: 'Tetanos', detail: 'Prochain rappel en 2027', status: 'A jour' },
-    { name: 'Grippe saisonniere', detail: 'Recommande avant novembre', status: 'A prevoir' }
-  ];
+  allergies: string[] = [];
+  chronicDiseases: string[] = [];
 
-  documents = [
-    { name: 'Compte rendu cardiologie.pdf', meta: 'Dr. Ben Salem - 02 juin 2026' },
-    { name: 'Radiographie thorax.pdf', meta: 'Clinique El Manar - 20 mai 2026' },
-    { name: 'Bilan sanguin complet.pdf', meta: 'Laboratoire Pasteur - 08 mai 2026' }
-  ];
+  treatments: { name: string; detail: string; status: string }[] = [];
 
-  constructor(private patientService: PatientService) {}
+  emergencyName = '';
+  emergencyPhone = '';
+  assurance: { label: string; value: string }[] = [];
+
+  errorMessage = '';
+
+  constructor(
+    private patientService: PatientService,
+    private authService: AuthService
+  ) {
+    this.currentUser = this.authService.getCurrentUser();
+  }
 
   ngOnInit(): void {
     this.patientService.getMyMedicalRecord().subscribe({
@@ -38,49 +42,103 @@ export class MedicalRecordsComponent implements OnInit {
         this.applyRecord(record);
         this.loading = false;
       },
-      error: () => {
-        // En cas d'erreur (service indisponible), on garde un affichage par defaut.
-        this.vitals = this.fallbackVitals();
+      error: (err) => {
+        this.errorMessage = 'Impossible de charger le dossier medical. Veuillez reessayer plus tard.';
+        console.error('Erreur chargement dossier medical', err);
         this.loading = false;
       }
     });
   }
 
-  private applyRecord(record: MedicalRecord): void {
-    const vitals: { label: string; value: string }[] = [
-      { label: 'Groupe sanguin', value: record.bloodGroup || 'Non renseigne' },
-      { label: 'Taille', value: record.height ? `${record.height} cm` : 'Non renseigne' },
-      { label: 'Poids', value: record.weight ? `${record.weight} kg` : 'Non renseigne' },
-      { label: 'Allergies', value: record.allergies || 'Aucune' },
-      { label: 'Maladies chroniques', value: record.chronicDiseases || 'Aucune' },
-      { label: 'Contact urgence', value: this.emergencyContact(record) }
+  get vitals(): { label: string; value: string; sub?: string }[] {
+    return [
+      { label: 'Groupe sanguin', value: this.bloodGroup },
+      { label: 'Taille', value: this.height ? `${this.height} cm` : '—' },
+      { label: 'Poids', value: this.weight ? `${this.weight} kg` : '—' },
+      { label: 'IMC', value: this.bmi !== null ? `${this.bmi}` : '—', sub: this.bmiCategory },
     ];
-    this.vitals = vitals;
+  }
+
+  get hasAllergies(): boolean {
+    return this.allergies.length > 0;
+  }
+
+  get hasChronicDiseases(): boolean {
+    return this.chronicDiseases.length > 0;
+  }
+
+  private applyRecord(record: MedicalRecord): void {
+    this.record = record;
+
+    this.bloodGroup = record.bloodGroup || 'Non renseigne';
+    this.height = record.height ?? null;
+    this.weight = record.weight ?? null;
+    this.bmi = this.computeBmi(record.height, record.weight);
+
+    this.allergies = this.splitList(record.allergies);
+    this.chronicDiseases = this.splitList(record.chronicDiseases);
+
+    this.emergencyName = record.emergencyContactName || '';
+    this.emergencyPhone = record.emergencyContactPhone || '';
+
+    this.assurance = [
+      { label: 'Compagnie', value: record.insuranceCompany || 'Non renseignee' },
+      { label: "Numero d'assure", value: record.insuranceNumber || 'Non renseigne' }
+    ];
 
     if (record.currentTreatments && record.currentTreatments.trim()) {
       this.treatments = record.currentTreatments
         .split(/[,\n;]/)
         .map(t => t.trim())
         .filter(Boolean)
-        .map(t => ({ name: t, detail: 'Traitement declare a l\'inscription', status: 'En cours' }));
+        .map(t => ({ name: t, detail: 'Prescrit par votre medecin', status: 'En cours' }));
     }
   }
 
-  private emergencyContact(record: MedicalRecord): string {
-    if (record.emergencyContactName || record.emergencyContactPhone) {
-      return `${record.emergencyContactName || ''} ${record.emergencyContactPhone || ''}`.trim();
-    }
-    return 'Non renseigne';
+  private computeBmi(height?: number, weight?: number): number | null {
+    if (!height || !weight) return null;
+    const meters = height / 100;
+    return Math.round((weight / (meters * meters)) * 10) / 10;
   }
 
-  private fallbackVitals(): { label: string; value: string }[] {
-    return [
-      { label: 'Groupe sanguin', value: 'Non disponible' },
-      { label: 'Taille', value: 'Non disponible' },
-      { label: 'Poids', value: 'Non disponible' },
-      { label: 'Allergies', value: 'Non disponible' },
-      { label: 'Maladies chroniques', value: 'Non disponible' },
-      { label: 'Contact urgence', value: 'Non disponible' }
-    ];
+  get bmiCategory(): string {
+    if (this.bmi === null) return '';
+    if (this.bmi < 18.5) return 'Insuffisance ponderale';
+    if (this.bmi < 25) return 'Corpulence normale';
+    if (this.bmi < 30) return 'Surpoids';
+    return 'Obesite';
+  }
+
+  private splitList(value?: string): string[] {
+    if (!value || !value.trim()) return [];
+    return value.split(/[,\n;]/).map(v => v.trim()).filter(Boolean);
+  }
+
+  get patientName(): string {
+    if (this.currentUser) {
+      return `${this.currentUser.firstName || ''} ${this.currentUser.lastName || ''}`.trim();
+    }
+    return '';
+  }
+
+  get initials(): string {
+    if (!this.currentUser) return 'PT';
+    const first = (this.currentUser.firstName || '').charAt(0);
+    const last = (this.currentUser.lastName || '').charAt(0);
+    return `${first}${last}`.toUpperCase() || 'PT';
+  }
+
+  get hasEmergencyContact(): boolean {
+    return !!(this.emergencyName || this.emergencyPhone);
+  }
+
+  getVitalIcon(label: string): string {
+    const map: Record<string, string> = {
+      'Groupe sanguin': 'blood',
+      'Taille': 'height',
+      'Poids': 'weight',
+      'IMC': 'bmi'
+    };
+    return map[label] || 'blood';
   }
 }
