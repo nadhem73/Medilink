@@ -7,6 +7,7 @@ import com.medilinktunisia.authservice.model.entity.PasswordResetToken;
 import com.medilinktunisia.authservice.model.entity.Patient;
 import com.medilinktunisia.authservice.repository.DoctorRepository;
 import com.medilinktunisia.authservice.repository.PasswordResetTokenRepository;
+import com.medilinktunisia.authservice.repository.PharmacyRepository;
 import com.medilinktunisia.authservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ class PasswordResetServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private DoctorRepository doctorRepository;
+    @Mock private PharmacyRepository pharmacyRepository;
     @Mock private PasswordResetTokenRepository tokenRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private EmailService emailService;
@@ -43,7 +45,7 @@ class PasswordResetServiceTest {
     @BeforeEach
     void setUp() {
         service = new PasswordResetService(userRepository, doctorRepository,
-                tokenRepository, passwordEncoder, emailService);
+                pharmacyRepository, tokenRepository, passwordEncoder, emailService);
         ReflectionTestUtils.setField(service, "frontendUrl", "http://localhost:4200");
         ReflectionTestUtils.setField(service, "expirationMinutes", 60L);
     }
