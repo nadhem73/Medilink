@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 
-/** Espaces gérés ici (la pharmacie est ignorée pour le moment). */
-type RoleKey = 'patient' | 'doctor';
+/** Espaces gérés ici. */
+type RoleKey = 'patient' | 'doctor' | 'pharmacy';
 
 interface RoleTab {
   key: RoleKey;
@@ -25,8 +25,9 @@ export class ForgotPasswordComponent implements OnInit {
   successMessage = '';
 
   readonly roles: RoleTab[] = [
-    { key: 'patient', label: 'Patient', idLabel: 'Email du compte',  idPlaceholder: 'vous@exemple.com', idType: 'email' },
-    { key: 'doctor',  label: 'Médecin', idLabel: "Numéro d'ordre",   idPlaceholder: 'Ex : 12345',       idType: 'text'  }
+    { key: 'patient',  label: 'Patient',   idLabel: 'Email du compte',  idPlaceholder: 'vous@exemple.com', idType: 'email' },
+    { key: 'doctor',   label: 'Médecin',   idLabel: "Numéro d'ordre",   idPlaceholder: 'Ex : 12345',       idType: 'text'  },
+    { key: 'pharmacy', label: 'Pharmacie', idLabel: 'Numéro de licence', idPlaceholder: 'Ex : PH-00123',   idType: 'text'  }
   ];
 
   selectedRole: RoleKey = 'patient';
@@ -79,7 +80,7 @@ export class ForgotPasswordComponent implements OnInit {
     const identifier = (this.forgotForm.value.identifier || '').trim();
     const payload = this.selectedRole === 'patient'
       ? { role: 'patient', email: identifier }
-      : { role: 'doctor', licenseNumber: identifier };
+      : { role: this.selectedRole, licenseNumber: identifier };
 
     this.authService.forgotPassword(payload).subscribe({
       next: (res) => {

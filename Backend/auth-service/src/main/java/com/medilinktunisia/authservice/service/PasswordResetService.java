@@ -4,9 +4,11 @@ import com.medilinktunisia.authservice.dto.request.ForgotPasswordRequest;
 import com.medilinktunisia.authservice.dto.request.ResetPasswordRequest;
 import com.medilinktunisia.authservice.model.entity.Doctor;
 import com.medilinktunisia.authservice.model.entity.PasswordResetToken;
+import com.medilinktunisia.authservice.model.entity.Pharmacy;
 import com.medilinktunisia.authservice.model.entity.User;
 import com.medilinktunisia.authservice.repository.DoctorRepository;
 import com.medilinktunisia.authservice.repository.PasswordResetTokenRepository;
+import com.medilinktunisia.authservice.repository.PharmacyRepository;
 import com.medilinktunisia.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import java.util.UUID;
  * <ul>
  *   <li>Le patient s'identifie par l'<b>email</b> de son compte.</li>
  *   <li>Le médecin s'identifie par son <b>numéro d'ordre</b>.</li>
+ *   <li>La pharmacie s'identifie par son <b>numéro de licence</b>.</li>
  * </ul>
  * Pour ne pas révéler l'existence d'un compte, la demande renvoie toujours un
  * message générique ; l'email n'est envoyé que si un compte correspond.
@@ -36,6 +39,7 @@ public class PasswordResetService {
 
     private final UserRepository userRepository;
     private final DoctorRepository doctorRepository;
+    private final PharmacyRepository pharmacyRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -88,6 +92,12 @@ public class PasswordResetService {
                 yield (license == null || license.isBlank())
                         ? Optional.empty()
                         : doctorRepository.findByLicenseNumber(license.trim()).map(d -> (User) d);
+            }
+            case "pharmacy" -> {
+                String license = request.getLicenseNumber();
+                yield (license == null || license.isBlank())
+                        ? Optional.empty()
+                        : pharmacyRepository.findByLicenseNumber(license.trim()).map(p -> (User) p);
             }
             default -> Optional.empty();
         };

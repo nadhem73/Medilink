@@ -1,5 +1,6 @@
 package com.medilinktunisia.pharmacyservice;
 
+import com.medilinktunisia.pharmacyservice.config.DatabaseCreationListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,7 +21,9 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 public class PharmacyServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(PharmacyServiceApplication.class, args);
+        SpringApplication application = new SpringApplication(PharmacyServiceApplication.class);
+        application.addListeners(new DatabaseCreationListener());
+        application.run(args);
         log.info("Pharmacy Service started successfully");
     }
 }
