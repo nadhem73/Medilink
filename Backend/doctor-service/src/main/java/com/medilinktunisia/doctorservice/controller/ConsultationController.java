@@ -66,6 +66,14 @@ public class ConsultationController {
         return ResponseEntity.ok(service.completeConsultation(id, doctorId, body));
     }
 
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<List<ConsultationResponse>> getConsultationsByPatient(
+            HttpServletRequest request,
+            @PathVariable Long patientId) {
+        Long doctorId = (Long) request.getAttribute("userId");
+        return ResponseEntity.ok(service.getConsultationsByPatient(doctorId, patientId));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> cancelConsultation(
             HttpServletRequest request,

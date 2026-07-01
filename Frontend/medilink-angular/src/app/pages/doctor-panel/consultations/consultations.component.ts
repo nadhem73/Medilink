@@ -27,7 +27,7 @@ export class ConsultationsComponent implements OnInit {
   editingConsultation: ConsultationRequest = {};
   loading = false;
   startingId: number | null = null;
-  filterStatus = '';
+  filterStatus = 'PENDING';
   searchTerm = '';
   patientMedicalRecord: MedicalRecord | null = null;
   editingMedicalRecord: Partial<MedicalRecord> = {};

@@ -1,1 +1,710 @@
 @import '../patient-page';
+
+.mr-page {
+  position: relative;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DOSSIER COVER - Medical Folder Spine Layout
+// ═══════════════════════════════════════════════════════════════
+.dossier-cover {
+  display: flex;
+  gap: 0;
+  position: relative;
+  margin-top: 8px;
+  animation: dossierFadeIn 0.45s ease;
+}
+
+.dossier-spine {
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  background: linear-gradient(180deg, var(--bleu-mediterranee, #0066A2), var(--turquoise-tunisie, #00A8B5));
+  border-radius: 12px 0 0 12px;
+  color: #fff;
+  font-family: var(--font-headings);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  padding: 16px 0;
+  flex-shrink: 0;
+}
+
+.dossier-cover-body {
+  flex: 1;
+  background: var(--blanc-sante, #fff);
+  border: 1px solid var(--gris-clair, #e6eaf2);
+  border-left: none;
+  border-radius: 0 16px 16px 12px;
+  box-shadow: 0 2px 4px rgba(20, 40, 80, 0.03), 0 12px 36px rgba(20, 40, 80, 0.07);
+  padding: 28px 32px 22px;
+}
+
+.dossier-cover-header {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.dossier-avatar-wrap {
+  flex-shrink: 0;
+}
+
+.dossier-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bleu-mediterranee, #0066A2), var(--turquoise-tunisie, #00A8B5));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-headings);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: 0 3px 12px rgba(0, 102, 162, 0.25);
+}
+
+.dossier-identity {
+  flex: 1;
+  min-width: 0;
+}
+
+.dossier-identity-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.dossier-name {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 700;
+  color: var(--bleu-nuit, #0F2C4C);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.dossier-blood {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px 4px 16px;
+  background: linear-gradient(135deg, var(--corail-urgence, #E85D4E), #d1453a);
+  border-radius: 20px;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(232, 93, 78, 0.25);
+  flex-shrink: 0;
+}
+
+.dossier-blood-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+
+.dossier-blood-value {
+  font-family: var(--font-headings);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+.dossier-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.dossier-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--gris-clinique, #5A6A7A);
+
+  svg {
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+
+  b {
+    color: var(--bleu-nuit, #0F2C4C);
+    font-weight: 600;
+  }
+}
+
+// ── Cover Summary Strip ──────────────────────────────────────
+.dossier-summary {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gris-clair, #e6eaf2);
+}
+
+.dossier-summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  padding: 4px 8px;
+}
+
+.dossier-summary-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--gris-clinique, #5A6A7A);
+}
+
+.dossier-summary-value {
+  font-family: var(--font-headings);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--bleu-nuit, #0F2C4C);
+  line-height: 1.2;
+}
+
+.dossier-summary-sub {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--gris-clinique, #5A6A7A);
+}
+
+.dossier-summary-divider {
+  width: 1px;
+  height: 36px;
+  background: var(--gris-clair, #e6eaf2);
+  flex-shrink: 0;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LAYOUT GRID
+// ═══════════════════════════════════════════════════════════════
+.mr-content {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.dossier-grid {
+  display: grid;
+  grid-template-columns: 1fr 310px;
+  gap: 24px;
+  align-items: start;
+}
+
+.dossier-main {
+  display: grid;
+  gap: 20px;
+}
+
+.dossier-aside {
+  display: grid;
+  gap: 20px;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARD
+// ═══════════════════════════════════════════════════════════════
+.dossier-card {
+  background: var(--blanc-sante, #fff);
+  border: 1px solid var(--gris-clair, #e6eaf2);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(20, 40, 80, 0.02), 0 4px 12px rgba(20, 40, 80, 0.04);
+  padding: 20px 24px;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+
+  &:hover {
+    box-shadow: 0 2px 4px rgba(20, 40, 80, 0.03), 0 8px 24px rgba(20, 40, 80, 0.06);
+  }
+}
+
+.dossier-card--side {
+  .dossier-card-head {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+}
+
+.dossier-card--error {
+  border-color: color-mix(in srgb, var(--corail-urgence, #E85D4E) 25%, transparent);
+  background: color-mix(in srgb, var(--corail-urgence, #E85D4E) 2%, #fff);
+}
+
+.dossier-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gris-clair, #e6eaf2);
+}
+
+.dossier-card-head-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dossier-card-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+
+  &--teal { background: linear-gradient(135deg, var(--turquoise-tunisie, #00A8B5), #00909a); }
+  &--amber { background: linear-gradient(135deg, var(--or-carthage, #D4A843), #c49a35); }
+  &--green { background: linear-gradient(135deg, var(--vert-oasis, #2E8B57), #237346); }
+  &--blue { background: linear-gradient(135deg, var(--bleu-mediterranee, #0066A2), #005282); }
+  &--red { background: linear-gradient(135deg, var(--corail-urgence, #E85D4E), #d1453a); }
+}
+
+.dossier-card-title {
+  margin: 0 0 1px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bleu-nuit, #0F2C4C);
+  line-height: 1.2;
+}
+
+.dossier-card-desc {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--gris-clinique, #5A6A7A);
+}
+
+// ── Tag ──────────────────────────────────────────────────────
+.dossier-tag {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &--blue {
+    background: color-mix(in srgb, var(--bleu-mediterranee, #0066A2) 8%, #fff);
+    color: var(--bleu-mediterranee, #0066A2);
+  }
+  &--orange {
+    background: color-mix(in srgb, var(--or-carthage, #D4A843) 10%, #fff);
+    color: #a07d2e;
+  }
+  &--green {
+    background: color-mix(in srgb, var(--vert-oasis, #2E8B57) 8%, #fff);
+    color: var(--vert-oasis, #2E8B57);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VITAL SIGNS
+// ═══════════════════════════════════════════════════════════════
+.dossier-vitals {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.dossier-vital {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--gris-clair, #e6eaf2) 30%, #fff);
+  border: 1px solid var(--gris-clair, #e6eaf2);
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--turquoise-tunisie, #00A8B5) 18%, #e6eaf2);
+    background: color-mix(in srgb, var(--turquoise-tunisie, #00A8B5) 3%, #fff);
+  }
+}
+
+.dossier-vital-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--turquoise-tunisie, #00A8B5) 10%, #fff);
+
+  svg { color: var(--turquoise-tunisie, #00A8B5); }
+
+  &--blood { background: color-mix(in srgb, var(--corail-urgence, #E85D4E) 8%, #fff); svg { color: var(--corail-urgence, #E85D4E); } }
+  &--height { background: color-mix(in srgb, var(--bleu-mediterranee, #0066A2) 8%, #fff); svg { color: var(--bleu-mediterranee, #0066A2); } }
+  &--weight { background: color-mix(in srgb, var(--bleu-mediterranee, #0066A2) 8%, #fff); svg { color: var(--bleu-mediterranee, #0066A2); } }
+  &--bmi { background: color-mix(in srgb, var(--or-carthage, #D4A843) 8%, #fff); svg { color: var(--or-carthage, #D4A843); } }
+}
+
+.dossier-vital-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gris-clinique, #5A6A7A);
+  margin-bottom: 1px;
+}
+
+.dossier-vital-value {
+  display: block;
+  font-family: var(--font-headings);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--bleu-nuit, #0F2C4C);
+  line-height: 1.2;
+}
+
+.dossier-vital-sub {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--turquoise-tunisie, #00A8B5);
+  margin-top: 2px;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MEDICAL ALERTS
+// ═══════════════════════════════════════════════════════════════
+.dossier-alerts {
+  display: grid;
+  gap: 14px;
+}
+
+.dossier-alert-group {
+  display: grid;
+  gap: 7px;
+}
+
+.dossier-alert-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bleu-nuit, #0F2C4C);
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.dossier-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.dossier-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+
+  &--danger {
+    background: color-mix(in srgb, var(--corail-urgence, #E85D4E) 8%, #fff);
+    color: var(--corail-urgence, #E85D4E);
+    border: 1px solid color-mix(in srgb, var(--corail-urgence, #E85D4E) 15%, transparent);
+  }
+
+  &--warning {
+    background: color-mix(in srgb, var(--or-carthage, #D4A843) 8%, #fff);
+    color: #a07d2e;
+    border: 1px solid color-mix(in srgb, var(--or-carthage, #D4A843) 15%, transparent);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TREATMENTS
+// ═══════════════════════════════════════════════════════════════
+.dossier-tx-list {
+  display: grid;
+  gap: 0;
+}
+
+.dossier-tx-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  position: relative;
+  padding: 0 0 16px;
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.dossier-tx-marker {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--vert-oasis, #2E8B57);
+  margin-top: 7px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vert-oasis, #2E8B57) 8%, transparent);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1.5px;
+    height: calc(100% + 16px);
+    background: var(--gris-clair, #e6eaf2);
+  }
+
+  .dossier-tx-item:last-child &::before {
+    display: none;
+  }
+}
+
+.dossier-tx-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dossier-tx-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.dossier-tx-name {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bleu-nuit, #0F2C4C);
+}
+
+.dossier-tx-status {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vert-oasis, #2E8B57);
+  background: color-mix(in srgb, var(--vert-oasis, #2E8B57) 8%, #fff);
+  padding: 2px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.dossier-tx-detail {
+  margin: 0;
+  font-size: 11px;
+  color: var(--gris-clinique, #5A6A7A);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INFO LIST (Sidebar)
+// ═══════════════════════════════════════════════════════════════
+.dossier-info-list {
+  display: grid;
+  gap: 8px;
+}
+
+.dossier-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--noir-profond, #1A2B3C) 1%, #fff);
+  border: 1px solid var(--gris-clair, #e6eaf2);
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--bleu-mediterranee, #0066A2) 10%, #e6eaf2);
+  }
+}
+
+.dossier-info-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gris-clinique, #5A6A7A);
+}
+
+.dossier-info-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bleu-nuit, #0F2C4C);
+
+  &--mono {
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    letter-spacing: 0.03em;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EMPTY & ERROR STATES
+// ═══════════════════════════════════════════════════════════════
+.dossier-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 20px;
+  color: var(--gris-clinique, #5A6A7A);
+  font-size: 13px;
+
+  svg {
+    opacity: 0.25;
+  }
+}
+
+.dossier-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--corail-urgence, #E85D4E);
+  font-size: 13px;
+  font-weight: 500;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANIMATIONS
+// ═══════════════════════════════════════════════════════════════
+@keyframes dossierFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════════════════
+@media (max-width: 1100px) {
+  .dossier-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dossier-aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dossier-spine {
+    width: 28px;
+    font-size: 9px;
+    padding: 12px 0;
+  }
+
+  .dossier-cover-body {
+    padding: 20px 22px 18px;
+  }
+
+  .dossier-cover-header {
+    flex-wrap: wrap;
+  }
+
+  .dossier-identity-row {
+    flex-wrap: wrap;
+  }
+
+  .dossier-name {
+    font-size: 19px;
+  }
+
+  .dossier-summary {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .dossier-summary-item {
+    min-width: 80px;
+  }
+
+  .dossier-summary-divider {
+    display: none;
+  }
+
+  .dossier-vitals {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dossier-aside {
+    grid-template-columns: 1fr;
+  }
+
+  .dossier-card {
+    padding: 16px 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dossier-spine {
+    display: none;
+  }
+
+  .dossier-cover-body {
+    border-left: 1px solid var(--gris-clair, #e6eaf2);
+    border-radius: 12px;
+    padding: 16px 16px 14px;
+  }
+
+  .dossier-avatar {
+    width: 46px;
+    height: 46px;
+    font-size: 17px;
+  }
+
+  .dossier-name {
+    font-size: 16px;
+  }
+
+  .dossier-vitals {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .dossier-vital {
+    padding: 10px 12px;
+  }
+
+  .dossier-vital-value {
+    font-size: 15px;
+  }
+
+  .dossier-card {
+    padding: 14px 16px;
+  }
+}

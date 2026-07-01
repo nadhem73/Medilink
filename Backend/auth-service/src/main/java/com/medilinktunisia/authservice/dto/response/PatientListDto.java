@@ -12,4 +12,7 @@ public class PatientListDto {
     private String email;
     private String phone;
     private String gender;
+    private String address;
+    private String birthDate;
+    private String cin;
 }

@@ -17,33 +17,143 @@
     <!-- ════════════════════════════════════════════════════════════════
          PATIENTS
     ════════════════════════════════════════════════════════════════ -->
-    <section *ngSwitchCase="'patients'" class="section-grid">
-      <article class="card wide-card">
-        <div class="card-header">
-          <h2>Liste des patients</h2>
-          <span class="badge accent-green">Patients suivis</span>
-        </div>
-        <div class="list-cards">
-          <article class="mini-card" *ngFor="let patient of patients">
-            <div class="mini-card-top">
-              <h3>{{ patient.name }}</h3>
-              <span class="status">{{ patient.status }}</span>
+    <ng-container *ngSwitchCase="'patients'">
+      <div class="patients-layout" [class.has-selected]="selectedPatient">
+
+        <!-- ── Liste des patients ─────────────────────────────────────── -->
+        <div class="patients-list-panel">
+          <article class="card">
+            <div class="card-header">
+              <h2>Liste des patients</h2>
+              <span class="badge accent-green">{{ filteredPatients.length }} patient(s)</span>
             </div>
-            <p>{{ patient.reason }}</p>
-            <span>{{ patient.age }} — Dernière visite : {{ patient.lastVisit }}</span>
+            <div class="search-wrapper" style="margin-bottom:12px">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" [(ngModel)]="patientSearch" placeholder="Rechercher un patient..." />
+            </div>
+            <div class="list-cards">
+              <article class="mini-card clickable" *ngFor="let patient of filteredPatients"
+                [class.selected]="selectedPatient?.id === patient.id"
+                (click)="selectPatient(patient)">
+                <div class="mini-card-top">
+                  <h3>{{ patient.name }}</h3>
+                  <span class="status">{{ patient.status }}</span>
+                </div>
+                <p>{{ patient.reason }}</p>
+                <span>{{ patient.age }}</span>
+              </article>
+            </div>
           </article>
         </div>
-      </article>
 
-      <article class="card side-card">
-        <h2>Suivi des patients</h2>
-        <ul class="checklist">
-          <li>Vérifier les antécédents avant chaque consultation.</li>
-          <li>Mettre à jour le dossier après chaque visite.</li>
-          <li>Programmer les rappels de suivi nécessaires.</li>
-        </ul>
-      </article>
-    </section>
+        <!-- ── Feuille de consultation patient ─────────────────────────── -->
+        <div class="patients-fiche-panel">
+
+          <div *ngIf="loadingPatientConsultations" class="loading-state">
+            <div class="spinner"></div>
+            <p>Chargement des consultations...</p>
+          </div>
+
+          <div *ngIf="!loadingPatientConsultations && selectedPatient" class="fiche-patient">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+              <button type="button" class="appt-btn btn-confirm" (click)="exportPDF()" style="font-family:inherit">📄 Exporter en PDF</button>
+            </div>
+            <!-- ── En-tête médecin ──────────────────────────────────── -->
+            <div class="fiche-doctor-header">
+              <div class="fiche-doctor-info">
+                <strong>Dr {{ currentUser?.firstName }} {{ currentUser?.lastName }}</strong>
+                <span>{{ currentUser?.address || currentUser?.facility || 'Médecin généraliste' }}</span>
+                <span>{{ currentUser?.specialty || '' }}</span>
+              </div>
+              <div class="fiche-doctor-loc">
+                <span>{{ currentUser?.city || '' }}</span>
+                <span>{{ currentUser?.postalCode || '' }}</span>
+              </div>
+            </div>
+
+            <!-- ── Titre ────────────────────────────────────────────── -->
+            <div class="fiche-title-row">
+              <h2 class="fiche-title">FICHE PATIENT</h2>
+            </div>
+
+            <!-- ── Informations patient ─────────────────────────────── -->
+            <div class="fiche-section">
+              <div class="fiche-row-2">
+                <div class="fiche-field">
+                  <span class="fiche-label">Prénom et nom :</span>
+                  <span class="fiche-value">{{ selectedPatient.name }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Adresse :</span>
+                  <span class="fiche-value">{{ patientDetails?.address || 'Non renseignée' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Téléphone :</span>
+                  <span class="fiche-value">{{ patientDetails?.phone || 'Non renseigné' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">E-mail :</span>
+                  <span class="fiche-value">{{ patientDetails?.email || 'Non renseigné' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Date de naissance :</span>
+                  <span class="fiche-value">{{ patientDetails?.birthDate || 'Non renseignée' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Taille :</span>
+                  <span class="fiche-value">{{ medicalHeight }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Poids :</span>
+                  <span class="fiche-value">{{ medicalWeight }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Informations médicales ───────────────────────────── -->
+            <div class="fiche-section">
+              <div class="fiche-row-2">
+                <div class="fiche-field">
+                  <span class="fiche-label">Pathologie :</span>
+                  <span class="fiche-value">{{ patientMedicalRecord?.chronicDiseases || 'Non renseignée' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Traitement en cours :</span>
+                  <span class="fiche-value">{{ patientMedicalRecord?.currentTreatments || 'Non renseigné' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Assurance :</span>
+                  <span class="fiche-value">{{ insuranceLabel }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Consultations / RDV ──────────────────────────────── -->
+            <div class="fiche-section">
+              <div *ngIf="patientConsultations.length === 0" class="fiche-empty">
+                Aucune consultation enregistrée pour ce patient.
+              </div>
+
+              <div class="fiche-rdv" *ngFor="let c of patientConsultations; let i = index">
+                <div class="fiche-rdv-header">
+                  <span class="fiche-rdv-num">RDV {{ i + 1 }}</span>
+                  <span class="fiche-rdv-date">{{ c.startTime | date:'dd/MM/yyyy' }}</span>
+                  <span class="fiche-rdv-status" [ngClass]="getConsultationStatusClass(c.status)">{{ getConsultationStatusLabel(c.status) }}</span>
+                </div>
+                <div class="fiche-rdv-content">
+                  <span *ngIf="c.diagnosis"><strong>Diagnostic :</strong> {{ c.diagnosis }}</span>
+                  <span *ngIf="c.requestedExams"><strong>Examens demandés :</strong> {{ c.requestedExams }}</span>
+                  <span *ngIf="c.observations"><strong>Observations :</strong> {{ c.observations }}</span>
+                  <span *ngIf="!c.diagnosis && !c.requestedExams && !c.observations">Aucun détail</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </ng-container>
 
     <!-- ════════════════════════════════════════════════════════════════
          AGENDA

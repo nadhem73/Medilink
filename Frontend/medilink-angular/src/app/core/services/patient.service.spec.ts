@@ -82,4 +82,25 @@ describe('PatientService', () => {
       req.flush('Not found', { status: 404, statusText: 'Not Found' });
     });
   });
+
+  describe('updatePatientMedicalRecord()', () => {
+    it('should PUT to update medical record and return updated record', () => {
+      const mockUpdate: Partial<MedicalRecord> = { height: 180, weight: 75 };
+      const mockResponse: MedicalRecord = { userId: 1, height: 180, weight: 75 };
+
+      service.updatePatientMedicalRecord(1, mockUpdate).subscribe(res => expect(res).toEqual(mockResponse));
+      const req = httpMock.expectOne('http://localhost:8765/api/patients/1/medical-record');
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(mockUpdate);
+      req.flush(mockResponse);
+    });
+
+    it('should handle error on updatePatientMedicalRecord', () => {
+      service.updatePatientMedicalRecord(99, { height: 180 }).subscribe({
+        error: err => expect(err.status).toBe(400)
+      });
+      const req = httpMock.expectOne('http://localhost:8765/api/patients/99/medical-record');
+      req.flush('Bad request', { status: 400, statusText: 'Bad Request' });
+    });
+  });
 });
