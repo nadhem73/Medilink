@@ -71,8 +71,9 @@
   --role-accent: #0066A2;
   --role-accent-2: #00A8B5;
 }
-.ai-console[data-role="patient"] { --role-accent: #0066A2; --role-accent-2: #00A8B5; }
-.ai-console[data-role="doctor"]  { --role-accent: #2E8B57; --role-accent-2: #3FB984; }
+.ai-console[data-role="patient"]  { --role-accent: #0066A2; --role-accent-2: #00A8B5; }
+.ai-console[data-role="doctor"]   { --role-accent: #2E8B57; --role-accent-2: #3FB984; }
+.ai-console[data-role="pharmacy"] { --role-accent: #6D28D9; --role-accent-2: #8B5CF6; }
 
 .auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
 .auth-brand .brand-logo { height: 38px; width: auto; }
@@ -89,20 +90,21 @@
 /* Sélecteur d'espace */
 .role-seg {
   position: relative; isolation: isolate;
-  display: grid; grid-template-columns: repeat(2, 1fr);
+  display: grid; grid-template-columns: repeat(3, 1fr);
   margin-bottom: 22px; padding: 5px;
   background: var(--c-bg-2); border: 1px solid var(--c-line); border-radius: 14px;
 }
 .role-seg-thumb {
   position: absolute; z-index: 0; top: 5px; left: 5px;
-  width: calc((100% - 10px) / 2); height: calc(100% - 10px);
+  width: calc((100% - 10px) / 3); height: calc(100% - 10px);
   border-radius: 10px;
   background: linear-gradient(135deg, var(--c-blue), var(--c-cyan));
   box-shadow: 0 8px 18px rgba(0, 102, 162, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transition: transform .42s cubic-bezier(.22, .9, .24, 1), background .42s ease, box-shadow .42s ease;
 }
-.role-seg[data-role="patient"] .role-seg-thumb { background: linear-gradient(135deg, #0F2C4C, #0066A2); }
-.role-seg[data-role="doctor"]  .role-seg-thumb { background: linear-gradient(135deg, #0F2C4C, #2E8B57); box-shadow: 0 8px 18px rgba(46, 139, 87, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.30); }
+.role-seg[data-role="patient"]  .role-seg-thumb { background: linear-gradient(135deg, #0F2C4C, #0066A2); }
+.role-seg[data-role="doctor"]   .role-seg-thumb { background: linear-gradient(135deg, #0F2C4C, #2E8B57); box-shadow: 0 8px 18px rgba(46, 139, 87, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.30); }
+.role-seg[data-role="pharmacy"] .role-seg-thumb { background: linear-gradient(135deg, #4C1D95, #8B5CF6); box-shadow: 0 8px 18px rgba(109, 40, 217, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.30); }
 
 .role-seg-btn {
   position: relative; z-index: 1;
@@ -116,8 +118,9 @@
   &.active { color: #fff; opacity: 1; }
   &.active svg { transform: scale(1.08); }
 }
-.role-seg-btn--patient { --seg-accent: #0066A2; }
-.role-seg-btn--doctor  { --seg-accent: #2E8B57; }
+.role-seg-btn--patient  { --seg-accent: #0066A2; }
+.role-seg-btn--doctor   { --seg-accent: #2E8B57; }
+.role-seg-btn--pharmacy { --seg-accent: #6D28D9; }
 
 /* Formulaire */
 .auth-form { display: grid; gap: 16px; }

@@ -104,16 +104,16 @@ describe('LoginComponent', () => {
     });
   });
 
-  it('should use email as identifier for pharmacy role', () => {
+  it('should use licenseNumber as identifier for pharmacy role', () => {
     authServiceSpy.login.and.returnValue(of({} as any));
 
     component.selectedRole = 'pharmacy';
-    component.loginForm.get('identifier')?.setValue('pharmacy@test.tn');
+    component.loginForm.get('identifier')?.setValue('PH-00123');
     component.loginForm.get('password')?.setValue('secret123');
     component.onSubmit();
 
     expect(authServiceSpy.login).toHaveBeenCalledWith({
-      email: 'pharmacy@test.tn',
+      licenseNumber: 'PH-00123',
       password: 'secret123'
     });
   });

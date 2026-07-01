@@ -77,7 +77,8 @@
       "Read(//c/Program Files/**)",
       "Bash(awk -v authfile=inject_auth.sql -v docfile=inject_doctors.sql ' *)",
       "Bash(grep -n \"auth\\\\|Path\\\\|uri\\\\|lb://\\\\|predicates\" Backend/api-gateway/src/main/resources/application.yml)",
-      "Bash(grep -n \"color\\\\|#[0-9a-fA-F]\\\\{3,6\\\\}\\\\|font-family\\\\|gradient\\\\|--c-\\\\|var\\(\" Frontend/medilink-angular/src/app/pages/home/home/home.component.scss)"
+      "Bash(grep -n \"color\\\\|#[0-9a-fA-F]\\\\{3,6\\\\}\\\\|font-family\\\\|gradient\\\\|--c-\\\\|var\\(\" Frontend/medilink-angular/src/app/pages/home/home/home.component.scss)",
+      "Bash(python -c ' *)"
     ]
   }
 }

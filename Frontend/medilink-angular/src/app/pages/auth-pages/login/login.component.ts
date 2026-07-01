@@ -32,7 +32,7 @@ export class LoginComponent implements OnInit {
   readonly roles: RoleTab[] = [
     { key: 'patient',  label: 'Patient',   idLabel: 'Numéro CIN',       idPlaceholder: 'Ex : 12345678',          idType: 'text',  idAutocomplete: 'off' },
     { key: 'doctor',   label: 'Médecin',   idLabel: "Numéro d'ordre",   idPlaceholder: 'Ex : 12345',             idType: 'text',  idAutocomplete: 'off' },
-    { key: 'pharmacy', label: 'Pharmacie', idLabel: 'Email',            idPlaceholder: 'officine@medilink.tn',   idType: 'email', idAutocomplete: 'email' }
+    { key: 'pharmacy', label: 'Pharmacie', idLabel: 'Numéro de licence', idPlaceholder: 'Ex : PH-00123',          idType: 'text',  idAutocomplete: 'off' }
   ];
 
   selectedRole: RoleKey = 'patient';
@@ -108,14 +108,12 @@ export class LoginComponent implements OnInit {
       const identifier = (this.loginForm.value.identifier || '').trim();
       const password = this.loginForm.value.password;
 
-      // Patient → CIN ; médecin → numéro d'ordre ; pharmacie → email.
+      // Patient → CIN ; médecin et pharmacie → numéro de licence.
       let credentials: { cin?: string; licenseNumber?: string; email?: string; password: string };
       if (this.selectedRole === 'patient') {
         credentials = { cin: identifier, password };
-      } else if (this.selectedRole === 'doctor') {
-        credentials = { licenseNumber: identifier, password };
       } else {
-        credentials = { email: identifier, password };
+        credentials = { licenseNumber: identifier, password };
       }
 
       this.authService.login(credentials).subscribe({

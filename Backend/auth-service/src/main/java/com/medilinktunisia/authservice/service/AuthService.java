@@ -12,11 +12,13 @@ import com.medilinktunisia.authservice.exception.DuplicateResourceException;
 import com.medilinktunisia.authservice.exception.EmailAlreadyExistsException;
 import com.medilinktunisia.authservice.model.entity.Doctor;
 import com.medilinktunisia.authservice.model.entity.Patient;
+import com.medilinktunisia.authservice.model.entity.Pharmacy;
 import com.medilinktunisia.authservice.model.entity.User;
 import com.medilinktunisia.authservice.model.enums.Role;
 import com.medilinktunisia.authservice.model.enums.UserStatus;
 import com.medilinktunisia.authservice.repository.DoctorRepository;
 import com.medilinktunisia.authservice.repository.PatientRepository;
+import com.medilinktunisia.authservice.repository.PharmacyRepository;
 import com.medilinktunisia.authservice.repository.UserRepository;
 import com.medilinktunisia.authservice.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +43,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
+    private final PharmacyRepository pharmacyRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -125,10 +128,12 @@ public class AuthService {
                     .map(Patient::getEmail)
                     .orElseThrow(() -> new BadCredentialsException("CIN ou mot de passe incorrect"));
         } else if (request.getLicenseNumber() != null && !request.getLicenseNumber().isBlank()) {
-            // Médecin : identifié par son numéro d'ordre.
-            email = doctorRepository.findByLicenseNumber(request.getLicenseNumber().trim())
+            // Identifiant par numéro de licence : médecin (numéro d'ordre) ou pharmacie.
+            String license = request.getLicenseNumber().trim();
+            email = doctorRepository.findByLicenseNumber(license)
                     .map(Doctor::getEmail)
-                    .orElseThrow(() -> new BadCredentialsException("Numéro d'ordre ou mot de passe incorrect"));
+                    .or(() -> pharmacyRepository.findByLicenseNumber(license).map(Pharmacy::getEmail))
+                    .orElseThrow(() -> new BadCredentialsException("Numéro de licence ou mot de passe incorrect"));
         }
         if (email == null || email.isBlank()) {
             throw new BadCredentialsException("Identifiant ou mot de passe incorrect");
