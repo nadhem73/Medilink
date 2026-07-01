@@ -20,6 +20,7 @@
         <module>patient-service</module>
         <module>doctor-service</module>
         <module>pharmacy-service</module>
+        <module>prescription-service</module>
     </modules>
 
     <repositories>

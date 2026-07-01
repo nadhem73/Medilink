@@ -1,4 +1,4 @@
-package com.medilinktunisia.pharmacyservice.security;
+package com.medilinktunisia.prescriptionservice.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,22 +20,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        log.info("Loading SecurityConfig - configuring HTTP security filter chain");
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // Permettre les requetes OPTIONS (CORS preflight) sans authentification
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Endpoint interne appele par l'auth-service (service-a-service)
-                        .requestMatchers("/pharmacy-profiles/internal/**").permitAll()
-                        // Liste des profils pharmacies (accessible aux utilisateurs authentifies)
-                        .requestMatchers("/pharmacy-profiles/all").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        // Endpoints medicaments et stock (accessibles aux docteurs)
-                        .requestMatchers(HttpMethod.GET, "/medicaments/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/medicaments/stock-check").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/stock/**").authenticated()
-                        // Le reste (ex. /pharmacy-profiles/me) necessite un JWT valide
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

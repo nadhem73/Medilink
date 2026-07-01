@@ -82,7 +82,7 @@ public class GatewayConfig {
                 // PHARMACY SERVICE - Pharmacies
                 // ========================================
                 .route("pharmacy-service", r -> r
-                        .path("/api/pharmacies/**")
+                        .path("/api/pharmacy/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config

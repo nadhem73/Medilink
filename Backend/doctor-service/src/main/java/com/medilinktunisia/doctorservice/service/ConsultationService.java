@@ -163,6 +163,13 @@ public class ConsultationService {
         repository.save(consultation);
     }
 
+    public void linkPrescription(Long consultationId, Long prescriptionId) {
+        Consultation consultation = repository.findById(consultationId)
+                .orElseThrow(() -> new RuntimeException("Consultation not found: " + consultationId));
+        consultation.setPrescriptionId(prescriptionId);
+        repository.save(consultation);
+    }
+
     private ConsultationResponse toDto(Consultation c) {
         return ConsultationResponse.builder()
                 .id(c.getId())

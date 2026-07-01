@@ -162,33 +162,35 @@
           </div>
         </article>
 
-        <!-- Dossier médical du patient (éditable) -->
+        <!-- Dossier médical du patient (lecture seule) -->
         <div *ngIf="medicalLoading" class="loading-state" style="padding: 24px;">
           <div class="spinner"></div>
           <p>Chargement du dossier médical...</p>
         </div>
-        <article class="card" [class.readonly]="isCompleted" *ngIf="patientMedicalRecord && !medicalLoading">
+        <article class="card readonly" *ngIf="patientMedicalRecord && !medicalLoading">
           <div class="card-header">
             <h2>Dossier médical — {{ getPatientName(selectedConsultation.patientId) }}</h2>
-            <button type="button" class="appt-btn btn-confirm" [disabled]="isCompleted" (click)="saveMedicalRecord()">💾 Enregistrer</button>
           </div>
-          <div class="readonly-banner" *ngIf="isCompleted">🔒 Consultation terminée — le dossier est en lecture seule</div>
 
           <!-- Infos générales -->
           <div class="section-block">
             <h3 class="section-title">🆔 Informations générales</h3>
             <div class="medical-grid">
+              <div class="profile-item full-width">
+                <span>Patient</span>
+                <input class="editable-text" readonly [value]="getPatientName(selectedConsultation.patientId)" />
+              </div>
               <div class="profile-item">
                 <span>Groupe sanguin</span>
-                <input class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.bloodGroup" placeholder="A+, O-..." />
+                <input class="editable-text" readonly [value]="editingMedicalRecord.bloodGroup || ''" placeholder="A+, O-..." />
               </div>
               <div class="profile-item">
                 <span>Taille (cm)</span>
-                <input class="editable-text" [readonly]="isCompleted" type="number" step="0.1" [(ngModel)]="editingMedicalRecord.height" placeholder="175" />
+                <input class="editable-text" readonly type="number" step="0.1" [value]="editingMedicalRecord.height || ''" placeholder="175" />
               </div>
               <div class="profile-item">
                 <span>Poids (kg)</span>
-                <input class="editable-text" [readonly]="isCompleted" type="number" step="0.1" [(ngModel)]="editingMedicalRecord.weight" placeholder="70" />
+                <input class="editable-text" readonly type="number" step="0.1" [value]="editingMedicalRecord.weight || ''" placeholder="70" />
               </div>
             </div>
           </div>
@@ -199,15 +201,15 @@
             <div class="medical-grid">
               <div class="profile-item full-width">
                 <span>Allergies</span>
-                <textarea class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.allergies" rows="2" placeholder="Aucune"></textarea>
+                <textarea class="editable-text" readonly [value]="editingMedicalRecord.allergies || ''" rows="2" placeholder="Aucune"></textarea>
               </div>
               <div class="profile-item full-width">
                 <span>Maladies chroniques</span>
-                <textarea class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.chronicDiseases" rows="2" placeholder="Aucune"></textarea>
+                <textarea class="editable-text" readonly [value]="editingMedicalRecord.chronicDiseases || ''" rows="2" placeholder="Aucune"></textarea>
               </div>
               <div class="profile-item full-width">
                 <span>Traitements en cours</span>
-                <textarea class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.currentTreatments" rows="2" placeholder="Aucun"></textarea>
+                <textarea class="editable-text" readonly [value]="editingMedicalRecord.currentTreatments || ''" rows="2" placeholder="Aucun"></textarea>
               </div>
             </div>
           </div>
@@ -218,11 +220,11 @@
             <div class="medical-grid">
               <div class="profile-item">
                 <span>Nom</span>
-                <input class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.emergencyContactName" placeholder="Nom complet" />
+                <input class="editable-text" readonly [value]="editingMedicalRecord.emergencyContactName || ''" placeholder="Nom complet" />
               </div>
               <div class="profile-item">
                 <span>Téléphone</span>
-                <input class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.emergencyContactPhone" placeholder="+216 XX XXX XXX" />
+                <input class="editable-text" readonly [value]="editingMedicalRecord.emergencyContactPhone || ''" placeholder="+216 XX XXX XXX" />
               </div>
             </div>
           </div>
@@ -237,7 +239,7 @@
               </div>
               <div class="profile-item">
                 <span>N° CNAM</span>
-                <input class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingMedicalRecord.insuranceNumber" placeholder="Numéro CNAM" />
+                <input class="editable-text" readonly [value]="editingMedicalRecord.insuranceNumber || ''" placeholder="Numéro CNAM" />
               </div>
             </div>
           </div>
@@ -301,18 +303,6 @@
           </div>
 
           <div class="section-block">
-            <h3 class="section-title">Examens d'analyse</h3>
-            <div class="analysis-grid">
-              <label class="analysis-chip" *ngFor="let type of analysisTypes"
-                     [class.selected]="hasAnalysis(type)"
-                     [class.disabled]="isCompleted">
-                <input type="checkbox" [disabled]="isCompleted" [checked]="hasAnalysis(type)" (change)="toggleAnalysis(type, $any($event.target).checked)" />
-                <span>{{ type }}</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="section-block">
             <h3 class="section-title">Suivi</h3>
             <div class="suivi-toggle">
               <label class="toggle-label">
@@ -345,11 +335,41 @@
             </div>
           </div>
 
-          <div class="form-actions" *ngIf="selectedConsultation.status !== 'COMPLETED'">
-            <button type="button" class="appt-btn btn-start" (click)="completeConsultation()">✅ Finaliser la consultation</button>
+          <!-- Prescription medicale -->
+          <div class="section-block">
+            <h3 class="section-title">💊 Prescription médicale</h3>
+            <div *ngIf="existingPrescriptionId" class="prescription-info">
+              <span class="badge-prescription">✅ Ordonnance #{{ existingPrescriptionId }} déjà prescrite</span>
+            </div>
+            <div *ngIf="!existingPrescriptionId && isCompleted" class="prescription-info">
+              <span class="badge-prescription muted">Aucune ordonnance prescrite</span>
+            </div>
+            <div class="dp-btn-row" *ngIf="!isCompleted">
+              <button type="button" class="dp-btn" (click)="openPrescriptionModal()" *ngIf="!existingPrescriptionId">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+                Prescrire
+              </button>
+              <button type="button" class="dp-btn" (click)="completeConsultation()" *ngIf="selectedConsultation.status !== 'COMPLETED'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Finaliser
+              </button>
+            </div>
           </div>
         </article>
       </div>
     </div>
+
+    <!-- Prescription Modal -->
+    <app-prescription-modal *ngIf="showPrescriptionModal && selectedConsultation"
+      [consultationId]="selectedConsultation!.id"
+      [patientId]="selectedConsultation!.patientId"
+      [patientName]="getPatientName(selectedConsultation!.patientId)"
+      [patientCnam]="patientMedicalRecord?.insuranceNumber || ''"
+      [analysisTypes]="analysisTypes"
+      [selectedAnalyses]="editingConsultation.requestedExams || ''"
+      (analysesChanged)="onAnalysesChanged($event)"
+      (close)="closePrescriptionModal()"
+      (saved)="onPrescriptionSaved()">
+    </app-prescription-modal>
   </ng-template>
 </section>

@@ -1,6 +1,7 @@
 package com.medilinktunisia.authservice.service;
 
 import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.util.ByteArrayDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -8,6 +9,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
  * Envoi des emails de l'auth-service.
@@ -70,6 +72,149 @@ public class EmailService {
             // L'échec d'envoi ne doit pas casser le flux ; on journalise le lien en secours.
             log.error("Échec de l'envoi de l'email à {} : {}. Lien : {}", to, e.getMessage(), resetLink);
         }
+    }
+
+    /**
+     * Envoie un email au patient avec les PDFs de l'ordonnance (médicaments et/ou analyses) en pièces jointes.
+     */
+    public void sendPrescriptionEmail(com.medilinktunisia.authservice.dto.request.PrescriptionEmailRequest request) {
+        if (!isMailConfigured()) {
+            log.warn("[EMAIL DEV] SMTP non configuré (MAIL_PASSWORD vide). Email à {} non envoyé.", request.getPatientEmail());
+            return;
+        }
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
+            helper.setFrom(from, "MediLink Tunisia");
+            helper.setTo(request.getPatientEmail());
+            helper.setSubject("MediLink Tunisia — Votre ordonnance médicale");
+
+            String html = buildPrescriptionEmailHtml(request.getPatientName());
+            String text = buildPrescriptionEmailText(request.getPatientName());
+            helper.setText(text, html);
+
+            if (request.getPdfMedicationsBase64() != null && !request.getPdfMedicationsBase64().isBlank()) {
+                byte[] pdfBytes = Base64.getDecoder().decode(request.getPdfMedicationsBase64());
+                String fileName = request.getMedicationsFileName() != null ? request.getMedicationsFileName() : "Ordonnance_Medicaments.pdf";
+                helper.addAttachment(fileName, new ByteArrayDataSource(pdfBytes, "application/pdf"));
+            }
+
+            if (request.getPdfAnalysesBase64() != null && !request.getPdfAnalysesBase64().isBlank()) {
+                byte[] pdfBytes = Base64.getDecoder().decode(request.getPdfAnalysesBase64());
+                String fileName = request.getAnalysesFileName() != null ? request.getAnalysesFileName() : "Ordonnance_Analyses.pdf";
+                helper.addAttachment(fileName, new ByteArrayDataSource(pdfBytes, "application/pdf"));
+            }
+
+            mailSender.send(message);
+            log.info("Email d'ordonnance envoyé à {}", request.getPatientEmail());
+        } catch (Exception e) {
+            log.error("Échec de l'envoi de l'email d'ordonnance à {} : {}", request.getPatientEmail(), e.getMessage());
+        }
+    }
+
+    private String buildPrescriptionEmailText(String patientName) {
+        String hello = (patientName != null && !patientName.isBlank())
+                ? "Bonjour " + patientName + ","
+                : "Bonjour,";
+        return hello + "\n\n"
+                + "Votre médecin vous a prescrit une ordonnance sur MediLink Tunisia.\n"
+                + "Vous trouverez ci-joint les documents suivants :\n"
+                + "  - Ordonnance médicaments\n"
+                + "  - Ordonnance analyses\n\n"
+                + "Merci de présenter ces documents à votre pharmacien ou laboratoire.\n\n"
+                + "Prenez soin de vous,\n"
+                + "— L'équipe MediLink Tunisia";
+    }
+
+    private String buildPrescriptionEmailHtml(String patientName) {
+        String hello = (patientName != null && !patientName.isBlank())
+                ? "Bonjour " + escape(patientName) + ","
+                : "Bonjour,";
+
+        return """
+                <!DOCTYPE html>
+                <html lang="fr">
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>Votre ordonnance MediLink Tunisia</title>
+                </head>
+                <body style="margin:0; padding:0; background-color:#F0F4F8;">
+                  <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background-color:#F0F4F8;">
+                    <tr>
+                      <td align="center" style="padding:32px 16px;">
+                        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:18px; overflow:hidden; box-shadow:0 18px 44px rgba(15,44,76,0.14); font-family:'Poppins','Segoe UI',Helvetica,Arial,sans-serif;">
+                          <tr>
+                            <td bgcolor="#0066A2" style="background-color:#0066A2; background-image:linear-gradient(135deg,#0066A2 0%%,#00A8B5 100%%); padding:38px 40px 34px;">
+                              <table role="presentation" width="100%%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                  <td style="vertical-align:middle;">
+                                    <table role="presentation" cellpadding="0" cellspacing="0">
+                                      <tr>
+                                        <td style="vertical-align:middle;">
+                                          <div style="width:46px; height:46px; border-radius:50%%; background-color:#ffffff; text-align:center; line-height:46px; font-size:26px; font-weight:700; color:#0066A2;">+</div>
+                                        </td>
+                                        <td style="vertical-align:middle; padding-left:14px;">
+                                          <div style="color:#ffffff; font-size:20px; font-weight:700;">MediLink&nbsp;Tunisia</div>
+                                          <div style="color:rgba(255,255,255,0.82); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; margin-top:2px;">Votre santé connectée</div>
+                                        </td>
+                                      </tr>
+                                    </table>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                          <tr><td style="height:4px; background-color:#D4A843; font-size:0; line-height:0;">&nbsp;</td></tr>
+                          <tr>
+                            <td style="padding:40px 40px 8px;">
+                              <h1 style="margin:0 0 6px; font-size:23px; font-weight:700; color:#1A2B3C;">Votre ordonnance médicale</h1>
+                              <p style="margin:0 0 22px; font-size:15px; line-height:1.6; color:#5A6A7A;">%s</p>
+                              <p style="margin:0 0 20px; font-size:15px; line-height:1.7; color:#1A2B3C;">
+                                Votre médecin vous a prescrit une ordonnance. Vous trouverez en pièces jointes de cet email les documents suivants :
+                              </p>
+                              <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                                <tr>
+                                  <td style="padding:14px 18px; background-color:#F0F4F8; border-left:4px solid #2E8B57; border-radius:8px;">
+                                    <strong style="color:#1A2B3C; font-size:14px;">💊 Ordonnance médicaments</strong>
+                                    <p style="margin:4px 0 0; font-size:13px; color:#5A6A7A;">Votre prescription médicamenteuse détaillée.</p>
+                                  </td>
+                                </tr>
+                                <tr><td style="height:8px; font-size:0;">&nbsp;</td></tr>
+                                <tr>
+                                  <td style="padding:14px 18px; background-color:#F0F4F8; border-left:4px solid #0066A2; border-radius:8px;">
+                                    <strong style="color:#1A2B3C; font-size:14px;">🔬 Ordonnance analyses</strong>
+                                    <p style="margin:4px 0 0; font-size:13px; color:#5A6A7A;">Les analyses de laboratoire prescrites.</p>
+                                  </td>
+                                </tr>
+                              </table>
+                              <p style="margin:0 0 16px; font-size:13px; line-height:1.6; color:#5A6A7A;">
+                                Merci de présenter ces documents à votre pharmacien ou laboratoire.
+                              </p>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding:24px 40px 36px;">
+                              <p style="margin:0; font-size:15px; color:#1A2B3C;">Prenez soin de vous,</p>
+                              <p style="margin:2px 0 0; font-size:15px; font-weight:700; color:#0066A2;">L'équipe MediLink Tunisia</p>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="background-color:#1A2B3C; padding:22px 40px;">
+                              <p style="margin:0; font-size:12px; line-height:1.6; color:rgba(255,255,255,0.66); text-align:center;">
+                                © 2026 MediLink Tunisia — Plateforme de santé connectée.<br>
+                                Cet email a été envoyé automatiquement suite à une prescription médicale.
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </body>
+                </html>
+                """.formatted(hello);
     }
 
     /** Version texte brut (repli pour les clients sans HTML). */
