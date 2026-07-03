@@ -82,4 +82,12 @@ public class ConsultationController {
         service.cancelConsultation(id, doctorId);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}/prescription/{prescriptionId}")
+    public ResponseEntity<Void> linkPrescription(
+            @PathVariable Long id,
+            @PathVariable Long prescriptionId) {
+        service.linkPrescription(id, prescriptionId);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -293,4 +293,25 @@ class ConsultationServiceTest {
 
         assertThat(result.getType()).isEqualTo("PRESENTIEL");
     }
+
+    @Test
+    void linkPrescription_setsPrescriptionId() {
+        Consultation existing = createConsultation(1L, ConsultationStatus.IN_PROGRESS);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.linkPrescription(1L, 10L);
+
+        verify(repository).save(consultationCaptor.capture());
+        assertThat(consultationCaptor.getValue().getPrescriptionId()).isEqualTo(10L);
+    }
+
+    @Test
+    void linkPrescription_notFound_throwsException() {
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.linkPrescription(99L, 10L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Consultation not found");
+    }
 }
