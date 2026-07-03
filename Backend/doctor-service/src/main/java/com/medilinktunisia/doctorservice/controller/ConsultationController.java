@@ -83,7 +83,7 @@ public class ConsultationController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/prescription/{prescriptionId}")
+    @PutMapping("/{id}/prescription/{prescriptionId}")
     public ResponseEntity<Void> linkPrescription(
             @PathVariable Long id,
             @PathVariable Long prescriptionId) {

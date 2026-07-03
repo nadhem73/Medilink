@@ -4,7 +4,7 @@ import { AppointmentService } from '../../../core/services/appointment.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PatientService, MedicalRecord } from '../../../core/services/patient.service';
 import { DoctorService } from '../../../core/services/doctor.service';
-import { PrescriptionService } from '../../../core/services/prescription.service';
+import { PrescriptionService, PrescriptionEmailRequest } from '../../../core/services/prescription.service';
 import { jsPDF } from 'jspdf';
 import { MINISTRY_LOGO_BASE64 } from './ministry-logo';
 
@@ -486,28 +486,64 @@ export class ConsultationsComponent implements OnInit {
   private sendPrescriptionEmailAfterCompletion(): void {
     if (!this.selectedConsultation) return;
     const patientName = this.getPatientName(this.selectedConsultation.patientId);
+    const patientEmail = this.getPatientEmail(this.selectedConsultation.patientId);
+    if (!patientEmail) {
+      console.warn('Aucun email trouvé pour le patient, email non envoyé.');
+      return;
+    }
 
     const hasAnalyses = !!(this.editingConsultation.requestedExams?.trim());
     const analyses = hasAnalyses
       ? this.editingConsultation.requestedExams!.split(',').map(s => s.trim()).filter(s => s)
       : [];
 
-    const items = this.savedPrescriptionItems.length > 0
-      ? this.savedPrescriptionItems
-      : null;
+    const prescriptionId = this.selectedConsultation.prescriptionId
+      || this.existingPrescriptionId;
 
-    if (items && items.length > 0) {
-      try {
-        const pdfMeds = this.generateMedicationPdfBase64(items);
-        this.downloadBase64Pdf(pdfMeds, 'Ordonnance_Medicaments.pdf');
-      } catch (e) { console.error('PDF medicaments error:', e); }
-    }
+    if (!prescriptionId && !hasAnalyses) return;
 
-    if (hasAnalyses) {
-      try {
-        const pdfAnalyses = this.generateAnalysesPdfBase64(analyses);
-        this.downloadBase64Pdf(pdfAnalyses, 'Ordonnance_Analyses.pdf');
-      } catch (e) { console.error('PDF analyses error:', e); }
+    const sendWithItems = (items: any[]) => {
+      let pdfMeds: string | null = null;
+      let pdfAnalyses: string | null = null;
+
+      if (items.length > 0) {
+        try {
+          pdfMeds = this.generateMedicationPdfBase64(items);
+        } catch (e) { console.error('PDF medicaments error:', e); }
+      }
+
+      if (hasAnalyses) {
+        try {
+          pdfAnalyses = this.generateAnalysesPdfBase64(analyses);
+        } catch (e) { console.error('PDF analyses error:', e); }
+      }
+
+      if (!pdfMeds && !pdfAnalyses) return;
+
+      const request: PrescriptionEmailRequest = {
+        patientEmail,
+        patientName,
+        pdfMedicationsBase64: pdfMeds || undefined,
+        pdfAnalysesBase64: pdfAnalyses || undefined,
+        medicationsFileName: pdfMeds ? 'Ordonnance_Medicaments.pdf' : undefined,
+        analysesFileName: pdfAnalyses ? 'Ordonnance_Analyses.pdf' : undefined,
+      };
+
+      this.prescriptionService.sendPrescriptionEmail(request).subscribe({
+        next: () => console.log('Email d\'ordonnance envoyé avec succès'),
+        error: (err) => console.error('Erreur envoi email ordonnance:', err)
+      });
+    };
+
+    if (this.savedPrescriptionItems.length > 0) {
+      sendWithItems(this.savedPrescriptionItems);
+    } else if (prescriptionId) {
+      this.prescriptionService.getPrescription(prescriptionId).subscribe({
+        next: (p) => sendWithItems(p.items || []),
+        error: (err) => console.error('Erreur récupération prescription:', err)
+      });
+    } else {
+      sendWithItems([]);
     }
   }
 
@@ -544,51 +580,66 @@ export class ConsultationsComponent implements OnInit {
 
   private pdfHeader(doc: jsPDF): number {
     const M = this.PDF.M, C = this.PDF;
-    doc.addImage(MINISTRY_LOGO_BASE64, 'PNG', M, 6, 14, 14);
+    doc.addImage(MINISTRY_LOGO_BASE64, 'PNG', M, 7, 16, 16);
     doc.setTextColor(C.navy[0], C.navy[1], C.navy[2]);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
-    doc.text('RÉPUBLIQUE TUNISIENNE', M + 17, 10);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
-    doc.text('MINISTÈRE DE LA SANTÉ', M + 17, 15.5);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
-    doc.text('ORDONNANCE MÉDICALE', M, 25);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+    doc.text('RÉPUBLIQUE TUNISIENNE', M + 20, 11);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text('MINISTÈRE DE LA SANTÉ', M + 20, 17);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+    doc.text('ORDONNANCE MÉDICALE', 105, 12, { align: 'center' });
     const lic = this.getCurrentDoctorLicense();
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
     doc.setTextColor(140, 140, 140);
-    doc.text(`N° TOM : ${lic || '__________'}`, M, 30);
+    doc.text(`N° TOM : ${lic || '__________'}`, 105, 18, { align: 'center' });
     doc.setDrawColor(C.gold[0], C.gold[1], C.gold[2]);
-    doc.setLineWidth(0.3);
-    doc.line(M, 33, 210 - M, 33);
+    doc.setLineWidth(0.4);
+    doc.line(M, 23, 210 - M, 23);
     doc.setFillColor(C.green[0], C.green[1], C.green[2]);
-    doc.rect(M, 37, 3, 16, 'F');
+    doc.rect(M, 27, 3, 16, 'F');
     doc.setTextColor(C.text[0], C.text[1], C.text[2]);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
-    doc.text(this.getCurrentDoctorName() || 'Médecin traitant', M + 6, 42);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text(this.getCurrentDoctorName() || 'Médecin traitant', M + 6, 32);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
     const spec = this.getCurrentDoctorSpecialty();
     const phone = this.getCurrentDoctorPhone();
     const email = this.getCurrentDoctorEmail();
+    const hosp = this.getCurrentDoctorHospital();
     const detail = [spec, phone, email].filter(Boolean).join(' · ');
-    if (detail) doc.text(detail, M + 6, 48);
+    if (detail) doc.text(detail, M + 6, 38);
+    if (hosp) doc.text(hosp, M + 6, 43);
     doc.setDrawColor(C.rule[0], C.rule[1], C.rule[2]);
     doc.setLineWidth(0.2);
-    doc.line(M, 58, 210 - M, 58);
+    doc.line(M, 48, 210 - M, 48);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
     doc.setTextColor(C.navy[0], C.navy[1], C.navy[2]);
-    doc.text('Patient', M, 64);
+    doc.text('Patient', M, 53);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(C.text[0], C.text[1], C.text[2]);
-    doc.text(': ' + this.getPatientName(this.selectedConsultation?.patientId || 0), M + 14, 64);
+    doc.text(': ' + this.getPatientName(this.selectedConsultation?.patientId || 0), M + 14, 53);
+    const cnam = this.patientMedicalRecord?.insuranceNumber;
+    if (cnam) {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(C.navy[0], C.navy[1], C.navy[2]);
+      doc.text('N° CNAM', 210 - M - 55, 53);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(C.text[0], C.text[1], C.text[2]);
+      doc.text(': ' + cnam, 210 - M - 35, 53);
+    }
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(C.navy[0], C.navy[1], C.navy[2]);
-    doc.text('Date', 210 - M - 50, 64);
+    doc.text('Date', 210 - M - 55, 58);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(C.text[0], C.text[1], C.text[2]);
-    doc.text(': ' + new Date().toLocaleDateString('fr-FR'), 210 - M - 30, 64);
+    doc.text(': ' + new Date().toLocaleDateString('fr-FR'), 210 - M - 35, 58);
     doc.setDrawColor(C.rule[0], C.rule[1], C.rule[2]);
     doc.setLineWidth(0.2);
-    doc.line(M, 68, 210 - M, 68);
-    return 74;
+    doc.line(M, 61, 210 - M, 61);
+    return 67;
+  }
+
+  private getCurrentDoctorHospital(): string {
+    return this.doctorProfile?.hospital || '';
   }
 
   private pdfFooter(doc: jsPDF, y: number): void {
@@ -643,7 +694,10 @@ export class ConsultationsComponent implements OnInit {
   private generateMedicationPdfBase64(items: any[]): string {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const M = this.PDF.M, C = this.PDF;
-    const col = [M, M + 58, M + 108, M + 138, M + 158];
+    const hasInstr = items.some(i => i.instructions);
+    const col = hasInstr
+      ? [M, M + 52, M + 92, M + 124, M + 148]
+      : [M, M + 58, M + 108, M + 138, M + 158];
     this.pdfBg(doc);
     let y = this.pdfHeader(doc);
     y += 2;
@@ -651,7 +705,7 @@ export class ConsultationsComponent implements OnInit {
     doc.rect(M, y, 3, 12, 'F');
     doc.setTextColor(C.navy[0], C.navy[1], C.navy[2]);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-    doc.text('MÉDICAMENTS PRESCRITS', M + 6, y + 4);
+    doc.text('Médicaments prescrits', M + 6, y + 4);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
     doc.setTextColor(150, 150, 150);
     doc.text('Prescription médicamenteuse', M + 6, y + 9); y += 16;
@@ -664,7 +718,8 @@ export class ConsultationsComponent implements OnInit {
     doc.text('Posologie', col[1] + 2, y + 4);
     doc.text('Voie', col[2] + 2, y + 4);
     doc.text('Durée', col[3] + 2, y + 4);
-    doc.text('Qté', col[4] + 2, y + 4);
+    if (hasInstr) doc.text('Instructions', col[4] + 2, y + 4);
+    else doc.text('Qté', col[4] + 2, y + 4);
     y += 7;
 
     doc.setTextColor(C.text[0], C.text[1], C.text[2]);
@@ -677,7 +732,7 @@ export class ConsultationsComponent implements OnInit {
         doc.rect(M, y, 3, 12, 'F');
         doc.setTextColor(C.navy[0], C.navy[1], C.navy[2]);
         doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-        doc.text('MÉDICAMENTS PRESCRITS (suite)', M + 6, y + 4);
+        doc.text('Médicaments prescrits (suite)', M + 6, y + 4);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
         doc.setTextColor(150, 150, 150);
         doc.text('Prescription médicamenteuse', M + 6, y + 9); y += 16;
@@ -689,7 +744,8 @@ export class ConsultationsComponent implements OnInit {
         doc.text('Posologie', col[1] + 2, y + 4);
         doc.text('Voie', col[2] + 2, y + 4);
         doc.text('Durée', col[3] + 2, y + 4);
-        doc.text('Qté', col[4] + 2, y + 4);
+        if (hasInstr) doc.text('Instructions', col[4] + 2, y + 4);
+        else doc.text('Qté', col[4] + 2, y + 4);
         y += 7; }
 
       if (i % 2 === 0) { doc.setFillColor(242, 241, 237); doc.rect(M, y - 1, C.W, 6.5, 'F'); }
@@ -701,8 +757,9 @@ export class ConsultationsComponent implements OnInit {
       doc.text(item.voieAdministration || '', col[2] + 2, y + 1);
       const d = item.dureeTraitement ? `${item.dureeTraitement} j` : '';
       doc.text(d, col[3] + 2, y + 1);
-      doc.text(`${item.quantitePrescrite ?? ''}`, col[4] + 2, y + 1);
-      y += (item.instructions ? 7 : 5);
+      if (hasInstr) doc.text(item.instructions || '—', col[4] + 2, y + 1);
+      else doc.text(`${item.quantitePrescrite ?? ''}`, col[4] + 2, y + 1);
+      y += 6;
     }
 
     y += 4;
@@ -725,7 +782,7 @@ export class ConsultationsComponent implements OnInit {
     doc.rect(M, y, 3, 12, 'F');
     doc.setTextColor(C.navy[0], C.navy[1], C.navy[2]);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-    doc.text('ANALYSES DEMANDÉES', M + 6, y + 4);
+    doc.text('Analyses demandées', M + 6, y + 4);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
     doc.setTextColor(150, 150, 150);
     doc.text('Examens de laboratoire prescrits', M + 6, y + 9); y += 18;
@@ -743,21 +800,23 @@ export class ConsultationsComponent implements OnInit {
           doc.rect(M, y, 3, 12, 'F');
           doc.setTextColor(C.navy[0], C.navy[1], C.navy[2]);
           doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-          doc.text('ANALYSES DEMANDÉES (suite)', M + 6, y + 4);
+          doc.text('Analyses demandées (suite)', M + 6, y + 4);
           doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
           doc.setTextColor(150, 150, 150);
           doc.text('Examens de laboratoire prescrits', M + 6, y + 9); y += 18; }
 
         doc.setDrawColor(C.blue[0], C.blue[1], C.blue[2]);
-        doc.setLineWidth(0.35);
-        doc.circle(M + 4, y - 1, 2, 'S');
-        const aLines = doc.splitTextToSize(analyses[i], C.W - 16);
-        doc.text(aLines, M + 10, y);
+        doc.setLineWidth(0.1);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+        doc.text('✓', M + 2, y);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+        const aLines = doc.splitTextToSize(analyses[i], C.W - 14);
+        doc.text(aLines, M + 8, y);
         y += Math.max(aLines.length * 4.5, 6);
         if (i < analyses.length - 1) {
           doc.setDrawColor(C.rule[0], C.rule[1], C.rule[2]);
           doc.setLineWidth(0.1);
-          doc.line(M + 10, y, 210 - M, y);
+          doc.line(M + 8, y, 210 - M, y);
           y += 1.5;
         }
       }

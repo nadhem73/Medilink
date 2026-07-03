@@ -27,7 +27,7 @@ public class PrescriptionService {
     private final PharmacyServiceClient pharmacyClient;
     private final DoctorServiceClient doctorClient;
 
-    @Transactional
+    @Transactional(noRollbackFor = Exception.class)
     public PrescriptionResponse createPrescription(Long doctorId, PrescriptionCreateRequest request) {
         List<Long> medicamentIds = request.getItems().stream()
                 .map(PrescriptionItemRequest::getMedicamentId)
@@ -91,18 +91,21 @@ public class PrescriptionService {
         return toDto(saved);
     }
 
+    @Transactional(readOnly = true)
     public PrescriptionResponse getPrescription(Long id) {
         Prescription prescription = prescriptionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Prescription not found: " + id));
         return toDto(prescription);
     }
 
+    @Transactional(readOnly = true)
     public PrescriptionResponse getPrescriptionByConsultation(Long consultationId) {
         Prescription prescription = prescriptionRepository.findByConsultationId(consultationId)
                 .orElseThrow(() -> new RuntimeException("No prescription found for consultation: " + consultationId));
         return toDto(prescription);
     }
 
+    @Transactional(readOnly = true)
     public List<PrescriptionResponse> getPrescriptionsByPatient(Long patientId) {
         return prescriptionRepository.findByPatientIdOrderByCreatedAtDesc(patientId)
                 .stream().map(this::toDto).toList();
