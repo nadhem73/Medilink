@@ -263,6 +263,10 @@
                 <span>Observations</span>
                 <textarea class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingConsultation.observations" rows="2" placeholder="Notes cliniques..."></textarea>
               </div>
+              <div class="profile-item full-width">
+                <span>Traitements prescrits</span>
+                <textarea class="editable-text" [readonly]="isCompleted" [(ngModel)]="editingConsultation.prescribedTreatments" rows="2" placeholder="Médicaments prescrits, posologie..."></textarea>
+              </div>
             </div>
           </div>
 

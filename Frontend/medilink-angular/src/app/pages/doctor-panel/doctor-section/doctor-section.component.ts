@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewChecked, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, PatientListDto } from '../../../core/services/auth.service';
 import { AppointmentService, AppointmentDto } from '../../../core/services/appointment.service';
 import { ConsultationService, ConsultationRequest, ConsultationResponse } from '../../../core/services/consultation.service';
 import { PatientService, MedicalRecord } from '../../../core/services/patient.service';
+import { DoctorService, Doctor } from '../../../core/services/doctor.service';
+import { PrescriptionService, PrescriptionItemResponse } from '../../../core/services/prescription.service';
 
 
 type DoctorSectionKey = 'patients' | 'appointments' | 'consultations' | 'prescriptions' | 'labs' | 'profile';
@@ -39,7 +41,7 @@ interface AgendaAppointment {
   templateUrl: './doctor-section.component.html',
   styleUrls: ['./doctor-section.component.scss']
 })
-export class DoctorSectionComponent implements OnInit {
+export class DoctorSectionComponent implements OnInit, AfterViewChecked {
 
   section: DoctorSectionKey = 'patients';
   title = '';
@@ -62,13 +64,162 @@ export class DoctorSectionComponent implements OnInit {
   patientConsultations: ConsultationResponse[] = [];
   loadingPatientConsultations = false;
   patientMedicalRecord: MedicalRecord | null = null;
+  ficheCurrentPage = 0;
+
+  // Pages de RDV calculées dynamiquement selon la hauteur réelle des blocs
+  @ViewChild('measureContainer') measureContainer?: ElementRef<HTMLElement>;
+  computedPages: { items: ConsultationResponse[]; start: number }[] = [];
+  private lastPaginationSignature = '';
+
+  get totalFichePages(): number {
+    // Page 0 = couverture, page 1 = données patient, pages 2+ = RDVs
+    return 2 + this.computedPages.length;
+  }
+
+  get totalRdv(): number {
+    return this.patientConsultations.length;
+  }
+
+  ngAfterViewChecked(): void {
+    this.paginateByHeight();
+  }
+
+  /**
+   * Répartit les blocs de RDV sur des pages A4 en fonction de leur hauteur
+   * réelle mesurée, pour afficher le maximum de blocs lisibles par page.
+   */
+  private paginateByHeight(): void {
+    const container = this.measureContainer?.nativeElement;
+    const consultations = this.patientConsultations;
+
+    if (!container || consultations.length === 0) {
+      if (this.computedPages.length) {
+        this.computedPages = [];
+        this.lastPaginationSignature = '';
+      }
+      return;
+    }
+
+    const blocks = Array.from(container.querySelectorAll<HTMLElement>('.measure-block'));
+    // Les blocs ne sont pas encore rendus (ou pas à jour) : on attend le prochain cycle
+    if (blocks.length !== consultations.length) return;
+
+    // Signature de l'état courant : on ne recalcule que si quelque chose a changé
+    const signature = [
+      consultations.map(c => c.id).join(','),
+      Array.from(this.prescriptionItemsMap.keys()).sort((a, b) => a - b).join(','),
+      blocks.map(b => Math.round(b.getBoundingClientRect().height)).join(','),
+      Math.round(container.getBoundingClientRect().width)
+    ].join('|');
+    if (signature === this.lastPaginationSignature) return;
+    this.lastPaginationSignature = signature;
+
+    // Hauteur A4 utile (px) : largeur mesurée × ratio 297/210 − paddings verticaux
+    const styles = getComputedStyle(container);
+    const padTop = parseFloat(styles.paddingTop) || 0;
+    const padBottom = parseFloat(styles.paddingBottom) || 0;
+    const outerWidth = container.getBoundingClientRect().width;
+    const pageContentHeight = (outerWidth * 297 / 210) - padTop - padBottom;
+
+    const TITLE_HEIGHT = 46; // titre « Rendez-vous » sur la 1re page de RDV
+    const GAP = 12;          // espacement inter-blocs
+
+    const pages: { items: ConsultationResponse[]; start: number }[] = [];
+    let current: ConsultationResponse[] = [];
+    let used = 0;
+    let startIndex = 0;
+    let limit = pageContentHeight - TITLE_HEIGHT; // 1re page RDV : moins le titre
+
+    blocks.forEach((el, i) => {
+      const h = el.getBoundingClientRect().height + GAP;
+      if (current.length > 0 && used + h > limit) {
+        pages.push({ items: current, start: startIndex });
+        startIndex += current.length;
+        current = [];
+        used = 0;
+        limit = pageContentHeight; // pages suivantes : pleine hauteur
+      }
+      current.push(consultations[i]);
+      used += h;
+    });
+    if (current.length) pages.push({ items: current, start: startIndex });
+
+    // Mise à jour hors du cycle de détection courant pour éviter
+    // ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      this.computedPages = pages;
+      if (this.ficheCurrentPage > this.totalFichePages - 1) {
+        this.ficheCurrentPage = this.totalFichePages - 1;
+      }
+    });
+  }
+
+  goToFichePage(index: number): void {
+    this.ficheCurrentPage = Math.max(0, Math.min(index, this.totalFichePages - 1));
+  }
+
+  nextFichePage(): void {
+    this.goToFichePage(this.ficheCurrentPage + 1);
+  }
+
+  prevFichePage(): void {
+    this.goToFichePage(this.ficheCurrentPage - 1);
+  }
+  doctors: Doctor[] = [];
+  prescriptionItemsMap: Map<number, PrescriptionItemResponse[]> = new Map();
+  prescriptionLoadingMap: Map<number, boolean> = new Map();
   medicalLoading = false;
   today = new Date();
+
+  // ── Comparaison RDVs ──────────────────────────────────────────────────
+  compareMode = false;
+  compareDoctorId: number | null = null;
+
+  get availableCompareDoctors(): { id: number; name: string }[] {
+    const seen = new Set<number>();
+    const result: { id: number; name: string }[] = [];
+    for (const c of this.patientConsultations) {
+      if (!c.doctorId || seen.has(c.doctorId)) continue;
+      seen.add(c.doctorId);
+      result.push({ id: c.doctorId, name: this.getDoctorName(c.doctorId) });
+    }
+    return result;
+  }
+
+  get compareConsultations(): ConsultationResponse[] {
+    if (!this.compareDoctorId) return [];
+    return this.patientConsultations.filter(c => c.doctorId === this.compareDoctorId);
+  }
+
+  get compareLast(): ConsultationResponse | null {
+    return this.compareConsultations.at(-1) || null;
+  }
+
+  get comparePrev(): ConsultationResponse | null {
+    return this.compareConsultations.at(-2) || null;
+  }
+
+  toggleCompareMode(): void {
+    this.compareMode = !this.compareMode;
+    if (!this.compareMode) {
+      this.compareDoctorId = null;
+    } else {
+      const avail = this.availableCompareDoctors;
+      this.compareDoctorId = avail.length ? avail[0].id : null;
+    }
+  }
+
+  onCompareDoctorChange(doctorId: number): void {
+    this.compareDoctorId = Number(doctorId);
+  }
 
   // ── Agenda ──────────────────────────────────────────────────────────────
   allAppointments: AgendaAppointment[] = [];
   loadingAppointments = false;
   actionLoading: { [id: number]: boolean } = {};
+  consultationsByAppointment: Map<number, ConsultationResponse> = new Map();
+  loadingConsultations = false;
+  consultExpanded: Set<number> = new Set();
 
   // Calendrier
   calendarYear = 0;
@@ -113,7 +264,9 @@ export class DoctorSectionComponent implements OnInit {
     private authService: AuthService,
     private appointmentService: AppointmentService,
     private consultationService: ConsultationService,
-    private patientService: PatientService
+    private patientService: PatientService,
+    private doctorService: DoctorService,
+    private prescriptionService: PrescriptionService
   ) {
     this.currentUser = this.authService.getCurrentUser();
     this.profileCards = [
@@ -160,21 +313,41 @@ export class DoctorSectionComponent implements OnInit {
     this.selectedPatient = null;
     this.patientConsultations = [];
     this.patientMedicalRecord = null;
+    this.prescriptionItemsMap.clear();
+    this.computedPages = [];
+    this.lastPaginationSignature = '';
+    this.ficheCurrentPage = 0;
   }
 
   exportPDF(): void {
     const ficheEl = document.querySelector<HTMLElement>('.fiche-patient');
     if (!ficheEl) return;
 
+    const savedPage = this.ficheCurrentPage;
+    this.ficheCurrentPage = 0;
+
     const clone = ficheEl.cloneNode(true) as HTMLElement;
     this.inlineStyles(ficheEl, clone);
 
+    const pages = clone.querySelectorAll<HTMLElement>('.fiche-sheet');
+    pages.forEach(p => p.style.display = 'block');
+
+    const pagination = clone.querySelector<HTMLElement>('.fiche-pagination');
+    if (pagination) pagination.style.display = 'none';
+
     const name = this.selectedPatient?.name?.replace(/\s+/g, '_') || 'patient';
     const html = `<html><head><title>Fiche_${name}</title><style>
-      @page { margin: 15mm; }
-      body { margin: 0; font-family: Arial, sans-serif; color: #1a2b3c; }
+      @page { margin: 12mm; size: A4; }
+      body { margin: 0; font-family: Arial, sans-serif; color: #1a2b3c; font-size: 11pt; line-height: 1.4; }
       .appt-btn { display: none !important; }
+      .fiche-sheet { display: block !important; page-break-after: always; }
+      .fiche-pagination { display: none !important; }
+      .fiche-rdv { break-inside: avoid; }
+      .fiche-section { break-inside: avoid; }
+      .prescription-meds ul li { break-inside: avoid; }
     </style></head><body>${clone.outerHTML}</body></html>`;
+
+    this.ficheCurrentPage = savedPage;
 
     const win = window.open('', '_blank');
     if (win) {
@@ -204,13 +377,56 @@ export class DoctorSectionComponent implements OnInit {
   private loadPatientConsultations(patientId: number): void {
     this.loadingPatientConsultations = true;
     this.patientConsultations = [];
+    this.prescriptionItemsMap.clear();
+    this.prescriptionLoadingMap.clear();
+    this.computedPages = [];
+    this.lastPaginationSignature = '';
+    this.ficheCurrentPage = 0;
     this.consultationService.getPatientConsultations(patientId).subscribe({
       next: (data) => {
-        this.patientConsultations = data;
+        // On n'affiche que les RDV dont la consultation est terminée,
+        // triés du premier au dernier (ordre chronologique croissant).
+        const completed = data
+          .filter(c => c.status === 'COMPLETED')
+          .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+        this.patientConsultations = completed;
+        completed.forEach(c => {
+          this.prescriptionLoadingMap.set(c.id, true);
+          if (c.prescriptionId) {
+            this.prescriptionService.getPrescription(c.prescriptionId).subscribe({
+              next: (p) => {
+        if (p?.items?.length) {
+                  this.prescriptionItemsMap.set(c.id, p.items);
+                }
+                this.prescriptionLoadingMap.set(c.id, false);
+              },
+              error: () => {
+                this.prescriptionLoadingMap.set(c.id, false);
+              }
+            });
+          } else {
+            this.loadPrescriptionByConsultation(c.id);
+          }
+        });
         this.loadingPatientConsultations = false;
       },
       error: () => {
         this.loadingPatientConsultations = false;
+      }
+    });
+  }
+
+  private loadPrescriptionByConsultation(consultationId: number): void {
+    this.prescriptionLoadingMap.set(consultationId, true);
+    this.prescriptionService.getPrescriptionByConsultation(consultationId).subscribe({
+      next: (p) => {
+        if (p?.items?.length) {
+          this.prescriptionItemsMap.set(consultationId, p.items);
+        }
+        this.prescriptionLoadingMap.set(consultationId, false);
+      },
+      error: () => {
+        this.prescriptionLoadingMap.set(consultationId, false);
       }
     });
   }
@@ -229,9 +445,24 @@ export class DoctorSectionComponent implements OnInit {
     });
   }
 
+  private loadDoctors(): void {
+    this.doctorService.getAllDoctors().subscribe({
+      next: (data) => {
+        this.doctors = data;
+      },
+      error: () => {}
+    });
+  }
+
+  getDoctorName(doctorId: number): string {
+    const doctor = this.doctors.find(d => d.id === doctorId);
+    return doctor ? `Dr ${doctor.firstName} ${doctor.lastName}` : `Dr #${doctorId}`;
+  }
+
   // ── Chargement données ────────────────────────────────────────────────────
 
   loadPatients(): void {
+    this.loadDoctors();
     this.authService.getAllPatients().subscribe({
       next: (data) => {
         this.registeredPatients = data;
@@ -249,6 +480,24 @@ export class DoctorSectionComponent implements OnInit {
     });
   }
 
+  private loadConsultations(): void {
+    this.loadingConsultations = true;
+    this.consultationService.getAllConsultations().subscribe({
+      next: (consultations) => {
+        this.consultationsByAppointment.clear();
+        consultations.forEach(c => {
+          if (c.appointmentId) {
+            this.consultationsByAppointment.set(c.appointmentId, c);
+          }
+        });
+        this.loadingConsultations = false;
+      },
+      error: () => {
+        this.loadingConsultations = false;
+      }
+    });
+  }
+
   loadAppointments(): void {
     this.loadingAppointments = true;
     this.appointmentService.getDoctorAppointments().subscribe({
@@ -256,6 +505,7 @@ export class DoctorSectionComponent implements OnInit {
         this.allAppointments = data.map(app => this.mapAppointment(app));
         this.buildCalendar();
         this.loadingAppointments = false;
+        this.loadConsultations();
       },
       error: (err) => {
         console.error('Erreur chargement agenda', err);
@@ -456,6 +706,18 @@ export class DoctorSectionComponent implements OnInit {
       status: this.getStatusLabel(dto.status),
       statusClass: this.getStatusClass(dto.status)
     };
+  }
+
+  getConsultationForAppointment(appointmentId: number): ConsultationResponse | undefined {
+    return this.consultationsByAppointment.get(appointmentId);
+  }
+
+  toggleConsultExpand(consultationId: number): void {
+    if (this.consultExpanded.has(consultationId)) {
+      this.consultExpanded.delete(consultationId);
+    } else {
+      this.consultExpanded.add(consultationId);
+    }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

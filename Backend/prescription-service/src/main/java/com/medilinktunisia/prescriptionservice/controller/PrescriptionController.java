@@ -36,7 +36,9 @@ public class PrescriptionController {
     @GetMapping("/consultation/{consultationId}")
     public ResponseEntity<PrescriptionResponse> getPrescriptionByConsultation(
             @PathVariable Long consultationId) {
-        return ResponseEntity.ok(prescriptionService.getPrescriptionByConsultation(consultationId));
+        return prescriptionService.getPrescriptionByConsultation(consultationId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
     }
 
     @GetMapping("/patient/{patientId}")

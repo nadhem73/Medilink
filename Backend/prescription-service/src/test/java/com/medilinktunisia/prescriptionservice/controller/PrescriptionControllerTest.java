@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
@@ -126,7 +127,7 @@ class PrescriptionControllerTest {
     @Test
     void getPrescriptionByConsultation_returns200() throws Exception {
         when(prescriptionService.getPrescriptionByConsultation(100L))
-                .thenReturn(createResponse(1L, "SOUMISE"));
+                .thenReturn(Optional.of(createResponse(1L, "SOUMISE")));
 
         mockMvc.perform(get("/api/prescriptions/consultation/100"))
                 .andExpect(status().isOk())
@@ -134,12 +135,12 @@ class PrescriptionControllerTest {
     }
 
     @Test
-    void getPrescriptionByConsultation_notFound_returns400() throws Exception {
+    void getPrescriptionByConsultation_notFound_returns204() throws Exception {
         when(prescriptionService.getPrescriptionByConsultation(99L))
-                .thenThrow(new RuntimeException("No prescription found for consultation: 99"));
+                .thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/prescriptions/consultation/99"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNoContent());
     }
 
     @Test

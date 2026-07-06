@@ -186,6 +186,7 @@ export class ConsultationsComponent implements OnInit {
       weight: c.weight,
       height: c.height,
       requestedExams: c.requestedExams,
+      prescribedTreatments: c.prescribedTreatments,
       followUpDate,
       followUpTime
     };
@@ -358,15 +359,13 @@ export class ConsultationsComponent implements OnInit {
   onPrescriptionSaved(): void {
     this.showPrescriptionModal = false;
     if (this.selectedConsultation) {
-      const exams = this.editingConsultation.requestedExams;
+      const currentEdits = { ...this.editingConsultation };
       this.consultationService.getConsultation(this.selectedConsultation.id).subscribe({
         next: (updated) => {
           this.selectedConsultation = updated;
           this.existingPrescriptionId = updated.prescriptionId || null;
           this.initEditingConsultation(updated);
-          if (exams) {
-            this.editingConsultation.requestedExams = exams;
-          }
+          Object.assign(this.editingConsultation, currentEdits);
           if (this.existingPrescriptionId) {
             this.prescriptionService.getPrescription(this.existingPrescriptionId).subscribe({
               next: (p) => { this.savedPrescriptionItems = p.items || []; }

@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -99,10 +100,9 @@ public class PrescriptionService {
     }
 
     @Transactional(readOnly = true)
-    public PrescriptionResponse getPrescriptionByConsultation(Long consultationId) {
-        Prescription prescription = prescriptionRepository.findByConsultationId(consultationId)
-                .orElseThrow(() -> new RuntimeException("No prescription found for consultation: " + consultationId));
-        return toDto(prescription);
+    public Optional<PrescriptionResponse> getPrescriptionByConsultation(Long consultationId) {
+        return prescriptionRepository.findByConsultationId(consultationId)
+                .map(this::toDto);
     }
 
     @Transactional(readOnly = true)

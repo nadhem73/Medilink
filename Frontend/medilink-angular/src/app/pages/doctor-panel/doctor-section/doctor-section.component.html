@@ -54,104 +54,385 @@
             <p>Chargement des consultations...</p>
           </div>
 
-          <div *ngIf="!loadingPatientConsultations && selectedPatient" class="fiche-patient">
-            <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-              <button type="button" class="appt-btn btn-confirm" (click)="exportPDF()" style="font-family:inherit">📄 Exporter en PDF</button>
-            </div>
-            <!-- ── En-tête médecin ──────────────────────────────────── -->
-            <div class="fiche-doctor-header">
-              <div class="fiche-doctor-info">
-                <strong>Dr {{ currentUser?.firstName }} {{ currentUser?.lastName }}</strong>
-                <span>{{ currentUser?.address || currentUser?.facility || 'Médecin généraliste' }}</span>
-                <span>{{ currentUser?.specialty || '' }}</span>
-              </div>
-              <div class="fiche-doctor-loc">
-                <span>{{ currentUser?.city || '' }}</span>
-                <span>{{ currentUser?.postalCode || '' }}</span>
-              </div>
-            </div>
-
-            <!-- ── Titre ────────────────────────────────────────────── -->
-            <div class="fiche-title-row">
-              <h2 class="fiche-title">FICHE PATIENT</h2>
-            </div>
-
-            <!-- ── Informations patient ─────────────────────────────── -->
-            <div class="fiche-section">
-              <div class="fiche-row-2">
-                <div class="fiche-field">
-                  <span class="fiche-label">Prénom et nom :</span>
-                  <span class="fiche-value">{{ selectedPatient.name }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Adresse :</span>
-                  <span class="fiche-value">{{ patientDetails?.address || 'Non renseignée' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Téléphone :</span>
-                  <span class="fiche-value">{{ patientDetails?.phone || 'Non renseigné' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">E-mail :</span>
-                  <span class="fiche-value">{{ patientDetails?.email || 'Non renseigné' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Date de naissance :</span>
-                  <span class="fiche-value">{{ patientDetails?.birthDate || 'Non renseignée' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Taille :</span>
-                  <span class="fiche-value">{{ medicalHeight }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Poids :</span>
-                  <span class="fiche-value">{{ medicalWeight }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- ── Informations médicales ───────────────────────────── -->
-            <div class="fiche-section">
-              <div class="fiche-row-2">
-                <div class="fiche-field">
-                  <span class="fiche-label">Pathologie :</span>
-                  <span class="fiche-value">{{ patientMedicalRecord?.chronicDiseases || 'Non renseignée' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Traitement en cours :</span>
-                  <span class="fiche-value">{{ patientMedicalRecord?.currentTreatments || 'Non renseigné' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Assurance :</span>
-                  <span class="fiche-value">{{ insuranceLabel }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- ── Consultations / RDV ──────────────────────────────── -->
-            <div class="fiche-section">
-              <div *ngIf="patientConsultations.length === 0" class="fiche-empty">
-                Aucune consultation enregistrée pour ce patient.
-              </div>
-
-              <div class="fiche-rdv" *ngFor="let c of patientConsultations; let i = index">
-                <div class="fiche-rdv-header">
-                  <span class="fiche-rdv-num">RDV {{ i + 1 }}</span>
-                  <span class="fiche-rdv-date">{{ c.startTime | date:'dd/MM/yyyy' }}</span>
-                  <span class="fiche-rdv-status" [ngClass]="getConsultationStatusClass(c.status)">{{ getConsultationStatusLabel(c.status) }}</span>
-                </div>
-                <div class="fiche-rdv-content">
-                  <span *ngIf="c.diagnosis"><strong>Diagnostic :</strong> {{ c.diagnosis }}</span>
-                  <span *ngIf="c.requestedExams"><strong>Examens demandés :</strong> {{ c.requestedExams }}</span>
-                  <span *ngIf="c.observations"><strong>Observations :</strong> {{ c.observations }}</span>
-                  <span *ngIf="!c.diagnosis && !c.requestedExams && !c.observations">Aucun détail</span>
-                </div>
-              </div>
-            </div>
-
+          <!-- Boutons au-dessus du contenu (uniquement si un patient est sélectionné) -->
+          <div *ngIf="selectedPatient" style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+            <button type="button" class="appt-btn" [class.btn-confirm]="!compareMode" [class.btn-secondary]="compareMode" (click)="toggleCompareMode()" style="font-family:inherit">
+              {{ compareMode ? '← Quitter comparateur' : '🔍 Comparer' }}
+            </button>
+            <button type="button" class="appt-btn btn-confirm" (click)="exportPDF()" *ngIf="!compareMode" style="font-family:inherit">📄 Exporter en PDF</button>
           </div>
-        </div>
 
+          <!-- Fiche patient (masquée en mode comparateur) -->
+          <div *ngIf="!compareMode && !loadingPatientConsultations && selectedPatient" class="fiche-patient">
+            <div class="fiche-patient-inner">
+
+            <!-- Pagination haute (collée en haut au scroll) -->
+            <ng-container *ngTemplateOutlet="fichePagination; context: { position: 'top' }"></ng-container>
+
+            <div class="fiche-sheets">
+
+              <div class="fiche-sheets-stack">
+
+                <!-- ═══════════════════════════════════════════════════
+                     PAGE 0 — PAGE DE GARDE
+                ═══════════════════════════════════════════════════ -->
+                <div class="fiche-sheet fiche-cover-page"
+                     [class.active]="ficheCurrentPage === 0">
+
+                  <div class="fiche-cover">
+
+                    <div class="fiche-cover-logos">
+                      <div class="fiche-cover-emblem">
+                        <img src="/assets/images/tn.png" alt="Drapeau Tunisie" width="52" height="52" />
+                        <span class="fiche-cover-emblem-label">RÉPUBLIQUE<br/>TUNISIENNE</span>
+                      </div>
+
+                      <div class="fiche-cover-brand">
+                        <span class="fiche-cover-brand-name">MediLink</span>
+                        <span class="fiche-cover-brand-sub">Dossier Médical Patient</span>
+                      </div>
+
+                      <div class="fiche-cover-emblem">
+                        <svg viewBox="0 0 50 65" width="40" height="52" aria-label="Ministère Santé">
+                          <line x1="25" y1="14" x2="25" y2="60" stroke="#0d7a6e" stroke-width="2.5" stroke-linecap="round"/>
+                          <path d="M25 18 Q14 26 16 36 Q14 46 25 54" fill="none" stroke="#0d7a6e" stroke-width="2" stroke-linecap="round"/>
+                          <path d="M25 18 Q36 26 34 36 Q36 46 25 54" fill="none" stroke="#0d7a6e" stroke-width="2" stroke-linecap="round"/>
+                          <path d="M25 12 Q12 6 6 18 Q16 20 25 14" fill="#0d7a6e"/>
+                          <path d="M25 12 Q38 6 44 18 Q34 20 25 14" fill="#0d7a6e"/>
+                        </svg>
+                        <span class="fiche-cover-emblem-label">MINISTÈRE<br/>DE LA SANTÉ</span>
+                      </div>
+                    </div>
+
+                    <div class="fiche-cover-divider">
+                      <span class="fiche-cover-divider-line"></span>
+                      <span class="fiche-cover-divider-diamond">✦</span>
+                      <span class="fiche-cover-divider-line"></span>
+                    </div>
+
+                    <div class="fiche-cover-patient">
+                      <span class="fiche-cover-patient-label">Patient</span>
+                      <h1 class="fiche-cover-patient-name">{{ selectedPatient.name }}</h1>
+                    </div>
+
+                    <div class="fiche-cover-footer">
+                      <span class="fiche-cover-footer-line"></span>
+                      <span class="fiche-cover-footer-line"></span>
+                      <span class="fiche-cover-footer-line"></span>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════
+                     PAGE 1 — DONNÉES PATIENT
+                ═══════════════════════════════════════════════════ -->
+                <div class="fiche-sheet fiche-identity-page"
+                     [class.active]="ficheCurrentPage === 1">
+                  <h2 class="fiche-page-title">Données du patient</h2>
+                  <div class="fiche-identity-section">
+                    <div class="fiche-identity-grid">
+                      <div class="fiche-identity-field">
+                        <span class="fiche-identity-label">Nom</span>
+                        <span class="fiche-identity-value">{{ selectedPatient.name }}</span>
+                      </div>
+                      <div class="fiche-identity-field">
+                        <span class="fiche-identity-label">Adresse</span>
+                        <span class="fiche-identity-value">{{ patientDetails?.address || 'Non renseignée' }}</span>
+                      </div>
+                      <div class="fiche-identity-field">
+                        <span class="fiche-identity-label">Téléphone</span>
+                        <span class="fiche-identity-value">{{ patientDetails?.phone || 'Non renseigné' }}</span>
+                      </div>
+                      <div class="fiche-identity-field">
+                        <span class="fiche-identity-label">E-mail</span>
+                        <span class="fiche-identity-value">{{ patientDetails?.email || 'Non renseigné' }}</span>
+                      </div>
+                      <div class="fiche-identity-field">
+                        <span class="fiche-identity-label">Naissance</span>
+                        <span class="fiche-identity-value">{{ patientDetails?.birthDate || 'Non renseignée' }}</span>
+                      </div>
+                      <div class="fiche-identity-field">
+                        <span class="fiche-identity-label">Taille</span>
+                        <span class="fiche-identity-value">{{ medicalHeight }}</span>
+                      </div>
+                      <div class="fiche-identity-field">
+                        <span class="fiche-identity-label">Poids</span>
+                        <span class="fiche-identity-value">{{ medicalWeight }}</span>
+                      </div>
+                      <div class="fiche-identity-field">
+                        <span class="fiche-identity-label">Pathologie</span>
+                        <span class="fiche-identity-value">{{ patientMedicalRecord?.chronicDiseases || 'Non renseignée' }}</span>
+                      </div>
+                      <div class="fiche-identity-field">
+                        <span class="fiche-identity-label">Traitement</span>
+                        <span class="fiche-identity-value">{{ patientMedicalRecord?.currentTreatments || 'Non renseigné' }}</span>
+                      </div>
+                      <div class="fiche-identity-field">
+                        <span class="fiche-identity-label">Assurance</span>
+                        <span class="fiche-identity-value">{{ insuranceLabel }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="fiche-rdv-summary">{{ totalRdv }} rendez-vous enregistré{{ totalRdv > 1 ? 's' : '' }}</p>
+                  <p *ngIf="totalRdv === 0" class="fiche-empty-note">Aucun rendez-vous pour ce patient.</p>
+                </div>
+
+                <!-- PAGES 2+ — RDVs répartis dynamiquement -->
+                <div class="fiche-sheet fiche-rdv-sheet"
+                     *ngFor="let page of computedPages; let pageIdx = index"
+                     [class.active]="ficheCurrentPage === pageIdx + 2">
+
+                  <h2 class="fiche-page-title" *ngIf="pageIdx === 0">Rendez-vous</h2>
+
+                  <ng-container *ngFor="let c of page.items; let cIdx = index">
+                    <ng-container *ngTemplateOutlet="rdvBlock; context: { c: c, num: page.start + cIdx + 1 }"></ng-container>
+                  </ng-container>
+                </div>
+
+                <div class="fiche-sheet fiche-measure" #measureContainer aria-hidden="true">
+                  <div class="measure-block" *ngFor="let c of patientConsultations">
+                    <ng-container *ngTemplateOutlet="rdvBlock; context: { c: c, num: 0 }"></ng-container>
+                  </div>
+                </div>
+
+                <!-- ── Gabarit d'un bloc RDV (réutilisé par les pages et la mesure) ── -->
+                <ng-template #rdvBlock let-c="c" let-num="num">
+                  <div class="fiche-rdv fiche-rdv-fullwidth" [ngClass]="getConsultationStatusClass(c.status)">
+                    <div class="fiche-rdv-header">
+                      <span class="fiche-rdv-num" *ngIf="num">RDV {{ num }}</span>
+                      <span class="fiche-rdv-date">{{ c.startTime | date:'dd/MM/yyyy' }}</span>
+                      <span class="fiche-rdv-doctor" *ngIf="c.doctorId">{{ getDoctorName(c.doctorId) }}</span>
+                    </div>
+                    <div class="fiche-rdv-content">
+                      <div *ngIf="c.diagnosis" class="fiche-field-card fiche-field-full">
+                        <span class="fiche-field-label">Diagnostic</span>
+                        <span class="fiche-field-text">{{ c.diagnosis }}</span>
+                      </div>
+                      <div *ngIf="c.observations" class="fiche-field-card fiche-field-full">
+                        <span class="fiche-field-label">Observations</span>
+                        <span class="fiche-field-text">{{ c.observations }}</span>
+                      </div>
+                      <div *ngIf="c.requestedExams" class="fiche-field-card">
+                        <span class="fiche-field-label">Examens demandés</span>
+                        <span class="fiche-field-text">{{ c.requestedExams }}</span>
+                      </div>
+                      <div *ngIf="c.prescribedTreatments" class="fiche-field-card">
+                        <span class="fiche-field-label">Traitements prescrits</span>
+                        <span class="fiche-field-text">{{ c.prescribedTreatments }}</span>
+                      </div>
+                      <div *ngIf="c.bloodPressure || c.pulse || c.temperature" class="fiche-field-card">
+                        <span class="fiche-field-label">Signes vitaux</span>
+                        <div class="fiche-vitals">
+                          <span class="vital-item" *ngIf="c.bloodPressure">TA {{ c.bloodPressure }}</span>
+                          <span class="vital-item" *ngIf="c.pulse">Pouls {{ c.pulse }} bpm</span>
+                          <span class="vital-item" *ngIf="c.temperature">T° {{ c.temperature }} °C</span>
+                        </div>
+                      </div>
+                      <div *ngIf="c.weight || c.height || c.bmi" class="fiche-field-card">
+                        <span class="fiche-field-label">Mesures</span>
+                        <div class="fiche-vitals">
+                          <span class="vital-item" *ngIf="c.weight">Poids {{ c.weight }} kg</span>
+                          <span class="vital-item" *ngIf="c.height">Taille {{ c.height }} cm</span>
+                          <span class="vital-item" *ngIf="c.bmi">IMC {{ c.bmi }}</span>
+                        </div>
+                      </div>
+                      <div *ngIf="prescriptionItemsMap.get(c.id)?.length" class="fiche-field-card fiche-field-full">
+                        <span class="fiche-field-label">Médicaments prescrits</span>
+                        <div class="prescription-meds">
+                          <ul>
+                            <li *ngFor="let item of prescriptionItemsMap.get(c.id)">
+                              {{ item.medicamentName }} {{ item.dosage }} — {{ item.posologie }} ({{ item.dureeTraitement }} j)
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div *ngIf="!c.diagnosis && !c.requestedExams && !c.prescribedTreatments && !c.observations && !prescriptionItemsMap.get(c.id)?.length" class="fiche-field-card fiche-field-full">
+                        <span class="fiche-field-text" style="color: #5a6a7a; font-style: italic;">Aucun détail</span>
+                      </div>
+                    </div>
+                  </div>
+                </ng-template>
+
+              </div>
+
+            </div>
+
+            <!-- Pagination basse -->
+            <ng-container *ngTemplateOutlet="fichePagination; context: { position: 'bottom' }"></ng-container>
+
+            </div><!-- /.fiche-patient-inner -->
+          </div><!-- /.fiche-patient -->
+
+          <!-- ════════════════════════════════════════════
+               MODE COMPARATEUR — Remplace toute la fiche
+          ════════════════════════════════════════════ -->
+          <div *ngIf="compareMode && selectedPatient" class="compare-container">
+
+            <ng-container *ngIf="availableCompareDoctors.length > 0; else noDoctors">
+              <div class="cmp-header">
+                <h2>Comparer les rendez-vous</h2>
+                <div class="cmp-doctor-selector">
+                  <label>Docteur :</label>
+                  <select (change)="onCompareDoctorChange($any($event.target).value)" class="cmp-select">
+                    <option *ngFor="let d of availableCompareDoctors" [value]="d.id" [selected]="d.id === compareDoctorId">
+                      {{ d.name }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="compare-split">
+                <!-- Avant-dernier RDV -->
+                <div class="compare-panel">
+                  <div class="cmp-panel-header">
+                    <span class="cmp-panel-badge">Avant-dernier</span>
+                    <span class="cmp-panel-date" *ngIf="comparePrev">{{ comparePrev.startTime | date:'dd/MM/yyyy' }}</span>
+                  </div>
+
+                  <ng-container *ngIf="comparePrev; else noPrev">
+                    <div class="cmp-card" [ngClass]="getConsultationStatusClass(comparePrev.status)">
+                      <div class="cmp-card-row">
+                        <span class="cmp-label">Patient</span>
+                        <span class="cmp-value">{{ selectedPatient.name }}</span>
+                      </div>
+                      <div class="cmp-card-row">
+                        <span class="cmp-label">Statut</span>
+                        <span class="cmp-status" [ngClass]="getConsultationStatusClass(comparePrev.status)">{{ getConsultationStatusLabel(comparePrev.status) }}</span>
+                      </div>
+                      <div class="cmp-card-divider"></div>
+                      <div class="cmp-card-row" *ngIf="comparePrev.diagnosis">
+                        <span class="cmp-label">Diagnostic</span>
+                        <span class="cmp-value" [class.diff-old]="compareLast && comparePrev.diagnosis !== compareLast.diagnosis">{{ comparePrev.diagnosis }}</span>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="comparePrev.observations">
+                        <span class="cmp-label">Observations</span>
+                        <span class="cmp-value" [class.diff-old]="compareLast && comparePrev.observations !== compareLast.observations">{{ comparePrev.observations }}</span>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="comparePrev.bloodPressure || comparePrev.pulse || comparePrev.temperature">
+                        <span class="cmp-label">Signes vitaux</span>
+                        <div class="cmp-vitals">
+                          <span class="vital-item" *ngIf="comparePrev.bloodPressure">TA {{ comparePrev.bloodPressure }}</span>
+                          <span class="vital-item" *ngIf="comparePrev.pulse">Pouls {{ comparePrev.pulse }} bpm</span>
+                          <span class="vital-item" *ngIf="comparePrev.temperature">T° {{ comparePrev.temperature }} °C</span>
+                        </div>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="comparePrev.weight || comparePrev.height || comparePrev.bmi">
+                        <span class="cmp-label">Mesures</span>
+                        <div class="cmp-vitals">
+                          <span class="vital-item" *ngIf="comparePrev.weight">Poids {{ comparePrev.weight }} kg</span>
+                          <span class="vital-item" *ngIf="comparePrev.height">Taille {{ comparePrev.height }} cm</span>
+                          <span class="vital-item" *ngIf="comparePrev.bmi">IMC {{ comparePrev.bmi }}</span>
+                        </div>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="comparePrev.requestedExams">
+                        <span class="cmp-label">Examens</span>
+                        <span class="cmp-value" [class.diff-old]="compareLast && comparePrev.requestedExams !== compareLast.requestedExams">{{ comparePrev.requestedExams }}</span>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="comparePrev.prescribedTreatments">
+                        <span class="cmp-label">Traitements</span>
+                        <span class="cmp-value" [class.diff-old]="compareLast && comparePrev.prescribedTreatments !== compareLast.prescribedTreatments">{{ comparePrev.prescribedTreatments }}</span>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="prescriptionItemsMap.get(comparePrev.id)?.length">
+                        <span class="cmp-label">Médicaments</span>
+                        <ul class="cmp-meds">
+                          <li *ngFor="let item of prescriptionItemsMap.get(comparePrev.id)">{{ item.medicamentName }} {{ item.dosage }}</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </ng-container>
+                  <ng-template #noPrev>
+                    <div class="cmp-empty">Aucun antécédent</div>
+                  </ng-template>
+                </div>
+
+                <!-- Dernier RDV -->
+                <div class="compare-panel">
+                  <div class="cmp-panel-header">
+                    <span class="cmp-panel-badge cmp-panel-badge-current">Dernier</span>
+                    <span class="cmp-panel-date" *ngIf="compareLast">{{ compareLast.startTime | date:'dd/MM/yyyy' }}</span>
+                  </div>
+
+                  <ng-container *ngIf="compareLast; else noLast">
+                    <div class="cmp-card" [ngClass]="getConsultationStatusClass(compareLast.status)">
+                      <div class="cmp-card-row">
+                        <span class="cmp-label">Patient</span>
+                        <span class="cmp-value">{{ selectedPatient.name }}</span>
+                      </div>
+                      <div class="cmp-card-row">
+                        <span class="cmp-label">Statut</span>
+                        <span class="cmp-status" [ngClass]="getConsultationStatusClass(compareLast.status)">{{ getConsultationStatusLabel(compareLast.status) }}</span>
+                      </div>
+                      <div class="cmp-card-divider"></div>
+                      <div class="cmp-card-row" *ngIf="compareLast.diagnosis">
+                        <span class="cmp-label">Diagnostic</span>
+                        <span class="cmp-value" [class.diff-new]="comparePrev && comparePrev.diagnosis !== compareLast.diagnosis">{{ compareLast.diagnosis }}</span>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="compareLast.observations">
+                        <span class="cmp-label">Observations</span>
+                        <span class="cmp-value" [class.diff-new]="comparePrev && comparePrev.observations !== compareLast.observations">{{ compareLast.observations }}</span>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="compareLast.bloodPressure || compareLast.pulse || compareLast.temperature">
+                        <span class="cmp-label">Signes vitaux</span>
+                        <div class="cmp-vitals">
+                          <span class="vital-item" *ngIf="compareLast.bloodPressure">TA {{ compareLast.bloodPressure }}</span>
+                          <span class="vital-item" *ngIf="compareLast.pulse">Pouls {{ compareLast.pulse }} bpm</span>
+                          <span class="vital-item" *ngIf="compareLast.temperature">T° {{ compareLast.temperature }} °C</span>
+                        </div>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="compareLast.weight || compareLast.height || compareLast.bmi">
+                        <span class="cmp-label">Mesures</span>
+                        <div class="cmp-vitals">
+                          <span class="vital-item" *ngIf="compareLast.weight">Poids {{ compareLast.weight }} kg</span>
+                          <span class="vital-item" *ngIf="compareLast.height">Taille {{ compareLast.height }} cm</span>
+                          <span class="vital-item" *ngIf="compareLast.bmi">IMC {{ compareLast.bmi }}</span>
+                        </div>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="compareLast.requestedExams">
+                        <span class="cmp-label">Examens</span>
+                        <span class="cmp-value" [class.diff-new]="comparePrev && comparePrev.requestedExams !== compareLast.requestedExams">{{ compareLast.requestedExams }}</span>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="compareLast.prescribedTreatments">
+                        <span class="cmp-label">Traitements</span>
+                        <span class="cmp-value" [class.diff-new]="comparePrev && comparePrev.prescribedTreatments !== compareLast.prescribedTreatments">{{ compareLast.prescribedTreatments }}</span>
+                      </div>
+                      <div class="cmp-card-row" *ngIf="prescriptionItemsMap.get(compareLast.id)?.length">
+                        <span class="cmp-label">Médicaments</span>
+                        <ul class="cmp-meds">
+                          <li *ngFor="let item of prescriptionItemsMap.get(compareLast.id)">{{ item.medicamentName }} {{ item.dosage }}</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </ng-container>
+                  <ng-template #noLast>
+                    <div class="cmp-empty">Aucun rendez-vous</div>
+                  </ng-template>
+                </div>
+              </div>
+            </ng-container>
+            <ng-template #noDoctors>
+              <div class="cmp-empty-state">
+                <p>Aucun docteur à comparer pour ce patient.</p>
+              </div>
+            </ng-template>
+
+          </div><!-- /.compare-container -->
+
+            <!-- Gabarit de pagination réutilisé (haut + bas) -->
+            <ng-template #fichePagination let-position="position">
+              <div class="fiche-pagination" [class.fiche-pagination-top]="position === 'top'" *ngIf="totalFichePages > 1">
+                <button class="fp-btn" (click)="prevFichePage()" [disabled]="ficheCurrentPage === 0" title="Page précédente">‹</button>
+                <div class="fp-dots">
+                  <span class="fp-dot" *ngFor="let _ of [].constructor(totalFichePages); let i = index"
+                        [class.active]="i === ficheCurrentPage"
+                        (click)="goToFichePage(i)" [title]="'Page ' + (i + 1)"></span>
+                </div>
+                <button class="fp-btn" (click)="nextFichePage()" [disabled]="ficheCurrentPage === totalFichePages - 1" title="Page suivante">›</button>
+                <span class="fp-label">{{ ficheCurrentPage + 1 }} / {{ totalFichePages }}</span>
+              </div>
+            </ng-template>
+
+        </div>
       </div>
     </ng-container>
 
@@ -305,7 +586,48 @@
                     <span *ngIf="actionLoading[appt.id]" class="btn-spinner"></span>
                   </button>
 
+                </div>
+              </div>
 
+              <!-- ── Données de consultation (si disponibles) ─────────── -->
+              <div class="appt-consultation-data" *ngIf="getConsultationForAppointment(appt.id) as consult">
+                <div class="consult-data-header" (click)="toggleConsultExpand(consult.id)">
+                  <span>📋 Données de la consultation</span>
+                  <span class="consult-toggle">{{ consultExpanded.has(consult.id) ? '▲' : '▼' }}</span>
+                </div>
+                <div class="consult-data-body" *ngIf="consultExpanded.has(consult.id)">
+                  <div class="consult-row" *ngIf="consult.diagnosis">
+                    <span class="consult-label">Diagnostic :</span>
+                    <span class="consult-value">{{ consult.diagnosis }}</span>
+                  </div>
+                  <div class="consult-row" *ngIf="consult.observations">
+                    <span class="consult-label">Observations :</span>
+                    <span class="consult-value">{{ consult.observations }}</span>
+                  </div>
+                  <div class="consult-row" *ngIf="consult.bloodPressure || consult.pulse || consult.temperature">
+                    <span class="consult-label">Signes vitaux :</span>
+                    <span class="consult-value">
+                      <span *ngIf="consult.bloodPressure">TA {{ consult.bloodPressure }}</span>
+                      <span *ngIf="consult.pulse"> · Pouls {{ consult.pulse }} bpm</span>
+                      <span *ngIf="consult.temperature"> · T° {{ consult.temperature }} °C</span>
+                    </span>
+                  </div>
+                  <div class="consult-row" *ngIf="consult.prescribedTreatments">
+                    <span class="consult-label">Traitements prescrits :</span>
+                    <span class="consult-value">{{ consult.prescribedTreatments }}</span>
+                  </div>
+                  <div class="consult-row" *ngIf="consult.requestedExams">
+                    <span class="consult-label">Examens demandés :</span>
+                    <span class="consult-value">{{ consult.requestedExams }}</span>
+                  </div>
+                  <div class="consult-row" *ngIf="consult.reason">
+                    <span class="consult-label">Motif :</span>
+                    <span class="consult-value">{{ consult.reason }}</span>
+                  </div>
+                  <div class="consult-row" *ngIf="consult.followUpDate">
+                    <span class="consult-label">Suivi prévu le :</span>
+                    <span class="consult-value">{{ consult.followUpDate | date:'dd/MM/yyyy' }}</span>
+                  </div>
                 </div>
               </div>
 

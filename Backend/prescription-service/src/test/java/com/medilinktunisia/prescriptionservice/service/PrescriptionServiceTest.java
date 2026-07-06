@@ -181,19 +181,18 @@ class PrescriptionServiceTest {
         Prescription p = createPrescriptionEntity(1L, PrescriptionStatus.SOUMISE);
         when(prescriptionRepository.findByConsultationId(consultationId)).thenReturn(Optional.of(p));
 
-        PrescriptionResponse result = prescriptionService.getPrescriptionByConsultation(consultationId);
+        java.util.Optional<PrescriptionResponse> result = prescriptionService.getPrescriptionByConsultation(consultationId);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getConsultationId()).isEqualTo(consultationId);
+        assertThat(result).isPresent();
+        assertThat(result.get().getConsultationId()).isEqualTo(consultationId);
     }
 
     @Test
-    void getPrescriptionByConsultation_notFound_throwsException() {
+    void getPrescriptionByConsultation_notFound_returnsEmpty() {
         when(prescriptionRepository.findByConsultationId(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> prescriptionService.getPrescriptionByConsultation(99L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("No prescription found for consultation");
+        java.util.Optional<PrescriptionResponse> result = prescriptionService.getPrescriptionByConsultation(99L);
+        assertThat(result).isEmpty();
     }
 
     @Test
