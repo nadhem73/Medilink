@@ -327,24 +327,108 @@ export class DoctorSectionComponent implements OnInit, AfterViewChecked {
     this.ficheCurrentPage = 0;
 
     const clone = ficheEl.cloneNode(true) as HTMLElement;
-    this.inlineStyles(ficheEl, clone);
 
-    const pages = clone.querySelectorAll<HTMLElement>('.fiche-sheet');
-    pages.forEach(p => p.style.display = 'block');
+    const sheets = clone.querySelectorAll<HTMLElement>('.fiche-sheet');
+    sheets.forEach(p => p.style.display = 'block');
 
     const pagination = clone.querySelector<HTMLElement>('.fiche-pagination');
     if (pagination) pagination.style.display = 'none';
 
+    const measure = clone.querySelector<HTMLElement>('.fiche-measure');
+    if (measure) measure.remove();
+
+    const actionBtns = clone.querySelectorAll<HTMLElement>('.appt-btn');
+    actionBtns.forEach(b => { b.style.display = 'none'; });
+
     const name = this.selectedPatient?.name?.replace(/\s+/g, '_') || 'patient';
     const html = `<html><head><title>Fiche_${name}</title><style>
-      @page { margin: 12mm; size: A4; }
-      body { margin: 0; font-family: Arial, sans-serif; color: #1a2b3c; font-size: 11pt; line-height: 1.4; }
-      .appt-btn { display: none !important; }
-      .fiche-sheet { display: block !important; page-break-after: always; }
-      .fiche-pagination { display: none !important; }
-      .fiche-rdv { break-inside: avoid; }
-      .fiche-section { break-inside: avoid; }
-      .prescription-meds ul li { break-inside: avoid; }
+      @page { margin: 15mm; size: A4; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+      body { margin: 0; padding: 0; font-family: 'Inter', 'Segoe UI', Arial, Helvetica, sans-serif; color: #1a2b3c; font-size: 11pt; line-height: 1.4; background: #f5f0e8; }
+
+      .page-header, .patients-list-panel, .back-link, .appt-btn, .compare-container,
+      .loading-state, .fiche-empty, .fiche-pagination { display: none !important; }
+
+      .patients-layout.has-selected { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+      .patients-fiche-panel { animation: none !important; opacity: 1 !important; transform: none !important; width: 100% !important; }
+
+      .fiche-patient { box-shadow: none !important; border: none !important; border-radius: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; background: transparent !important; }
+      .fiche-patient-inner { padding: 0 !important; border-left: none !important; }
+      .fiche-sheets { display: block !important; margin: 0 !important; }
+      .fiche-sheets-stack { display: block !important; }
+
+      .fiche-sheet {
+        display: block !important; position: static !important;
+        width: auto !important; min-height: 267mm !important;
+        padding: 20mm 25mm !important; margin: 0 auto !important;
+        background: #f5f0e8 !important; border: 1px solid #d5cdbd !important;
+        border-radius: 4px !important; box-shadow: none !important;
+        aspect-ratio: auto !important; height: auto !important;
+        overflow: visible !important; page-break-after: always;
+        box-sizing: border-box !important;
+      }
+      .fiche-sheet:last-child { page-break-after: auto; }
+
+      .fiche-cover-page { background: #f5f0e8 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+      .fiche-cover { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: auto !important; padding: 24px 0; gap: 10px; }
+      .fiche-cover-logos { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; }
+      .fiche-cover-emblem { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+      .fiche-cover-emblem-label { font-size: 8pt; font-weight: 700; color: #6a5f4e; text-align: center; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase; }
+      .fiche-cover-brand { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; text-align: center; }
+      .fiche-cover-brand-name { font-family: 'Georgia', 'Playfair Display', serif; font-size: 26pt; font-weight: 700; color: #1a2b3c; letter-spacing: .04em; }
+      .fiche-cover-brand-sub { font-size: 11pt; font-weight: 600; color: #6a5f4e; letter-spacing: .12em; text-transform: uppercase; }
+      .fiche-cover-divider { display: flex; align-items: center; gap: 14px; width: 60%; margin: 14px auto; }
+      .fiche-cover-divider-line { flex: 1; height: 1px; background: #6a5f4e; opacity: .35; }
+      .fiche-cover-divider-diamond { color: #c9953a; font-size: 14pt; }
+      .fiche-cover-patient { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 4px 0; }
+      .fiche-cover-patient-label { font-size: 9pt; font-weight: 600; color: #6a5f4e; letter-spacing: .15em; text-transform: uppercase; }
+      .fiche-cover-patient-name { margin: 0; font-family: 'Georgia', 'Playfair Display', serif; font-size: 22pt; font-weight: 700; color: #1a2b3c; text-align: center; word-break: break-word; }
+      .fiche-cover-footer { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: auto; padding-top: 14px; }
+      .fiche-cover-footer-line { display: block; width: 40px; height: 1px; background: #6a5f4e; opacity: .2; }
+      .fiche-cover-footer-line:nth-child(2) { width: 28px; }
+      .fiche-cover-footer-line:nth-child(3) { width: 16px; }
+
+      .fiche-page-title { font-family: 'Georgia', 'Playfair Display', serif; font-size: 18pt; font-weight: 700; color: #1a2b3c; border-bottom: 2px solid #c8bfab; padding-bottom: 6px; margin: 0 0 14px; }
+      .fiche-rdv-summary { font-size: 10pt; font-weight: 600; color: #6a5f4e; text-align: right; margin: 12px 0 0; }
+      .fiche-empty-note { font-size: 12pt; font-style: italic; color: #6a5f4e; }
+
+      .fiche-identity-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+      .fiche-identity-field { display: flex; flex-direction: column; gap: 1px; padding: 4px 8px; border-radius: 3px; background: #f2ede4; }
+      .fiche-identity-label { font-size: 8pt; font-weight: 600; color: #6a5f4e; text-transform: uppercase; letter-spacing: .05em; }
+      .fiche-identity-value { font-size: 12pt; font-weight: 500; color: #1a2b3c; line-height: 1.3; }
+
+      .fiche-rdv, .fiche-rdv-fullwidth {
+        break-inside: avoid; page-break-inside: avoid;
+        margin-bottom: 8px; border: 1px solid #d5cdbd;
+        border-radius: 4px; border-left: 4px solid #1a2b3c;
+        background: #faf8f5; overflow: hidden;
+      }
+      .fiche-rdv.status-completed, .fiche-rdv-fullwidth.status-completed { border-left-color: #0d7a6e; }
+      .fiche-rdv.status-progress, .fiche-rdv-fullwidth.status-progress { border-left-color: #2b6f9e; }
+      .fiche-rdv.status-pending, .fiche-rdv-fullwidth.status-pending { border-left-color: #c9953a; }
+      .fiche-rdv.status-cancelled, .fiche-rdv-fullwidth.status-cancelled { border-left-color: #c0392b; }
+
+      .fiche-rdv-header { padding: 8px 12px; background: #efe9df; border-bottom: 1px solid #d5cdbd; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .fiche-rdv-num { font-size: 14pt; font-weight: 700; color: #1a2b3c; text-transform: uppercase; letter-spacing: .04em; }
+      .fiche-rdv-date { font-size: 12pt; font-weight: 500; color: #6a5f4e; }
+      .fiche-rdv-doctor { font-size: 12pt; font-weight: 500; color: #0d7a6e; margin-left: auto; }
+
+      .fiche-rdv-content { padding: 10px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12pt; color: #1a2b3c; line-height: 1.5; }
+      .fiche-field-full { grid-column: 1 / -1; }
+      .fiche-field-card { background: #f2ede4; border: 1px solid #dcd4c2; border-radius: 3px; padding: 6px 8px; }
+      .fiche-field-label { font-size: 9pt; font-weight: 600; color: #6a5f4e; text-transform: uppercase; letter-spacing: .03em; display: block; margin-bottom: 2px; }
+      .fiche-field-text { font-size: 12pt; font-weight: 500; color: #1a2b3c; line-height: 1.4; display: block; padding: 1px 0; }
+
+      .fiche-vitals { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+      .vital-item { font-size: 11pt; font-weight: 500; color: #1a2b3c; padding: 2px 8px; background: #faf8f5; border: 1px solid #d5cdbd; border-radius: 3px; display: inline-flex; align-items: center; gap: 3px; line-height: 1.4; }
+
+      .prescription-meds ul { margin: 4px 0 0; padding: 0; list-style: none; }
+      .prescription-meds ul li { font-size: 11pt; font-weight: 500; color: #1a2b3c; line-height: 1.5; padding: 2px 0 2px 14px; position: relative; break-inside: avoid; }
+      .prescription-meds ul li::before { content: '💊'; position: absolute; left: 0; top: 2px; font-size: 9pt; }
+      .prescription-meds ul li + li { border-top: 1px dashed #d5cdbd; margin-top: 1px; padding-top: 3px; }
+
+      .fiche-measure { display: none !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
     </style></head><body>${clone.outerHTML}</body></html>`;
 
     this.ficheCurrentPage = savedPage;
@@ -353,7 +437,7 @@ export class DoctorSectionComponent implements OnInit, AfterViewChecked {
     if (win) {
       win.document.write(html);
       win.document.close();
-      win.onload = () => { win.print(); win.close(); };
+      setTimeout(() => { win.print(); }, 300);
     }
   }
 
