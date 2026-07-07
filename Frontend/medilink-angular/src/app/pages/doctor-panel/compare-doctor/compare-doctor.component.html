@@ -1,0 +1,212 @@
+<section class="dp-page">
+  <header class="dp-header">
+    <div>
+      <h1>Comparer docteurs</h1>
+      <p class="dp-copy">
+        Sélectionnez un docteur pour comparer son dernier rendez-vous avec l'avant-dernier.
+      </p>
+    </div>
+  </header>
+
+  <!-- ── Sélecteur de docteur ────────────────────────────────────── -->
+  <div class="compare-selector">
+    <div class="compare-selector-inner">
+      <svg class="cmp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <select (change)="onDoctorSelect($any($event.target).value)" class="cmp-select">
+        <option value="">Sélectionner un docteur…</option>
+        <option *ngFor="let d of doctors" [value]="d.id">
+          Dr. {{ d.firstName }} {{ d.lastName }} — {{ d.specialty }} — {{ d.hospital }}
+        </option>
+      </select>
+    </div>
+    <div class="cmp-selector-info" *ngIf="selectedDoctor">
+      <span class="cmp-info-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        {{ selectedDoctor.firstName }} {{ selectedDoctor.lastName }}
+      </span>
+      <span class="cmp-info-spec">{{ selectedDoctor.specialty }}</span>
+      <span class="cmp-info-hosp">{{ selectedDoctor.hospital }}</span>
+    </div>
+  </div>
+
+  <!-- ── Spinner ─────────────────────────────────────────────────── -->
+  <div *ngIf="loading" class="cmp-loading">
+    <div class="spinner"></div>
+    <p>Chargement des consultations…</p>
+  </div>
+
+  <!-- ── Split panel ─────────────────────────────────────────────── -->
+  <div class="compare-split" *ngIf="selectedDoctor && !loading">
+
+    <!-- Colonne gauche : Avant-dernier RDV -->
+    <div class="compare-panel compare-panel-old">
+      <div class="cmp-panel-header">
+        <div class="cmp-panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Avant-dernier RDV</span>
+        </div>
+        <span class="cmp-panel-sub" *ngIf="prevConsultation">{{ prevConsultation.startTime | date:'dd/MM/yyyy' }}</span>
+      </div>
+
+      <ng-container *ngIf="prevConsultation; else noPrev">
+        <div class="cmp-card" [ngClass]="getStatusClass(prevConsultation.status)">
+          <div class="cmp-card-row">
+            <span class="cmp-label">Patient</span>
+            <span class="cmp-value">{{ getPatientName(prevConsultation.patientId) }}</span>
+          </div>
+          <div class="cmp-card-row">
+            <span class="cmp-label">Type</span>
+            <span class="cmp-value">{{ getTypeLabel(prevConsultation.type) }}</span>
+          </div>
+          <div class="cmp-card-row">
+            <span class="cmp-label">Statut</span>
+            <span class="cmp-status-badge" [ngClass]="getStatusClass(prevConsultation.status)">{{ getStatusLabel(prevConsultation.status) }}</span>
+          </div>
+          <div class="cmp-card-divider"></div>
+
+          <div class="cmp-card-row" *ngIf="prevConsultation.diagnosis">
+            <span class="cmp-label">Diagnostic</span>
+            <span class="cmp-value">{{ prevConsultation.diagnosis }}</span>
+          </div>
+          <div class="cmp-card-row" *ngIf="prevConsultation.observations">
+            <span class="cmp-label">Observations</span>
+            <span class="cmp-value">{{ prevConsultation.observations }}</span>
+          </div>
+
+          <div class="cmp-card-row cmp-row-vitals" *ngIf="prevConsultation.bloodPressure || prevConsultation.pulse || prevConsultation.temperature">
+            <span class="cmp-label">Signes vitaux</span>
+            <div class="cmp-vitals">
+              <span class="vital-item" *ngIf="prevConsultation.bloodPressure">TA {{ prevConsultation.bloodPressure }}</span>
+              <span class="vital-item" *ngIf="prevConsultation.pulse">Pouls {{ prevConsultation.pulse }} bpm</span>
+              <span class="vital-item" *ngIf="prevConsultation.temperature">T° {{ prevConsultation.temperature }} °C</span>
+            </div>
+          </div>
+
+          <div class="cmp-card-row" *ngIf="prevConsultation.weight || prevConsultation.height || prevConsultation.bmi">
+            <span class="cmp-label">Mesures</span>
+            <div class="cmp-vitals">
+              <span class="vital-item" *ngIf="prevConsultation.weight">Poids {{ prevConsultation.weight }} kg</span>
+              <span class="vital-item" *ngIf="prevConsultation.height">Taille {{ prevConsultation.height }} cm</span>
+              <span class="vital-item" *ngIf="prevConsultation.bmi">IMC {{ prevConsultation.bmi }}</span>
+            </div>
+          </div>
+
+          <div class="cmp-card-row" *ngIf="prevConsultation.requestedExams">
+            <span class="cmp-label">Examens demandés</span>
+            <span class="cmp-value">{{ prevConsultation.requestedExams }}</span>
+          </div>
+          <div class="cmp-card-row" *ngIf="prevConsultation.prescribedTreatments">
+            <span class="cmp-label">Traitements prescrits</span>
+            <span class="cmp-value">{{ prevConsultation.prescribedTreatments }}</span>
+          </div>
+
+          <div class="cmp-card-row cmp-row-full" *ngIf="prescriptionItemsMap.get(prevConsultation.id)?.length">
+            <span class="cmp-label">Médicaments prescrits</span>
+            <ul class="cmp-meds">
+              <li *ngFor="let item of prescriptionItemsMap.get(prevConsultation.id)">
+                {{ item.medicamentName }} {{ item.dosage }} — {{ item.posologie }} ({{ item.dureeTraitement }} j)
+              </li>
+            </ul>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noPrev>
+        <div class="cmp-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>Aucun antécédent</p>
+          <span>Ce docteur n'a qu'un seul rendez-vous enregistré.</span>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Colonne droite : Dernier RDV -->
+    <div class="compare-panel compare-panel-new">
+      <div class="cmp-panel-header">
+        <div class="cmp-panel-title">
+          <span>Dernier RDV</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <span class="cmp-panel-sub" *ngIf="lastConsultation">{{ lastConsultation.startTime | date:'dd/MM/yyyy' }}</span>
+      </div>
+
+      <ng-container *ngIf="lastConsultation; else noLast">
+        <div class="cmp-card" [ngClass]="getStatusClass(lastConsultation.status)">
+          <div class="cmp-card-row">
+            <span class="cmp-label">Patient</span>
+            <span class="cmp-value">{{ getPatientName(lastConsultation.patientId) }}</span>
+          </div>
+          <div class="cmp-card-row">
+            <span class="cmp-label">Type</span>
+            <span class="cmp-value">{{ getTypeLabel(lastConsultation.type) }}</span>
+          </div>
+          <div class="cmp-card-row">
+            <span class="cmp-label">Statut</span>
+            <span class="cmp-status-badge" [ngClass]="getStatusClass(lastConsultation.status)">{{ getStatusLabel(lastConsultation.status) }}</span>
+          </div>
+          <div class="cmp-card-divider"></div>
+
+          <div class="cmp-card-row" *ngIf="lastConsultation.diagnosis">
+            <span class="cmp-label">Diagnostic</span>
+            <span class="cmp-value cmp-value-diff" [class.diff-changed]="prevConsultation && prevConsultation.diagnosis !== lastConsultation.diagnosis">{{ lastConsultation.diagnosis }}</span>
+          </div>
+          <div class="cmp-card-row" *ngIf="lastConsultation.observations">
+            <span class="cmp-label">Observations</span>
+            <span class="cmp-value cmp-value-diff" [class.diff-changed]="prevConsultation && prevConsultation.observations !== lastConsultation.observations">{{ lastConsultation.observations }}</span>
+          </div>
+
+          <div class="cmp-card-row cmp-row-vitals" *ngIf="lastConsultation.bloodPressure || lastConsultation.pulse || lastConsultation.temperature">
+            <span class="cmp-label">Signes vitaux</span>
+            <div class="cmp-vitals">
+              <span class="vital-item" *ngIf="lastConsultation.bloodPressure">TA {{ lastConsultation.bloodPressure }}</span>
+              <span class="vital-item" *ngIf="lastConsultation.pulse">Pouls {{ lastConsultation.pulse }} bpm</span>
+              <span class="vital-item" *ngIf="lastConsultation.temperature">T° {{ lastConsultation.temperature }} °C</span>
+            </div>
+          </div>
+
+          <div class="cmp-card-row" *ngIf="lastConsultation.weight || lastConsultation.height || lastConsultation.bmi">
+            <span class="cmp-label">Mesures</span>
+            <div class="cmp-vitals">
+              <span class="vital-item" *ngIf="lastConsultation.weight">Poids {{ lastConsultation.weight }} kg</span>
+              <span class="vital-item" *ngIf="lastConsultation.height">Taille {{ lastConsultation.height }} cm</span>
+              <span class="vital-item" *ngIf="lastConsultation.bmi">IMC {{ lastConsultation.bmi }}</span>
+            </div>
+          </div>
+
+          <div class="cmp-card-row" *ngIf="lastConsultation.requestedExams">
+            <span class="cmp-label">Examens demandés</span>
+            <span class="cmp-value cmp-value-diff" [class.diff-changed]="prevConsultation && prevConsultation.requestedExams !== lastConsultation.requestedExams">{{ lastConsultation.requestedExams }}</span>
+          </div>
+          <div class="cmp-card-row" *ngIf="lastConsultation.prescribedTreatments">
+            <span class="cmp-label">Traitements prescrits</span>
+            <span class="cmp-value cmp-value-diff" [class.diff-changed]="prevConsultation && prevConsultation.prescribedTreatments !== lastConsultation.prescribedTreatments">{{ lastConsultation.prescribedTreatments }}</span>
+          </div>
+
+          <div class="cmp-card-row cmp-row-full" *ngIf="prescriptionItemsMap.get(lastConsultation.id)?.length">
+            <span class="cmp-label">Médicaments prescrits</span>
+            <ul class="cmp-meds">
+              <li *ngFor="let item of prescriptionItemsMap.get(lastConsultation.id)">
+                {{ item.medicamentName }} {{ item.dosage }} — {{ item.posologie }} ({{ item.dureeTraitement }} j)
+              </li>
+            </ul>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noLast>
+        <div class="cmp-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>Aucun rendez-vous</p>
+          <span>Ce docteur n'a pas encore de consultations.</span>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- ── État vide : aucun docteur sélectionné ────────────────────── -->
+  <div class="cmp-empty-state" *ngIf="!selectedDoctor && !loading">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+    <h3>Sélectionnez un docteur</h3>
+    <p>Choisissez un docteur dans la liste ci-dessus pour comparer ses deux derniers rendez-vous côte à côte.</p>
+  </div>
+</section>
