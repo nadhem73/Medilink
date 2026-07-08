@@ -2,6 +2,7 @@ package com.medilinktunisia.authservice.service;
 
 import com.medilinktunisia.authservice.client.MedicalRecordRequest;
 import com.medilinktunisia.authservice.client.PatientServiceClient;
+import com.medilinktunisia.authservice.dto.request.LinkTelegramRequest;
 import com.medilinktunisia.authservice.dto.request.LoginRequest;
 import com.medilinktunisia.authservice.dto.request.RegisterRequest;
 import com.medilinktunisia.authservice.dto.response.AuthResponse;
@@ -218,6 +219,8 @@ public class AuthService {
             builder.birthDate(patient.getBirthDate())
                     .gender(patient.getGender() != null ? patient.getGender().name() : null)
                     .address(patient.getAddress());
+        } else if (user instanceof Pharmacy pharmacy) {
+            builder.pharmacieId(pharmacy.getId());
         }
         return builder.build();
     }
@@ -235,6 +238,19 @@ public class AuthService {
                 .build();
     }
 
+    public void linkTelegram(LinkTelegramRequest request) {
+        Patient patient = patientRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Patient not found with email: " + request.getEmail()));
+        patient.setTelegramChatId(request.getTelegramChatId());
+        patientRepository.save(patient);
+    }
+
+    public String getPatientTelegramChatId(Long patientId) {
+        return patientRepository.findById(patientId)
+                .map(Patient::getTelegramChatId)
+                .orElse(null);
+    }
+
     private PatientListDto toPatientListDto(Patient patient) {
         return PatientListDto.builder()
                 .id(patient.getId())
@@ -246,6 +262,7 @@ public class AuthService {
                 .address(patient.getAddress())
                 .birthDate(patient.getBirthDate() != null ? patient.getBirthDate().toString() : null)
                 .cin(patient.getCin())
+                .telegramChatId(patient.getTelegramChatId())
                 .build();
     }
 }

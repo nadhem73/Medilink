@@ -26,4 +26,5 @@ public class UserDto {
     private boolean isEmailVerified;
     private List<String> roles;
     private LocalDateTime createdAt;
+    private Long pharmacieId;
 }

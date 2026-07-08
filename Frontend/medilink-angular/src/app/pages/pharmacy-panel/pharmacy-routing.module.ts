@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { PharmacyDashboardComponent } from './pharmacy-dashboard/pharmacy-dashboard.component';
 import { PharmacySectionComponent } from './pharmacy-section/pharmacy-section.component';
+import { PharmacyPrescriptionsComponent } from './pharmacy-prescriptions/pharmacy-prescriptions.component';
 import { AlertsComponent } from './alerts/alerts.component';
 import { ForecastComponent } from './forecast/forecast.component';
 import { MessagesComponent } from './messages/messages.component';
@@ -13,8 +14,7 @@ const routes: Routes = [
   { path: '', component: PharmacyDashboardComponent },
   {
     path: 'prescriptions',
-    component: PharmacySectionComponent,
-    data: { section: 'prescriptions', title: 'Ordonnances recues' }
+    component: PharmacyPrescriptionsComponent
   },
   {
     path: 'stock',

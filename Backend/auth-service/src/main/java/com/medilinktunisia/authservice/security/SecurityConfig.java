@@ -37,6 +37,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh",
                                 "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+                        .requestMatchers("/api/auth/patients/*/telegram").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/pharmacies").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
