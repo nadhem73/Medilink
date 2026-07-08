@@ -16,6 +16,7 @@ import com.medilinktunisia.authservice.security.JwtAuthenticationFilter;
 import com.medilinktunisia.authservice.security.JwtService;
 import com.medilinktunisia.authservice.security.SecurityConfig;
 import com.medilinktunisia.authservice.service.AuthService;
+import com.medilinktunisia.authservice.service.EmailService;
 import com.medilinktunisia.authservice.service.PasswordResetService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -56,6 +57,9 @@ class AuthControllerTest {
 
     @MockBean
     private AuthService authService;
+
+    @MockBean
+    private EmailService emailService;
 
     @MockBean
     private PasswordResetService passwordResetService;

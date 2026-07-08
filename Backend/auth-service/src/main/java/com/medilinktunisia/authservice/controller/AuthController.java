@@ -1,7 +1,9 @@
 package com.medilinktunisia.authservice.controller;
 
 import com.medilinktunisia.authservice.dto.request.ForgotPasswordRequest;
+import com.medilinktunisia.authservice.dto.request.LinkTelegramRequest;
 import com.medilinktunisia.authservice.dto.request.LoginRequest;
+import com.medilinktunisia.authservice.dto.request.PrescriptionEmailRequest;
 import com.medilinktunisia.authservice.dto.request.RefreshTokenRequest;
 import com.medilinktunisia.authservice.dto.request.RegisterRequest;
 import com.medilinktunisia.authservice.dto.request.OtpVerificationRequest;
@@ -12,6 +14,7 @@ import com.medilinktunisia.authservice.dto.response.PatientListDto;
 import com.medilinktunisia.authservice.dto.response.MessageResponse;
 import com.medilinktunisia.authservice.dto.response.UserDto;
 import com.medilinktunisia.authservice.service.AuthService;
+import com.medilinktunisia.authservice.service.EmailService;
 import com.medilinktunisia.authservice.service.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -31,6 +35,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+    private final EmailService emailService;
 
     /** Auto-inscription d'un patient. */
     @PostMapping("/register")
@@ -85,6 +90,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.getAllActivePatients());
     }
 
+    @GetMapping("/patients/{id}/telegram")
+    public ResponseEntity<Map<String, String>> getPatientTelegramChatId(@PathVariable Long id) {
+        String chatId = authService.getPatientTelegramChatId(id);
+        return ResponseEntity.ok(Map.of("telegramChatId", chatId != null ? chatId : ""));
+    }
+
     /**
      * Demande l'envoi d'un code OTP par email pour l'utilisateur connecté.
      */
@@ -131,6 +142,25 @@ public class AuthController {
         log.info("Password reset successful");
         return ResponseEntity.ok(new MessageResponse(
                 "Votre mot de passe a été réinitialisé. Vous pouvez vous connecter.", true));
+    }
+
+    /**
+     * Envoie un email au patient avec les PDFs de l'ordonnance en pièces jointes.
+     */
+    @PostMapping("/email/prescriptions")
+    public ResponseEntity<MessageResponse> sendPrescriptionEmail(@Valid @RequestBody PrescriptionEmailRequest request) {
+        log.info("Prescription email request for: {}", request.getPatientEmail());
+        emailService.sendPrescriptionEmail(request);
+        log.info("Prescription email sent to: {}", request.getPatientEmail());
+        return ResponseEntity.ok(new MessageResponse("Email envoyé avec succès.", true));
+    }
+
+    @PutMapping("/patients/telegram")
+    public ResponseEntity<MessageResponse> linkTelegram(@Valid @RequestBody LinkTelegramRequest request) {
+        log.info("Telegram link request for email: {}", request.getEmail());
+        authService.linkTelegram(request);
+        log.info("Telegram linked successfully for email: {}", request.getEmail());
+        return ResponseEntity.ok(new MessageResponse("Compte Telegram lié avec succès.", true));
     }
 }
 
