@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { PharmacyDashboardComponent } from './pharmacy-dashboard/pharmacy-dashboard.component';
 import { PharmacySectionComponent } from './pharmacy-section/pharmacy-section.component';
 import { PharmacyPrescriptionsComponent } from './pharmacy-prescriptions/pharmacy-prescriptions.component';
+import { PharmacyStockComponent } from './pharmacy-stock/pharmacy-stock.component';
 import { AlertsComponent } from './alerts/alerts.component';
 import { ForecastComponent } from './forecast/forecast.component';
 import { MessagesComponent } from './messages/messages.component';
@@ -18,8 +19,7 @@ const routes: Routes = [
   },
   {
     path: 'stock',
-    component: PharmacySectionComponent,
-    data: { section: 'stock', title: 'Stock des medicaments' }
+    component: PharmacyStockComponent
   },
   {
     path: 'orders',

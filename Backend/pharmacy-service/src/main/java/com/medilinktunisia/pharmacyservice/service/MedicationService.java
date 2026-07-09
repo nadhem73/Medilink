@@ -1,5 +1,6 @@
 package com.medilinktunisia.pharmacyservice.service;
 
+import com.medilinktunisia.pharmacyservice.dto.MedicamentRequest;
 import com.medilinktunisia.pharmacyservice.dto.MedicationDto;
 import com.medilinktunisia.pharmacyservice.model.Medicament;
 import com.medilinktunisia.pharmacyservice.model.Stock;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -24,17 +26,43 @@ public class MedicationService {
 
     public Page<MedicationDto> searchByName(String name, Pageable pageable) {
         Page<Medicament> page = medicamentRepository.findByNameContainingIgnoreCase(name, pageable);
-        Map<Long, Integer> stockMap = buildStockMap();
-        return page.map(m -> toDto(m, stockMap.getOrDefault(m.getId(), 0)));
+        List<Stock> stocks = stockRepository.findAll();
+        Map<Long, Integer> stockMap = sumByMedicament(stocks);
+        Map<Long, Integer> lotMap = countByMedicament(stocks);
+        return page.map(m -> toDto(m, stockMap.getOrDefault(m.getId(), 0), lotMap.getOrDefault(m.getId(), 0)));
     }
 
     public MedicationDto getById(Long id) {
         Medicament medicament = medicamentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Medicament not found: " + id));
-        int stockTotal = stockRepository.findByMedicamentId(id).stream()
-                .mapToInt(Stock::getQuantiteEnStock)
-                .sum();
-        return toDto(medicament, stockTotal);
+        List<Stock> lots = stockRepository.findByMedicamentId(id);
+        int stockTotal = lots.stream().mapToInt(Stock::getQuantiteEnStock).sum();
+        return toDto(medicament, stockTotal, lots.size());
+    }
+
+    public Page<MedicationDto> getAllMedicaments(Pageable pageable) {
+        Page<Medicament> page = medicamentRepository.findAll(pageable);
+        List<Stock> stocks = stockRepository.findAll();
+        Map<Long, Integer> stockMap = sumByMedicament(stocks);
+        Map<Long, Integer> lotMap = countByMedicament(stocks);
+        return page.map(m -> toDto(m, stockMap.getOrDefault(m.getId(), 0), lotMap.getOrDefault(m.getId(), 0)));
+    }
+
+    @Transactional
+    public MedicationDto createMedicament(MedicamentRequest request) {
+        Medicament m = new Medicament();
+        m.setName(request.getName());
+        m.setDosage(request.getDosage());
+        m.setForme(request.getForme());
+        m.setPresentation(request.getPresentation());
+        m.setPrice(request.getPrice());
+        m.setRemboursement(request.getRemboursement());
+        m.setDci(request.getDci());
+        m.setType(request.getType());
+        m.setPrescriptionRequired(request.getPrescriptionRequired() != null ? request.getPrescriptionRequired() : false);
+        m.setImageUrl(request.getImageUrl());
+        Medicament saved = medicamentRepository.save(m);
+        return toDto(saved, 0, 0);
     }
 
     public Map<Long, Integer> getStockForMedicaments(List<Long> medicamentIds) {
@@ -47,15 +75,23 @@ public class MedicationService {
                 ));
     }
 
-    private Map<Long, Integer> buildStockMap() {
-        return stockRepository.findAll().stream()
+    private Map<Long, Integer> sumByMedicament(List<Stock> stocks) {
+        return stocks.stream()
                 .collect(Collectors.groupingBy(
                         s -> s.getMedicament().getId(),
                         Collectors.summingInt(Stock::getQuantiteEnStock)
                 ));
     }
 
-    private MedicationDto toDto(Medicament m, int stockTotal) {
+    private Map<Long, Integer> countByMedicament(List<Stock> stocks) {
+        return stocks.stream()
+                .collect(Collectors.groupingBy(
+                        s -> s.getMedicament().getId(),
+                        Collectors.summingInt(s -> 1)
+                ));
+    }
+
+    private MedicationDto toDto(Medicament m, int stockTotal, int nbLots) {
         return MedicationDto.builder()
                 .id(m.getId())
                 .name(m.getName())
@@ -67,7 +103,9 @@ public class MedicationService {
                 .dci(m.getDci())
                 .type(m.getType())
                 .prescriptionRequired(m.getPrescriptionRequired())
+                .imageUrl(m.getImageUrl())
                 .stockTotal(stockTotal)
+                .nbLots(nbLots)
                 .voieAdministration(mapFormeToVoies(m.getForme()))
                 .build();
     }

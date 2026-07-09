@@ -1,0 +1,451 @@
+<section class="sc-page" [class.sc-page--blurred]="!!selectedGroup">
+
+  <!-- ── Atmospheric hero ─────────────────────────────── -->
+  <header class="sc-hero">
+    <span class="sc-hero-orb sc-hero-orb--1"></span>
+    <span class="sc-hero-orb sc-hero-orb--2"></span>
+    <div class="sc-hero-grid"></div>
+    <div class="sc-hero-content">
+      <div class="sc-hero-heading">
+        <span class="sc-eyebrow"><i class="sc-eyebrow-dot"></i> Catalogue officine</span>
+        <h1>Stock des médicaments</h1>
+        <p class="sc-hero-sub">Référentiel national tunisien · images des conditionnements</p>
+      </div>
+      <div class="sc-hero-stats">
+        <div class="sc-stat">
+          <strong>{{ groups.length | number }}</strong>
+          <span>médicaments</span>
+        </div>
+        <div class="sc-stat">
+          <strong>{{ totalElements | number }}</strong>
+          <span>présentations</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Toolbar ──────────────────────────────────────── -->
+  <div class="sc-toolbar">
+    <label class="sc-search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/></svg>
+      <input type="text" placeholder="Rechercher par nom, DCI ou classe…" [(ngModel)]="searchQuery" (ngModelChange)="onFilterChange()" />
+      <button *ngIf="searchQuery" class="sc-search-clear" (click)="searchQuery = ''" aria-label="Effacer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </label>
+    <button class="sc-back" (click)="openAddModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Ajouter
+    </button>
+  </div>
+
+  <!-- ── Filtres (listes déroulantes) ─────────────────── -->
+  <div class="sc-filters">
+    <label class="sc-select">
+      <span class="sc-select-label">Classe thérapeutique</span>
+      <div class="sc-select-field">
+        <select [(ngModel)]="selectedType" (ngModelChange)="onFilterChange()">
+          <option *ngFor="let t of types" [value]="t">{{ t || 'Toutes les classes' }}</option>
+        </select>
+        <svg class="sc-select-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </label>
+
+    <label class="sc-select">
+      <span class="sc-select-label">Niveau de stock</span>
+      <div class="sc-select-field">
+        <select [(ngModel)]="selectedStockFilter" (ngModelChange)="onFilterChange()">
+          <option *ngFor="let f of stockFilters" [value]="f">{{ f ? getStockLabel(f) : 'Tous les niveaux' }}</option>
+        </select>
+        <svg class="sc-select-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </label>
+
+    <button class="sc-filters-reset" *ngIf="hasActiveFilters" (click)="clearFilters()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      Réinitialiser
+    </button>
+  </div>
+
+  <!-- ── Skeleton loading ─────────────────────────────── -->
+  <div *ngIf="loading" class="sc-grid">
+    <article class="sc-skel" *ngFor="let s of [].constructor(10); let i = index" [style.--i]="i">
+      <div class="sc-skel-art"></div>
+      <div class="sc-skel-body">
+        <div class="sc-skel-line sc-skel-line--lg"></div>
+        <div class="sc-skel-line sc-skel-line--sm"></div>
+        <div class="sc-skel-line sc-skel-line--bar"></div>
+        <div class="sc-skel-foot">
+          <div class="sc-skel-line sc-skel-line--xs"></div>
+          <div class="sc-skel-line sc-skel-line--xs"></div>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <div class="sc-meta" *ngIf="hasActiveFilters">
+      <span>{{ filteredGroups.length }} médicament{{ filteredGroups.length > 1 ? 's' : '' }} sur {{ groups.length }}</span>
+      <button class="sc-clear" (click)="clearFilters()">Effacer les filtres</button>
+    </div>
+
+    <!-- ── Catalogue groupé par nom populaire ─────────── -->
+    <div class="sc-grid" *ngIf="filteredGroups.length > 0; else noResults">
+      <article class="sc-card" *ngFor="let g of pagedGroups; let i = index"
+               [style.--i]="i" [style.--art-color]="classColor(g.type)"
+               (click)="openModal(g)">
+
+        <div class="sc-card-art">
+          <div class="sc-card-img-wrap">
+            <div class="sc-card-placeholder" *ngIf="!g.imageUrl || groupImgErrors.has(g.name)" [style.background]="headerGradient(g.name)">
+              <span class="sc-card-initial">{{ g.name.charAt(0) }}</span>
+            </div>
+            <img *ngIf="g.imageUrl && !groupImgErrors.has(g.name)" [src]="g.imageUrl" class="sc-card-img" loading="lazy" referrerpolicy="no-referrer" (error)="onGroupImgError(g)" />
+          </div>
+          <span class="sc-sheen"></span>
+          <span class="sc-chip sc-chip--type">{{ g.type || 'Autres' }}</span>
+          <span class="sc-chip sc-chip--rx" *ngIf="g.prescriptionRequired" title="Sur ordonnance">Rx</span>
+          <span class="sc-chip sc-chip--count">{{ g.variants.length }} présent.<span *ngIf="g.variants.length > 1">s</span></span>
+          <span class="sc-chip sc-chip--lots" *ngIf="g.lotsTotal" title="Nombre de lots en stock">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5"/></svg>
+            {{ g.lotsTotal }} lot<span *ngIf="g.lotsTotal > 1">s</span>
+          </span>
+        </div>
+
+        <div class="sc-card-body">
+          <div class="sc-card-head">
+            <h3 class="sc-card-name">{{ g.name }}</h3>
+            <span class="sc-badge" [class]="'badge-' + getStockStatus(g.stockTotal)">
+              <i class="sc-badge-dot"></i>{{ getStockLabel(getStockStatus(g.stockTotal)) }}
+            </span>
+          </div>
+
+          <div class="sc-card-dci" *ngIf="g.dci">{{ g.dci }}</div>
+
+          <div class="sc-card-formes" *ngIf="g.formes.length">
+            <span class="sc-tag" *ngFor="let f of g.formes.slice(0, 3)">{{ f }}</span>
+            <span class="sc-more" *ngIf="g.formes.length > 3">+{{ g.formes.length - 3 }}</span>
+          </div>
+
+          <div class="sc-stock-row">
+            <div class="sc-bar-track">
+              <div class="sc-bar-fill" [style.width.%]="barWidth(g)" [style.background]="getStockBarColor(getStockStatus(g.stockTotal))"></div>
+            </div>
+          </div>
+
+          <div class="sc-card-foot">
+            <span class="sc-qty">{{ g.stockTotal }}</span>
+            <span class="sc-price">{{ priceRange(g) }}</span>
+            <svg class="sc-expand-caret" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- ── Pagination ────────────────────────────────── -->
+    <nav class="sc-pager" *ngIf="totalPages > 1">
+      <button class="sc-pg-btn" (click)="prevPage()" [disabled]="currentPage === 0">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Précédent
+      </button>
+      <span class="sc-pg-info">Page {{ currentPage + 1 }} / {{ totalPages }}</span>
+      <button class="sc-pg-btn" (click)="nextPage()" [disabled]="currentPage >= totalPages - 1">
+        Suivant
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </nav>
+
+    <ng-template #noResults>
+      <div class="sc-empty">
+        <div class="sc-empty-icon">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/></svg>
+        </div>
+        <h3>Aucun résultat</h3>
+        <p>Modifiez vos filtres ou votre recherche.</p>
+        <button class="sc-clear sc-clear--btn" (click)="clearFilters()">Réinitialiser les filtres</button>
+      </div>
+    </ng-template>
+  </ng-container>
+
+</section>
+
+<!-- ── Modal détail médicament ─────────────────────────────── -->
+<div class="sc-modal-overlay" *ngIf="selectedGroup" (click)="onOverlayClick($event)">
+  <div class="sc-modal" role="dialog" aria-label="Détail du médicament" (click)="$event.stopPropagation()">
+    <button class="sc-modal-close" (click)="closeModal()" aria-label="Fermer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+
+    <div class="sc-modal-inner">
+
+      <div class="sc-modal-visual" [class.sc-has-img]="selectedGroup.imageUrl && !groupImgErrors.has(selectedGroup.name)" [style.--art-color]="classColor(selectedGroup.type)" [style.--modal-grad]="headerGradient(selectedGroup.name)">
+        <div class="sc-modal-visual-content">
+          <div class="sc-modal-img-wrap" *ngIf="!selectedGroup.imageUrl || groupImgErrors.has(selectedGroup.name)">
+            <span class="sc-modal-initial">{{ selectedGroup.name.charAt(0) }}</span>
+          </div>
+          <img *ngIf="selectedGroup.imageUrl && !groupImgErrors.has(selectedGroup.name)"
+               [src]="selectedGroup.imageUrl" class="sc-modal-img" referrerpolicy="no-referrer" (error)="onGroupImgError(selectedGroup)" />
+        </div>
+        <span class="sc-chip sc-chip--type">{{ selectedGroup.type || 'Autres' }}</span>
+        <span class="sc-chip sc-chip--rx" *ngIf="selectedGroup.prescriptionRequired" title="Sur ordonnance">Rx</span>
+      </div>
+
+      <div class="sc-modal-details">
+        <div class="sc-modal-header">
+          <h2 class="sc-modal-name">{{ selectedGroup.name }}</h2>
+          <span class="sc-badge" [class]="'badge-' + getStockStatus(selectedGroup.stockTotal)">
+            <i class="sc-badge-dot"></i>{{ getStockLabel(getStockStatus(selectedGroup.stockTotal)) }}
+          </span>
+        </div>
+        <div class="sc-modal-dci" *ngIf="selectedGroup.dci">{{ selectedGroup.dci }}</div>
+
+        <div class="sc-modal-formes" *ngIf="selectedGroup.formes.length">
+          <span class="sc-tag" *ngFor="let f of selectedGroup.formes">{{ f }}</span>
+        </div>
+
+        <div class="sc-modal-subhead">
+          {{ selectedGroup.variants.length }} présentation{{ selectedGroup.variants.length > 1 ? 's' : '' }}
+          <span class="sc-modal-subhead-lots" *ngIf="selectedGroup.lotsTotal">· {{ selectedGroup.lotsTotal }} lot{{ selectedGroup.lotsTotal > 1 ? 's' : '' }} en stock</span>
+        </div>
+
+        <div class="sc-modal-list">
+          <div class="sc-modal-variant" *ngFor="let v of selectedGroup.variants" [style.--art-color]="classColor(selectedGroup.type)">
+            <div class="sc-modal-variant-info">
+              <span class="sc-variant-dose">{{ v.dosage || '—' }}</span>
+              <span class="sc-variant-forme">{{ v.forme }}</span>
+              <span class="sc-variant-pres" *ngIf="v.presentation">{{ v.presentation }}</span>
+              <span class="sc-variant-lots" *ngIf="v.nbLots">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5"/></svg>
+                {{ v.nbLots }} lot{{ v.nbLots > 1 ? 's' : '' }}
+              </span>
+              <span class="sc-variant-emp" *ngIf="v.emplacements.length">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ v.emplacements.join(', ') }}
+              </span>
+            </div>
+            <div class="sc-modal-variant-meta">
+              <span class="sc-variant-stock" [class]="'vbadge-' + getStockStatus(v.stockTotal)">{{ v.stockTotal }}</span>
+              <span class="sc-variant-price">{{ formatPrice(v.price) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Ajouter ──────────────────────────────────── -->
+<div class="sc-modal-overlay" *ngIf="showAddForm" (click)="closeAddModal()">
+  <div class="sc-modal sc-modal--add" role="dialog" aria-label="Ajouter au stock" (click)="$event.stopPropagation()">
+    <button class="sc-modal-close" (click)="closeAddModal()" aria-label="Fermer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+
+    <div class="sc-modal-add-header">
+      <h2>Ajouter au stock</h2>
+      <p>Réapprovisionnez un médicament existant ou créez-en un nouveau.</p>
+    </div>
+
+    <!-- Onglets -->
+    <div class="sc-add-tabs" role="tablist">
+      <button class="sc-add-tab" role="tab" [class.is-active]="addTab === 'existing'" (click)="addTab = 'existing'">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5"/></svg>
+        Médicament existant
+      </button>
+      <button class="sc-add-tab" role="tab" [class.is-active]="addTab === 'new'" (click)="addTab = 'new'">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Nouveau médicament
+      </button>
+    </div>
+
+    <!-- ── Onglet 1 : médicament existant → nouveau lot ── -->
+    <div class="sc-add-body" *ngIf="addTab === 'existing'">
+
+      <fieldset class="sc-add-fieldset">
+        <legend>Médicament</legend>
+
+        <div class="sc-lot-picker" *ngIf="!selectedMed">
+          <label class="sc-add-field">
+            <span>Rechercher un médicament *</span>
+            <input type="text" [(ngModel)]="lotSearch" (ngModelChange)="onLotSearch()" placeholder="Nom, DCI ou dosage…" autocomplete="off" />
+          </label>
+          <ul class="sc-lot-results" *ngIf="lotResults.length">
+            <li *ngFor="let m of lotResults" (click)="selectMedForLot(m)">
+              <span class="sc-lot-res-name">{{ m.name }}</span>
+              <span class="sc-lot-res-meta">
+                {{ m.dosage || '—' }} · {{ m.forme }}<ng-container *ngIf="m.presentation"> · {{ m.presentation }}</ng-container>
+              </span>
+            </li>
+          </ul>
+          <p class="sc-lot-hint" *ngIf="lotSearch.trim() && !lotResults.length">Aucun médicament trouvé.</p>
+        </div>
+
+        <div class="sc-lot-selected" *ngIf="selectedMed">
+          <div class="sc-lot-sel-info">
+            <strong>{{ selectedMed.name }}</strong>
+            <span>{{ selectedMed.dosage || '—' }} · {{ selectedMed.forme }}<ng-container *ngIf="selectedMed.presentation"> · {{ selectedMed.presentation }}</ng-container></span>
+          </div>
+          <button class="sc-lot-change" type="button" (click)="clearSelectedMed()">Changer</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="sc-add-fieldset" [class.is-disabled]="!selectedMed">
+        <legend>Nouveau lot</legend>
+
+        <div class="sc-add-row">
+          <label class="sc-add-field">
+            <span>Quantité *</span>
+            <input type="number" min="0" [(ngModel)]="lotForm.quantite" placeholder="ex: 120" [disabled]="!selectedMed" />
+          </label>
+          <label class="sc-add-field">
+            <span>Numéro de lot</span>
+            <input type="text" [(ngModel)]="lotForm.numeroLot" (ngModelChange)="lotNumeroTouched = true" placeholder="auto après la date de fabrication" [disabled]="!selectedMed" />
+          </label>
+        </div>
+
+        <div class="sc-add-row">
+          <label class="sc-add-field">
+            <span>Date de fabrication</span>
+            <input type="date" [(ngModel)]="lotForm.dateFabrication" (ngModelChange)="onLotDateChange()" [disabled]="!selectedMed" />
+          </label>
+          <label class="sc-add-field">
+            <span>Date d expiration</span>
+            <input type="date" [(ngModel)]="lotForm.dateExpiration" (ngModelChange)="onLotDateChange()" [disabled]="!selectedMed" />
+          </label>
+        </div>
+
+        <label class="sc-add-field">
+          <span>Emplacement (casier / rayon)</span>
+          <input type="text" [(ngModel)]="lotForm.emplacement" placeholder="ex: B12, Rayon5" [disabled]="!selectedMed" />
+        </label>
+      </fieldset>
+
+      <p class="sc-add-error" *ngIf="lotError">{{ lotError }}</p>
+
+      <div class="sc-add-actions">
+        <button class="sc-btn sc-btn--secondary" (click)="closeAddModal()">Annuler</button>
+        <button class="sc-btn sc-btn--primary" (click)="submitLot()" [disabled]="lotSaving || !selectedMed">
+          <span *ngIf="lotSaving">Enregistrement…</span>
+          <span *ngIf="!lotSaving">Ajouter le lot</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Onglet 2 : nouveau médicament ── -->
+    <div class="sc-add-body" *ngIf="addTab === 'new'">
+
+      <fieldset class="sc-add-fieldset">
+        <legend>Medicament</legend>
+
+        <label class="sc-add-field">
+          <span>Nom commercial *</span>
+          <input type="text" [(ngModel)]="addForm.name" placeholder="ex: DOLIPRANE" />
+        </label>
+
+        <div class="sc-add-row">
+          <label class="sc-add-field">
+            <span>Dosage</span>
+            <input type="text" list="dl-dosage" [(ngModel)]="addForm.dosage" placeholder="Choisir ou saisir…" autocomplete="off" />
+            <datalist id="dl-dosage"><option *ngFor="let o of doseOptions" [value]="o"></option></datalist>
+          </label>
+          <label class="sc-add-field">
+            <span>Forme galenique</span>
+            <input type="text" list="dl-forme" [(ngModel)]="addForm.forme" placeholder="Choisir ou saisir…" autocomplete="off" />
+            <datalist id="dl-forme"><option *ngFor="let o of formeOptions" [value]="o"></option></datalist>
+          </label>
+        </div>
+
+        <div class="sc-add-row">
+          <label class="sc-add-field">
+            <span>Presentation</span>
+            <input type="text" list="dl-presentation" [(ngModel)]="addForm.presentation" placeholder="Choisir ou saisir…" autocomplete="off" />
+            <datalist id="dl-presentation"><option *ngFor="let o of presentationOptions" [value]="o"></option></datalist>
+          </label>
+          <label class="sc-add-field">
+            <span>DCI</span>
+            <input type="text" list="dl-dci" [(ngModel)]="addForm.dci" placeholder="Choisir ou saisir…" autocomplete="off" />
+            <datalist id="dl-dci"><option *ngFor="let o of dciOptions" [value]="o"></option></datalist>
+          </label>
+        </div>
+
+        <div class="sc-add-row">
+          <label class="sc-add-field">
+            <span>Prix (DT)</span>
+            <input type="number" step="0.001" [(ngModel)]="addForm.price" placeholder="0.000" />
+          </label>
+          <label class="sc-add-field">
+            <span>Remboursement (DT)</span>
+            <input type="number" step="0.001" [(ngModel)]="addForm.remboursement" placeholder="0.000" />
+          </label>
+        </div>
+
+        <div class="sc-add-row">
+          <label class="sc-add-field">
+            <span>Classe therapeutique</span>
+            <select [(ngModel)]="addForm.type">
+              <option value="">— Choisir une classe —</option>
+              <option *ngFor="let t of types.slice(1)" [value]="t">{{ t }}</option>
+            </select>
+          </label>
+          <label class="sc-add-field sc-add-field--inline">
+            <input type="checkbox" [(ngModel)]="addForm.prescriptionRequired" />
+            <span>Sur ordonnance</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="sc-add-fieldset">
+        <legend>Image du conditionnement</legend>
+        <label class="sc-add-field">
+          <span>URL de l image</span>
+          <input type="url" [(ngModel)]="addForm.imageUrl" (ngModelChange)="addImgError = false" placeholder="https://…" autocomplete="off" />
+        </label>
+        <div class="sc-add-img-preview" *ngIf="addForm.imageUrl && addForm.imageUrl.trim()">
+          <img *ngIf="!addImgError" [src]="addForm.imageUrl" referrerpolicy="no-referrer" (error)="addImgError = true" alt="Aperçu" />
+          <span class="sc-add-img-err" *ngIf="addImgError">Image introuvable à cette URL.</span>
+        </div>
+      </fieldset>
+
+      <fieldset class="sc-add-fieldset">
+        <legend>Lot de stock initial</legend>
+
+        <div class="sc-add-row">
+          <label class="sc-add-field">
+            <span>Quantite *</span>
+            <input type="number" min="0" [(ngModel)]="addForm.quantite" placeholder="ex: 120" />
+          </label>
+          <label class="sc-add-field">
+            <span>Numéro de lot</span>
+            <input type="text" [(ngModel)]="addForm.numeroLot" (ngModelChange)="addNumeroTouched = true" placeholder="auto après la date de fabrication" />
+          </label>
+        </div>
+
+        <div class="sc-add-row">
+          <label class="sc-add-field">
+            <span>Date de fabrication</span>
+            <input type="date" [(ngModel)]="addForm.dateFabrication" (ngModelChange)="onAddDateChange()" />
+          </label>
+          <label class="sc-add-field">
+            <span>Date d expiration</span>
+            <input type="date" [(ngModel)]="addForm.dateExpiration" (ngModelChange)="onAddDateChange()" />
+          </label>
+        </div>
+
+        <label class="sc-add-field">
+          <span>Emplacement (casier / rayon)</span>
+          <input type="text" [(ngModel)]="addForm.emplacement" placeholder="ex: B12, Rayon5" />
+        </label>
+      </fieldset>
+
+      <p class="sc-add-error" *ngIf="addError">{{ addError }}</p>
+
+      <div class="sc-add-actions">
+        <button class="sc-btn sc-btn--secondary" (click)="closeAddModal()">Annuler</button>
+        <button class="sc-btn sc-btn--primary" (click)="submitAdd()" [disabled]="addSaving">
+          <span *ngIf="addSaving">Enregistrement…</span>
+          <span *ngIf="!addSaving">Ajouter</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

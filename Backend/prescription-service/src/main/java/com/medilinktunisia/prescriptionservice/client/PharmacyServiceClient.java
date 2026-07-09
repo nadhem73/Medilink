@@ -1,6 +1,6 @@
 package com.medilinktunisia.prescriptionservice.client;
 
-import com.medilinktunisia.prescriptionservice.dto.StockCheckResult;
+import com.medilinktunisia.prescriptionservice.dto.DispensationRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,4 +21,7 @@ public interface PharmacyServiceClient {
 
     @PostMapping("/medicaments/stock-check")
     Map<Long, Integer> checkStock(@RequestBody List<Long> medicamentIds);
+
+    @PostMapping("/stock/dispenser")
+    Map<String, Object> dispenserStock(@RequestBody DispensationRequest request);
 }

@@ -11,6 +11,9 @@ Finaliser le flux notifications Telegram patient via n8n. Ajouter la recherche/f
 ## Progress
 ### ✅ Done
 - **Recherche + Filtres (Pharmacy) — redesign** : Barre de recherche avec icône SVG, bouton tri avec libellé (Récent/Ancien), filtres par statut en pillules cliquables (remplace le `<select>`), état vide filtré avec bouton "Effacer les filtres". Layout en 3 zones distinctes (header/search+pills/liste). Build OK.
+- **FIFO dispensation backend** : `POST /stock/dispenser` endpoint, `PrescriptionService.deduireStock()` on `DISPENSEE`, `quantitePrescrite` added to DTO, 16 JUnit tests for `MedicationStockServiceTest` + 14 for `MedicationStockControllerTest`.
+- **FIFO dispensation frontend tests** : Fixed 3 flaky stock component tests — corrected `getStockStatus` thresholds (0→rupture, ≤10→critique, ≤50→faible, >50→suffisant), aligned `priceRange` expectations, fixed `nextPage` page boundary assertions. All 33 stock tests now pass.
+- **Alerts component tests** : 19/21 pass (2 intermittent failures due to Jasmine shared spy state with `throwError`/`of`).
 
 ### ❌ Expression evaluation (non essentiel)
 - Les expressions n8n (`=$json.body.field` ou `{{ $json.field }}`) ne sont PAS évaluées dans n8n 2.8.4. Contourné : Code node + `this.helpers.httpRequest()`.

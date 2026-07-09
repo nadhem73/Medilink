@@ -87,6 +87,12 @@ export class PrescriptionService {
 
   constructor(private http: HttpClient) {}
 
+  getAllMedicaments(page: number = 0, size: number = 50): Observable<any> {
+    return this.http.get(`${this.PHARMACY_API}/medicaments`, {
+      params: { page: page.toString(), size: size.toString() }
+    });
+  }
+
   searchMedicaments(name: string, page: number = 0): Observable<any> {
     return this.http.get(`${this.PHARMACY_API}/medicaments/search`, {
       params: { name, page: page.toString(), size: '20' }
@@ -99,6 +105,30 @@ export class PrescriptionService {
 
   checkStock(medicamentIds: number[]): Observable<Record<number, number>> {
     return this.http.post<Record<number, number>>(`${this.PHARMACY_API}/medicaments/stock-check`, medicamentIds);
+  }
+
+  getStockLots(medicamentId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PHARMACY_API}/stock/medicament/${medicamentId}/lots`);
+  }
+
+  createMedicament(data: any): Observable<any> {
+    return this.http.post(`${this.PHARMACY_API}/medicaments`, data);
+  }
+
+  createStock(data: any): Observable<any> {
+    return this.http.post(`${this.PHARMACY_API}/stock`, data);
+  }
+
+  getAlertsRupture(seuil: number = 20): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PHARMACY_API}/stock/alerts/rupture`, {
+      params: { seuil: seuil.toString() }
+    });
+  }
+
+  getAlertsPerimes(jours: number = 30): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PHARMACY_API}/stock/alerts/perimes`, {
+      params: { jours: jours.toString() }
+    });
   }
 
   createPrescription(request: PrescriptionCreateRequest): Observable<PrescriptionResponse> {

@@ -10,6 +10,7 @@ import com.medilinktunisia.prescriptionservice.model.enums.PrescriptionStatus;
 import com.medilinktunisia.prescriptionservice.repository.PickupCodeRepository;
 import com.medilinktunisia.prescriptionservice.repository.PrescriptionItemRepository;
 import com.medilinktunisia.prescriptionservice.repository.PrescriptionRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -93,6 +94,7 @@ public class PrescriptionService {
             item.setDureeTraitement(itemReq.getDureeTraitement());
             item.setVoieAdministration(itemReq.getVoieAdministration());
             item.setInstructions(itemReq.getInstructions());
+            item.setQuantitePrescrite(itemReq.getQuantitePrescrite());
             saved.getItems().add(item);
         }
 
@@ -164,6 +166,7 @@ public class PrescriptionService {
             item.setDureeTraitement(itemReq.getDureeTraitement());
             item.setVoieAdministration(itemReq.getVoieAdministration());
             item.setInstructions(itemReq.getInstructions());
+            item.setQuantitePrescrite(itemReq.getQuantitePrescrite());
             prescription.getItems().add(item);
         }
 
@@ -210,6 +213,8 @@ public class PrescriptionService {
             String code = generatePickupCode(id);
             response.setPickupCode(code);
             notifyN8n("prescription-prepared", response);
+        } else if (newStatus == PrescriptionStatus.DISPENSEE) {
+            deduireStock(id);
         }
 
         return response;
@@ -345,6 +350,33 @@ public class PrescriptionService {
 
         prescription.setStatus(PrescriptionStatus.ANNULEE);
         prescriptionRepository.save(prescription);
+    }
+
+    private void deduireStock(Long prescriptionId) {
+        Prescription prescription = prescriptionRepository.findById(prescriptionId)
+                .orElseThrow(() -> new RuntimeException("Prescription not found: " + prescriptionId));
+
+        List<DispensationItem> items = prescription.getItems().stream()
+                .filter(i -> i.getQuantitePrescrite() != null && i.getQuantitePrescrite() > 0)
+                .map(i -> DispensationItem.builder()
+                        .medicamentId(i.getMedicamentId())
+                        .quantite(i.getQuantitePrescrite())
+                        .build())
+                .toList();
+
+        if (items.isEmpty()) {
+            log.warn("No items with quantitePrescrite to deduct for prescription {}", prescriptionId);
+            return;
+        }
+
+        try {
+            Map<String, Object> result = pharmacyClient.dispenserStock(
+                    DispensationRequest.builder().items(items).build());
+            log.info("Stock deducted for prescription {}: {}", prescriptionId, result);
+        } catch (FeignException e) {
+            log.error("Stock deduction failed for prescription {}: {}", prescriptionId, e.getMessage());
+            throw new RuntimeException("Stock insuffisant pour la dispensation");
+        }
     }
 
     private PrescriptionResponse toDto(Prescription p) {
