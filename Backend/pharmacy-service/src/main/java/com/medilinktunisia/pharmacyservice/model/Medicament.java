@@ -61,4 +61,8 @@ public class Medicament {
     /** Médicament soumis à prescription (colonne «Prescription» : Oui/Non). */
     @Column(name = "prescription_required", nullable = false)
     private Boolean prescriptionRequired = false;
+
+    /** URL de l'image du médicament (résolue via Wikipedia, stockée localement). */
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 }

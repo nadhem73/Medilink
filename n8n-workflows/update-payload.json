@@ -1,0 +1,48 @@
+{
+  "name": "1 - Ordonnance créée → Notification patient",
+  "nodes": [
+    {
+      "id": "w1-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "prescription-created",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "w1-telegram",
+      "name": "Telegram - Envoyer avec boutons",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [750, 300],
+      "parameters": {
+        "jsCode": "const input = $input.first().json.body;\n\nif (!input || !input.patientTelegramChatId) {\n  return [{ json: { skipped: true, reason: 'No patientTelegramChatId' } }];\n}\n\nconst chatId = input.patientTelegramChatId;\nconst prescriptionId = input.id;\nconst token = \"8644047281:AAHywXMMM9zpDThyBj_FOgme46RZi_GhzRk\";\n\n// Fetch pharmacies\nlet pharmacies = [];\ntry {\n  const resp = await this.helpers.httpRequest({\n    method: 'GET',\n    url: 'http://localhost:8081/api/pharmacies',\n    headers: { 'Content-Type': 'application/json' }\n  });\n  pharmacies = Array.isArray(resp) ? resp : (resp.data || resp.results || []);\n} catch(e) {\n  // Fallback to empty list\n}\n\n// Build inline keyboard\nconst keyboard = [];\nlet row = [];\nfor (const pharm of pharmacies) {\n  row.push({\n    text: pharm.pharmacyName,\n    callback_data: 'pick:' + prescriptionId + ':' + pharm.id\n  });\n  if (row.length === 2) {\n    keyboard.push(row);\n    row = [];\n  }\n}\nif (row.length > 0) keyboard.push(row);\n\nconst text = '\\uD83D\\uDCCB *Ordonnance #' + prescriptionId + ' cr\\u00E9\\u00E9e !*\\n\\nChoisissez une pharmacie pour la r\\u00E9cup\\u00E9rer :';\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://api.telegram.org/bot' + token + '/sendMessage',\n  headers: { 'Content-Type': 'application/json' },\n  body: {\n    chat_id: chatId,\n    text: text,\n    parse_mode: 'Markdown',\n    reply_markup: { inline_keyboard: keyboard }\n  }\n});\n\nreturn [{ json: { success: true, chatId, prescriptionId, messageId: response.result.message_id, pharmacyCount: pharmacies.length, keyboardRows: keyboard.length } }];"
+      }
+    },
+    {
+      "id": "w1-respond",
+      "name": "Répondre",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Telegram - Envoyer avec boutons", "index": 0 }]]
+    },
+    "Telegram - Envoyer avec boutons": {
+      "main": [[{ "node": "Répondre", "index": 0 }]]
+    }
+  },
+  "settings": {}
+}
