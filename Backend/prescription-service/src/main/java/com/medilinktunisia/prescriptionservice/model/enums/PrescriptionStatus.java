@@ -7,5 +7,6 @@ public enum PrescriptionStatus {
     PREPAREE,
     RETIREE,
     DISPENSEE,
-    ANNULEE
+    ANNULEE,
+    ARCHIVEE
 }

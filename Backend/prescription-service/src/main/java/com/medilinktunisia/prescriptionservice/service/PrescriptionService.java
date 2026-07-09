@@ -178,10 +178,24 @@ public class PrescriptionService {
         Prescription prescription = prescriptionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Prescription not found: " + id));
 
-        if (prescription.getStatus() == PrescriptionStatus.ANNULEE
-                || prescription.getStatus() == PrescriptionStatus.DISPENSEE) {
-            throw new RuntimeException("Cannot change status of a " +
-                    prescription.getStatus().name().toLowerCase() + " prescription");
+        if (prescription.getStatus() == PrescriptionStatus.ANNULEE) {
+            throw new RuntimeException("Cannot change status of a cancelled prescription");
+        }
+
+        if (prescription.getStatus() == PrescriptionStatus.ARCHIVEE) {
+            throw new RuntimeException("Cannot change status of an archived prescription");
+        }
+
+        if (newStatus == PrescriptionStatus.ARCHIVEE) {
+            if (prescription.getStatus() != PrescriptionStatus.DISPENSEE) {
+                throw new RuntimeException("Only dispensed prescriptions can be archived");
+            }
+            prescription.setStatus(newStatus);
+            return toDto(prescriptionRepository.save(prescription));
+        }
+
+        if (prescription.getStatus() == PrescriptionStatus.DISPENSEE) {
+            throw new RuntimeException("Cannot change status of a dispensed prescription");
         }
 
         if (newStatus == PrescriptionStatus.EN_PREPARATION
