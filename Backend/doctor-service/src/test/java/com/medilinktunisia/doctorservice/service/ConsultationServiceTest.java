@@ -260,7 +260,7 @@ class ConsultationServiceTest {
         Consultation c2 = createConsultation(2L, ConsultationStatus.PENDING);
         c1.setPatientId(10L);
         c2.setPatientId(10L);
-        when(repository.findByDoctorIdAndPatientIdOrderByStartTimeDesc(doctorId, 10L))
+        when(repository.findByPatientIdOrderByStartTimeDesc(10L))
                 .thenReturn(List.of(c1, c2));
 
         List<ConsultationResponse> result = service.getConsultationsByPatient(doctorId, 10L);
@@ -271,7 +271,7 @@ class ConsultationServiceTest {
 
     @Test
     void getConsultationsByPatient_emptyList_returnsEmpty() {
-        when(repository.findByDoctorIdAndPatientIdOrderByStartTimeDesc(doctorId, 99L))
+        when(repository.findByPatientIdOrderByStartTimeDesc(99L))
                 .thenReturn(List.of());
 
         List<ConsultationResponse> result = service.getConsultationsByPatient(doctorId, 99L);
@@ -292,5 +292,26 @@ class ConsultationServiceTest {
         ConsultationResponse result = service.startConsultation(doctorId, request);
 
         assertThat(result.getType()).isEqualTo("PRESENTIEL");
+    }
+
+    @Test
+    void linkPrescription_setsPrescriptionId() {
+        Consultation existing = createConsultation(1L, ConsultationStatus.IN_PROGRESS);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.linkPrescription(1L, 10L);
+
+        verify(repository).save(consultationCaptor.capture());
+        assertThat(consultationCaptor.getValue().getPrescriptionId()).isEqualTo(10L);
+    }
+
+    @Test
+    void linkPrescription_notFound_throwsException() {
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.linkPrescription(99L, 10L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Consultation not found");
     }
 }

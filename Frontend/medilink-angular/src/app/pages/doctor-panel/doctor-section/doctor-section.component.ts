@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewChecked, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, PatientListDto } from '../../../core/services/auth.service';
 import { AppointmentService, AppointmentDto } from '../../../core/services/appointment.service';
 import { ConsultationService, ConsultationRequest, ConsultationResponse } from '../../../core/services/consultation.service';
 import { PatientService, MedicalRecord } from '../../../core/services/patient.service';
+import { DoctorService, Doctor } from '../../../core/services/doctor.service';
+import { PrescriptionService, PrescriptionItemResponse } from '../../../core/services/prescription.service';
 
 
 type DoctorSectionKey = 'patients' | 'appointments' | 'consultations' | 'prescriptions' | 'labs' | 'profile';
@@ -39,7 +41,7 @@ interface AgendaAppointment {
   templateUrl: './doctor-section.component.html',
   styleUrls: ['./doctor-section.component.scss']
 })
-export class DoctorSectionComponent implements OnInit {
+export class DoctorSectionComponent implements OnInit, AfterViewChecked {
 
   section: DoctorSectionKey = 'patients';
   title = '';
@@ -62,13 +64,162 @@ export class DoctorSectionComponent implements OnInit {
   patientConsultations: ConsultationResponse[] = [];
   loadingPatientConsultations = false;
   patientMedicalRecord: MedicalRecord | null = null;
+  ficheCurrentPage = 0;
+
+  // Pages de RDV calculées dynamiquement selon la hauteur réelle des blocs
+  @ViewChild('measureContainer') measureContainer?: ElementRef<HTMLElement>;
+  computedPages: { items: ConsultationResponse[]; start: number }[] = [];
+  private lastPaginationSignature = '';
+
+  get totalFichePages(): number {
+    // Page 0 = couverture, page 1 = données patient, pages 2+ = RDVs
+    return 2 + this.computedPages.length;
+  }
+
+  get totalRdv(): number {
+    return this.patientConsultations.length;
+  }
+
+  ngAfterViewChecked(): void {
+    this.paginateByHeight();
+  }
+
+  /**
+   * Répartit les blocs de RDV sur des pages A4 en fonction de leur hauteur
+   * réelle mesurée, pour afficher le maximum de blocs lisibles par page.
+   */
+  private paginateByHeight(): void {
+    const container = this.measureContainer?.nativeElement;
+    const consultations = this.patientConsultations;
+
+    if (!container || consultations.length === 0) {
+      if (this.computedPages.length) {
+        this.computedPages = [];
+        this.lastPaginationSignature = '';
+      }
+      return;
+    }
+
+    const blocks = Array.from(container.querySelectorAll<HTMLElement>('.measure-block'));
+    // Les blocs ne sont pas encore rendus (ou pas à jour) : on attend le prochain cycle
+    if (blocks.length !== consultations.length) return;
+
+    // Signature de l'état courant : on ne recalcule que si quelque chose a changé
+    const signature = [
+      consultations.map(c => c.id).join(','),
+      Array.from(this.prescriptionItemsMap.keys()).sort((a, b) => a - b).join(','),
+      blocks.map(b => Math.round(b.getBoundingClientRect().height)).join(','),
+      Math.round(container.getBoundingClientRect().width)
+    ].join('|');
+    if (signature === this.lastPaginationSignature) return;
+    this.lastPaginationSignature = signature;
+
+    // Hauteur A4 utile (px) : largeur mesurée × ratio 297/210 − paddings verticaux
+    const styles = getComputedStyle(container);
+    const padTop = parseFloat(styles.paddingTop) || 0;
+    const padBottom = parseFloat(styles.paddingBottom) || 0;
+    const outerWidth = container.getBoundingClientRect().width;
+    const pageContentHeight = (outerWidth * 297 / 210) - padTop - padBottom;
+
+    const TITLE_HEIGHT = 46; // titre « Rendez-vous » sur la 1re page de RDV
+    const GAP = 12;          // espacement inter-blocs
+
+    const pages: { items: ConsultationResponse[]; start: number }[] = [];
+    let current: ConsultationResponse[] = [];
+    let used = 0;
+    let startIndex = 0;
+    let limit = pageContentHeight - TITLE_HEIGHT; // 1re page RDV : moins le titre
+
+    blocks.forEach((el, i) => {
+      const h = el.getBoundingClientRect().height + GAP;
+      if (current.length > 0 && used + h > limit) {
+        pages.push({ items: current, start: startIndex });
+        startIndex += current.length;
+        current = [];
+        used = 0;
+        limit = pageContentHeight; // pages suivantes : pleine hauteur
+      }
+      current.push(consultations[i]);
+      used += h;
+    });
+    if (current.length) pages.push({ items: current, start: startIndex });
+
+    // Mise à jour hors du cycle de détection courant pour éviter
+    // ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      this.computedPages = pages;
+      if (this.ficheCurrentPage > this.totalFichePages - 1) {
+        this.ficheCurrentPage = this.totalFichePages - 1;
+      }
+    });
+  }
+
+  goToFichePage(index: number): void {
+    this.ficheCurrentPage = Math.max(0, Math.min(index, this.totalFichePages - 1));
+  }
+
+  nextFichePage(): void {
+    this.goToFichePage(this.ficheCurrentPage + 1);
+  }
+
+  prevFichePage(): void {
+    this.goToFichePage(this.ficheCurrentPage - 1);
+  }
+  doctors: Doctor[] = [];
+  prescriptionItemsMap: Map<number, PrescriptionItemResponse[]> = new Map();
+  prescriptionLoadingMap: Map<number, boolean> = new Map();
   medicalLoading = false;
   today = new Date();
+
+  // ── Comparaison RDVs ──────────────────────────────────────────────────
+  compareMode = false;
+  compareDoctorId: number | null = null;
+
+  get availableCompareDoctors(): { id: number; name: string }[] {
+    const seen = new Set<number>();
+    const result: { id: number; name: string }[] = [];
+    for (const c of this.patientConsultations) {
+      if (!c.doctorId || seen.has(c.doctorId)) continue;
+      seen.add(c.doctorId);
+      result.push({ id: c.doctorId, name: this.getDoctorName(c.doctorId) });
+    }
+    return result;
+  }
+
+  get compareConsultations(): ConsultationResponse[] {
+    if (!this.compareDoctorId) return [];
+    return this.patientConsultations.filter(c => c.doctorId === this.compareDoctorId);
+  }
+
+  get compareLast(): ConsultationResponse | null {
+    return this.compareConsultations.at(-1) || null;
+  }
+
+  get comparePrev(): ConsultationResponse | null {
+    return this.compareConsultations.at(-2) || null;
+  }
+
+  toggleCompareMode(): void {
+    this.compareMode = !this.compareMode;
+    if (!this.compareMode) {
+      this.compareDoctorId = null;
+    } else {
+      const avail = this.availableCompareDoctors;
+      this.compareDoctorId = avail.length ? avail[0].id : null;
+    }
+  }
+
+  onCompareDoctorChange(doctorId: number): void {
+    this.compareDoctorId = Number(doctorId);
+  }
 
   // ── Agenda ──────────────────────────────────────────────────────────────
   allAppointments: AgendaAppointment[] = [];
   loadingAppointments = false;
   actionLoading: { [id: number]: boolean } = {};
+  consultationsByAppointment: Map<number, ConsultationResponse> = new Map();
+  loadingConsultations = false;
+  consultExpanded: Set<number> = new Set();
 
   // Calendrier
   calendarYear = 0;
@@ -113,7 +264,9 @@ export class DoctorSectionComponent implements OnInit {
     private authService: AuthService,
     private appointmentService: AppointmentService,
     private consultationService: ConsultationService,
-    private patientService: PatientService
+    private patientService: PatientService,
+    private doctorService: DoctorService,
+    private prescriptionService: PrescriptionService
   ) {
     this.currentUser = this.authService.getCurrentUser();
     this.profileCards = [
@@ -160,27 +313,131 @@ export class DoctorSectionComponent implements OnInit {
     this.selectedPatient = null;
     this.patientConsultations = [];
     this.patientMedicalRecord = null;
+    this.prescriptionItemsMap.clear();
+    this.computedPages = [];
+    this.lastPaginationSignature = '';
+    this.ficheCurrentPage = 0;
   }
 
   exportPDF(): void {
     const ficheEl = document.querySelector<HTMLElement>('.fiche-patient');
     if (!ficheEl) return;
 
+    const savedPage = this.ficheCurrentPage;
+    this.ficheCurrentPage = 0;
+
     const clone = ficheEl.cloneNode(true) as HTMLElement;
-    this.inlineStyles(ficheEl, clone);
+
+    const sheets = clone.querySelectorAll<HTMLElement>('.fiche-sheet');
+    sheets.forEach(p => p.style.display = 'block');
+
+    const pagination = clone.querySelector<HTMLElement>('.fiche-pagination');
+    if (pagination) pagination.style.display = 'none';
+
+    const measure = clone.querySelector<HTMLElement>('.fiche-measure');
+    if (measure) measure.remove();
+
+    const actionBtns = clone.querySelectorAll<HTMLElement>('.appt-btn');
+    actionBtns.forEach(b => { b.style.display = 'none'; });
 
     const name = this.selectedPatient?.name?.replace(/\s+/g, '_') || 'patient';
     const html = `<html><head><title>Fiche_${name}</title><style>
-      @page { margin: 15mm; }
-      body { margin: 0; font-family: Arial, sans-serif; color: #1a2b3c; }
-      .appt-btn { display: none !important; }
+      @page { margin: 15mm; size: A4; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+      body { margin: 0; padding: 0; font-family: 'Inter', 'Segoe UI', Arial, Helvetica, sans-serif; color: #1a2b3c; font-size: 11pt; line-height: 1.4; background: #f5f0e8; }
+
+      .page-header, .patients-list-panel, .back-link, .appt-btn, .compare-container,
+      .loading-state, .fiche-empty, .fiche-pagination { display: none !important; }
+
+      .patients-layout.has-selected { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+      .patients-fiche-panel { animation: none !important; opacity: 1 !important; transform: none !important; width: 100% !important; }
+
+      .fiche-patient { box-shadow: none !important; border: none !important; border-radius: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; background: transparent !important; }
+      .fiche-patient-inner { padding: 0 !important; border-left: none !important; }
+      .fiche-sheets { display: block !important; margin: 0 !important; }
+      .fiche-sheets-stack { display: block !important; }
+
+      .fiche-sheet {
+        display: block !important; position: static !important;
+        width: auto !important; min-height: 267mm !important;
+        padding: 20mm 25mm !important; margin: 0 auto !important;
+        background: #f5f0e8 !important; border: 1px solid #d5cdbd !important;
+        border-radius: 4px !important; box-shadow: none !important;
+        aspect-ratio: auto !important; height: auto !important;
+        overflow: visible !important; page-break-after: always;
+        box-sizing: border-box !important;
+      }
+      .fiche-sheet:last-child { page-break-after: auto; }
+
+      .fiche-cover-page { background: #f5f0e8 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+      .fiche-cover { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: auto !important; padding: 24px 0; gap: 10px; }
+      .fiche-cover-logos { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; }
+      .fiche-cover-emblem { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+      .fiche-cover-emblem-label { font-size: 8pt; font-weight: 700; color: #6a5f4e; text-align: center; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase; }
+      .fiche-cover-brand { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; text-align: center; }
+      .fiche-cover-brand-name { font-family: 'Georgia', 'Playfair Display', serif; font-size: 26pt; font-weight: 700; color: #1a2b3c; letter-spacing: .04em; }
+      .fiche-cover-brand-sub { font-size: 11pt; font-weight: 600; color: #6a5f4e; letter-spacing: .12em; text-transform: uppercase; }
+      .fiche-cover-divider { display: flex; align-items: center; gap: 14px; width: 60%; margin: 14px auto; }
+      .fiche-cover-divider-line { flex: 1; height: 1px; background: #6a5f4e; opacity: .35; }
+      .fiche-cover-divider-diamond { color: #c9953a; font-size: 14pt; }
+      .fiche-cover-patient { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 4px 0; }
+      .fiche-cover-patient-label { font-size: 9pt; font-weight: 600; color: #6a5f4e; letter-spacing: .15em; text-transform: uppercase; }
+      .fiche-cover-patient-name { margin: 0; font-family: 'Georgia', 'Playfair Display', serif; font-size: 22pt; font-weight: 700; color: #1a2b3c; text-align: center; word-break: break-word; }
+      .fiche-cover-footer { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: auto; padding-top: 14px; }
+      .fiche-cover-footer-line { display: block; width: 40px; height: 1px; background: #6a5f4e; opacity: .2; }
+      .fiche-cover-footer-line:nth-child(2) { width: 28px; }
+      .fiche-cover-footer-line:nth-child(3) { width: 16px; }
+
+      .fiche-page-title { font-family: 'Georgia', 'Playfair Display', serif; font-size: 18pt; font-weight: 700; color: #1a2b3c; border-bottom: 2px solid #c8bfab; padding-bottom: 6px; margin: 0 0 14px; }
+      .fiche-rdv-summary { font-size: 10pt; font-weight: 600; color: #6a5f4e; text-align: right; margin: 12px 0 0; }
+      .fiche-empty-note { font-size: 12pt; font-style: italic; color: #6a5f4e; }
+
+      .fiche-identity-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+      .fiche-identity-field { display: flex; flex-direction: column; gap: 1px; padding: 4px 8px; border-radius: 3px; background: #f2ede4; }
+      .fiche-identity-label { font-size: 8pt; font-weight: 600; color: #6a5f4e; text-transform: uppercase; letter-spacing: .05em; }
+      .fiche-identity-value { font-size: 12pt; font-weight: 500; color: #1a2b3c; line-height: 1.3; }
+
+      .fiche-rdv, .fiche-rdv-fullwidth {
+        break-inside: avoid; page-break-inside: avoid;
+        margin-bottom: 8px; border: 1px solid #d5cdbd;
+        border-radius: 4px; border-left: 4px solid #1a2b3c;
+        background: #faf8f5; overflow: hidden;
+      }
+      .fiche-rdv.status-completed, .fiche-rdv-fullwidth.status-completed { border-left-color: #0d7a6e; }
+      .fiche-rdv.status-progress, .fiche-rdv-fullwidth.status-progress { border-left-color: #2b6f9e; }
+      .fiche-rdv.status-pending, .fiche-rdv-fullwidth.status-pending { border-left-color: #c9953a; }
+      .fiche-rdv.status-cancelled, .fiche-rdv-fullwidth.status-cancelled { border-left-color: #c0392b; }
+
+      .fiche-rdv-header { padding: 8px 12px; background: #efe9df; border-bottom: 1px solid #d5cdbd; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .fiche-rdv-num { font-size: 14pt; font-weight: 700; color: #1a2b3c; text-transform: uppercase; letter-spacing: .04em; }
+      .fiche-rdv-date { font-size: 12pt; font-weight: 500; color: #6a5f4e; }
+      .fiche-rdv-doctor { font-size: 12pt; font-weight: 500; color: #0d7a6e; margin-left: auto; }
+
+      .fiche-rdv-content { padding: 10px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12pt; color: #1a2b3c; line-height: 1.5; }
+      .fiche-field-full { grid-column: 1 / -1; }
+      .fiche-field-card { background: #f2ede4; border: 1px solid #dcd4c2; border-radius: 3px; padding: 6px 8px; }
+      .fiche-field-label { font-size: 9pt; font-weight: 600; color: #6a5f4e; text-transform: uppercase; letter-spacing: .03em; display: block; margin-bottom: 2px; }
+      .fiche-field-text { font-size: 12pt; font-weight: 500; color: #1a2b3c; line-height: 1.4; display: block; padding: 1px 0; }
+
+      .fiche-vitals { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+      .vital-item { font-size: 11pt; font-weight: 500; color: #1a2b3c; padding: 2px 8px; background: #faf8f5; border: 1px solid #d5cdbd; border-radius: 3px; display: inline-flex; align-items: center; gap: 3px; line-height: 1.4; }
+
+      .prescription-meds ul { margin: 4px 0 0; padding: 0; list-style: none; }
+      .prescription-meds ul li { font-size: 11pt; font-weight: 500; color: #1a2b3c; line-height: 1.5; padding: 2px 0 2px 14px; position: relative; break-inside: avoid; }
+      .prescription-meds ul li::before { content: '💊'; position: absolute; left: 0; top: 2px; font-size: 9pt; }
+      .prescription-meds ul li + li { border-top: 1px dashed #d5cdbd; margin-top: 1px; padding-top: 3px; }
+
+      .fiche-measure { display: none !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
     </style></head><body>${clone.outerHTML}</body></html>`;
+
+    this.ficheCurrentPage = savedPage;
 
     const win = window.open('', '_blank');
     if (win) {
       win.document.write(html);
       win.document.close();
-      win.onload = () => { win.print(); win.close(); };
+      setTimeout(() => { win.print(); }, 300);
     }
   }
 
@@ -204,13 +461,56 @@ export class DoctorSectionComponent implements OnInit {
   private loadPatientConsultations(patientId: number): void {
     this.loadingPatientConsultations = true;
     this.patientConsultations = [];
+    this.prescriptionItemsMap.clear();
+    this.prescriptionLoadingMap.clear();
+    this.computedPages = [];
+    this.lastPaginationSignature = '';
+    this.ficheCurrentPage = 0;
     this.consultationService.getPatientConsultations(patientId).subscribe({
       next: (data) => {
-        this.patientConsultations = data;
+        // On n'affiche que les RDV dont la consultation est terminée,
+        // triés du premier au dernier (ordre chronologique croissant).
+        const completed = data
+          .filter(c => c.status === 'COMPLETED')
+          .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+        this.patientConsultations = completed;
+        completed.forEach(c => {
+          this.prescriptionLoadingMap.set(c.id, true);
+          if (c.prescriptionId) {
+            this.prescriptionService.getPrescription(c.prescriptionId).subscribe({
+              next: (p) => {
+        if (p?.items?.length) {
+                  this.prescriptionItemsMap.set(c.id, p.items);
+                }
+                this.prescriptionLoadingMap.set(c.id, false);
+              },
+              error: () => {
+                this.prescriptionLoadingMap.set(c.id, false);
+              }
+            });
+          } else {
+            this.loadPrescriptionByConsultation(c.id);
+          }
+        });
         this.loadingPatientConsultations = false;
       },
       error: () => {
         this.loadingPatientConsultations = false;
+      }
+    });
+  }
+
+  private loadPrescriptionByConsultation(consultationId: number): void {
+    this.prescriptionLoadingMap.set(consultationId, true);
+    this.prescriptionService.getPrescriptionByConsultation(consultationId).subscribe({
+      next: (p) => {
+        if (p?.items?.length) {
+          this.prescriptionItemsMap.set(consultationId, p.items);
+        }
+        this.prescriptionLoadingMap.set(consultationId, false);
+      },
+      error: () => {
+        this.prescriptionLoadingMap.set(consultationId, false);
       }
     });
   }
@@ -229,9 +529,24 @@ export class DoctorSectionComponent implements OnInit {
     });
   }
 
+  private loadDoctors(): void {
+    this.doctorService.getAllDoctors().subscribe({
+      next: (data) => {
+        this.doctors = data;
+      },
+      error: () => {}
+    });
+  }
+
+  getDoctorName(doctorId: number): string {
+    const doctor = this.doctors.find(d => d.id === doctorId);
+    return doctor ? `Dr ${doctor.firstName} ${doctor.lastName}` : `Dr #${doctorId}`;
+  }
+
   // ── Chargement données ────────────────────────────────────────────────────
 
   loadPatients(): void {
+    this.loadDoctors();
     this.authService.getAllPatients().subscribe({
       next: (data) => {
         this.registeredPatients = data;
@@ -249,6 +564,24 @@ export class DoctorSectionComponent implements OnInit {
     });
   }
 
+  private loadConsultations(): void {
+    this.loadingConsultations = true;
+    this.consultationService.getAllConsultations().subscribe({
+      next: (consultations) => {
+        this.consultationsByAppointment.clear();
+        consultations.forEach(c => {
+          if (c.appointmentId) {
+            this.consultationsByAppointment.set(c.appointmentId, c);
+          }
+        });
+        this.loadingConsultations = false;
+      },
+      error: () => {
+        this.loadingConsultations = false;
+      }
+    });
+  }
+
   loadAppointments(): void {
     this.loadingAppointments = true;
     this.appointmentService.getDoctorAppointments().subscribe({
@@ -256,6 +589,7 @@ export class DoctorSectionComponent implements OnInit {
         this.allAppointments = data.map(app => this.mapAppointment(app));
         this.buildCalendar();
         this.loadingAppointments = false;
+        this.loadConsultations();
       },
       error: (err) => {
         console.error('Erreur chargement agenda', err);
@@ -456,6 +790,18 @@ export class DoctorSectionComponent implements OnInit {
       status: this.getStatusLabel(dto.status),
       statusClass: this.getStatusClass(dto.status)
     };
+  }
+
+  getConsultationForAppointment(appointmentId: number): ConsultationResponse | undefined {
+    return this.consultationsByAppointment.get(appointmentId);
+  }
+
+  toggleConsultExpand(consultationId: number): void {
+    if (this.consultExpanded.has(consultationId)) {
+      this.consultExpanded.delete(consultationId);
+    } else {
+      this.consultExpanded.add(consultationId);
+    }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

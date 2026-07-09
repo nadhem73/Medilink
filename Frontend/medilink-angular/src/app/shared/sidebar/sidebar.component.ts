@@ -45,6 +45,7 @@ export class SidebarComponent {
     { label: 'Agenda', route: '/dashboard/doctor/appointments', icon: 'calendar' },
     { label: 'Consultations', route: '/dashboard/doctor/consultations', icon: 'stethoscope' },
     { label: 'Dossiers medicaux', route: '/dashboard/doctor/medical-records', icon: 'folder' },
+    { label: 'Comparer docteurs', route: '/dashboard/doctor/compare', icon: 'activity' },
     { label: 'Ordonnances', route: '/dashboard/doctor/prescriptions', icon: 'pill' },
     { label: 'Teleconsultation', route: '/dashboard/doctor/teleconsultation', icon: 'video' },
     { label: "Resultats d'analyses", route: '/dashboard/doctor/labs', icon: 'flask' },

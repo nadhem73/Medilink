@@ -84,6 +84,7 @@ export interface AuthResponse {
     isEmailVerified: boolean;
     roles: string[];
     createdAt: string;
+    pharmacieId?: number;
   };
 }
 
