@@ -60,6 +60,9 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.GET, "/api/pharmacies/nearby").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/laboratories/search").permitAll()
 
+                        // Assignation pharmacie (appelé par n8n Telegram bot)
+                        .pathMatchers(HttpMethod.PUT, "/api/prescriptions/*/assign-pharmacy").permitAll()
+
                         // Géolocalisation publique
                         .pathMatchers(HttpMethod.GET, "/api/geolocation/nearby/**").permitAll()
 

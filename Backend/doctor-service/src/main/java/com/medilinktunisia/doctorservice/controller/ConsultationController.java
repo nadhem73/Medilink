@@ -66,6 +66,12 @@ public class ConsultationController {
         return ResponseEntity.ok(service.completeConsultation(id, doctorId, body));
     }
 
+    @GetMapping("/doctor/{doctorId}")
+    public ResponseEntity<List<ConsultationResponse>> getConsultationsByDoctorId(
+            @PathVariable Long doctorId) {
+        return ResponseEntity.ok(service.getConsultationsByDoctorId(doctorId));
+    }
+
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<ConsultationResponse>> getConsultationsByPatient(
             HttpServletRequest request,
@@ -81,5 +87,13 @@ public class ConsultationController {
         Long doctorId = (Long) request.getAttribute("userId");
         service.cancelConsultation(id, doctorId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/prescription/{prescriptionId}")
+    public ResponseEntity<Void> linkPrescription(
+            @PathVariable Long id,
+            @PathVariable Long prescriptionId) {
+        service.linkPrescription(id, prescriptionId);
+        return ResponseEntity.ok().build();
     }
 }

@@ -9,11 +9,6 @@ import { HelpComponent } from './help/help.component';
 const routes: Routes = [
   { path: '', component: AdminDashboardComponent },
   {
-    path: 'approvals',
-    component: AdminSectionComponent,
-    data: { section: 'approvals', title: 'Validation des comptes medicaux' }
-  },
-  {
     path: 'users',
     component: AdminSectionComponent,
     data: { section: 'users', title: 'Gestion des utilisateurs' }

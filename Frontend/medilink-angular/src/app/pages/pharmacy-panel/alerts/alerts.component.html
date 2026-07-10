@@ -1,66 +1,144 @@
-<section class="pp-page">
-  <header class="pp-header">
-    <div>
-      <p class="pp-kicker">Panel pharmacie</p>
-      <h1>Alertes de stock</h1>
-      <p class="pp-copy">Alertes automatiques en cas de rupture, seuils critiques atteints et medicaments proches de la peremption.</p>
+<section class="al-page">
+  <header class="al-header">
+    <div class="al-header-text">
+      <span class="al-kicker">Pharmacie &middot; Monitoring</span>
+      <h1 class="al-title">Alertes stock</h1>
+      <p class="al-desc">Medicaments sous le seuil de reapprovisionnement et lots en voie de peremption.</p>
     </div>
-    <a routerLink="/dashboard/pharmacy" class="pp-back">Retour au tableau de bord</a>
+    <a routerLink="/dashboard/pharmacy" class="al-back">Tableau de bord</a>
   </header>
 
-  <article class="pp-card">
-    <div class="pp-info-grid">
-      <div class="pp-info" *ngFor="let s of summary">
-        <span>{{ s.label }}</span>
-        <strong>{{ s.value }}</strong>
-      </div>
-    </div>
-  </article>
-
-  <div class="pp-grid">
-    <article class="pp-card">
-      <div class="pp-card-header">
-        <h2>Ruptures critiques</h2>
-        <span class="pp-badge orange">Action requise</span>
-      </div>
-      <div class="pp-list">
-        <div class="pp-item" *ngFor="let r of ruptures">
-          <div>
-            <h3>{{ r.name }}</h3>
-            <p>{{ r.detail }}</p>
-          </div>
-          <span class="pp-status">{{ r.status }}</span>
-        </div>
-      </div>
-    </article>
-
-    <article class="pp-card">
-      <h2>Sous le seuil d alerte</h2>
-      <div class="pp-list">
-        <div class="pp-item" *ngFor="let t of thresholds">
-          <div>
-            <h3>{{ t.name }}</h3>
-            <p>{{ t.detail }}</p>
-          </div>
-          <span class="pp-status">{{ t.status }}</span>
-        </div>
-      </div>
-    </article>
+  <!-- ── Barometre : onglets ─────────────────────────── -->
+  <div class="al-barometer">
+    <button class="al-gauge" [class.al-gauge--active]="activeTab === 'rupture'" (click)="switchTab('rupture')">
+      <span class="al-gauge-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      </span>
+      <span class="al-gauge-body">
+        <span class="al-gauge-label">Rupture de stock</span>
+      </span>
+      <span class="al-gauge-badge" [class.al-gauge-badge--red]="ruptureCount > 0">{{ ruptureCount }} alerte(s)</span>
+    </button>
+    <button class="al-gauge" [class.al-gauge--active]="activeTab === 'perimes'" (click)="switchTab('perimes')">
+      <span class="al-gauge-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </span>
+      <span class="al-gauge-body">
+        <span class="al-gauge-label">Peremption</span>
+      </span>
+      <span class="al-gauge-badge" [class.al-gauge-badge--amber]="perimesCount > 0">{{ perimesCount }} lot(s)</span>
+    </button>
   </div>
 
-  <article class="pp-card">
-    <div class="pp-card-header">
-      <h2>Peremptions proches</h2>
-      <span class="pp-badge purple">A controler</span>
+  <!-- ── Barre d'outils ────────────────────────────── -->
+  <div class="al-toolbar" *ngIf="!loading">
+    <label class="al-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/></svg>
+      <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchOrSortChange()" placeholder="Chercher un medicament…" />
+      <button *ngIf="searchQuery" class="al-search-clear" (click)="searchQuery = ''; onSearchOrSortChange()" aria-label="Effacer la recherche">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </label>
+    <div class="al-sort">
+      <span class="al-sort-label">Trier</span>
+      <select [(ngModel)]="sortBy" (ngModelChange)="onSearchOrSortChange()" class="al-sort-select">
+        <option *ngFor="let o of sortOptions" [value]="o.value">{{ o.label }}</option>
+      </select>
     </div>
-    <div class="pp-list">
-      <div class="pp-item" *ngFor="let e of expirations">
-        <div>
-          <h3>{{ e.name }}</h3>
-          <p>{{ e.meta }}</p>
-        </div>
-        <button type="button" class="pp-btn ghost">Commander</button>
+  </div>
+
+  <!-- ── Chargement ────────────────────────────────── -->
+  <ng-container *ngIf="loading; else loaded">
+    <div class="al-loading">Chargement des alertes…</div>
+  </ng-container>
+
+  <!-- ── Contenu ───────────────────────────────────── -->
+  <ng-template #loaded>
+
+    <!-- ══════════ Onglet Rupture ══════════ -->
+    <div class="al-panel" *ngIf="activeTab === 'rupture'">
+
+      <div class="al-empty" *ngIf="totalItems === 0 && ruptureAlerts.length > 0">
+        <p>Aucun medicament ne correspond a votre recherche.</p>
       </div>
+      <div class="al-empty" *ngIf="ruptureAlerts.length === 0">
+        <p>Aucun medicament sous le seuil de stock.</p>
+      </div>
+
+      <div class="al-list" *ngIf="currentItems.length > 0">
+        <div class="al-row" *ngFor="let r of currentItems; trackBy: trackById"
+             [class.al-row--rupture]="r.status === 'Rupture'"
+             [class.al-row--critique]="r.status === 'Critique'">
+          <div class="al-row-left">
+            <span class="al-row-dot" [class.al-row-dot--red]="r.status === 'Rupture'" [class.al-row-dot--amber]="r.status === 'Critique'"></span>
+            <div class="al-row-info">
+              <span class="al-row-name">{{ r.medicamentName }}</span>
+              <span class="al-row-meta">
+                Stock total
+                <strong class="al-row-num">{{ r.stockTotal }}</strong>
+              </span>
+            </div>
+          </div>
+          <span class="al-row-badge" [class.al-row-badge--red]="r.status === 'Rupture'" [class.al-row-badge--amber]="r.status === 'Critique'">{{ r.status }}</span>
+        </div>
+      </div>
+
+      <nav class="al-pager" *ngIf="totalPages > 1">
+        <button class="al-pg-btn" (click)="goTo(page - 1)" [disabled]="page === 0">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Prec.
+        </button>
+        <span class="al-pg-info">{{ page + 1 }} / {{ totalPages }}</span>
+        <button class="al-pg-btn" (click)="goTo(page + 1)" [disabled]="page >= totalPages - 1">
+          Suiv.
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </nav>
     </div>
-  </article>
+
+    <!-- ══════════ Onglet Peremption ══════════ -->
+    <div class="al-panel" *ngIf="activeTab === 'perimes'">
+
+      <div class="al-empty" *ngIf="totalItems === 0 && perimesAlerts.length > 0">
+        <p>Aucun lot ne correspond a votre recherche.</p>
+      </div>
+      <div class="al-empty" *ngIf="perimesAlerts.length === 0">
+        <p>Aucun lot proche de la peremption.</p>
+      </div>
+
+      <div class="al-list" *ngIf="currentItems.length > 0">
+        <div class="al-row" *ngFor="let p of currentItems; trackBy: trackById"
+             [class.al-row--critique]="joursRestants(p.dateExpiration) <= 7">
+          <div class="al-row-left">
+            <span class="al-row-dot" [class.al-row-dot--red]="joursRestants(p.dateExpiration) <= 7" [class.al-row-dot--amber]="joursRestants(p.dateExpiration) <= 14 && joursRestants(p.dateExpiration) > 7"></span>
+            <div class="al-row-info">
+              <span class="al-row-name">{{ p.medicamentName }}</span>
+              <span class="al-row-meta">
+                Lot <strong class="al-row-lot">{{ p.numeroLot || '—' }}</strong>
+                &middot; {{ p.quantiteEnStock }} u.
+                &middot; Exp.
+                <strong class="al-row-num" [class.al-row-num--red]="joursRestants(p.dateExpiration) <= 7">{{ p.dateExpiration | date:'dd/MM/yyyy' }}</strong>
+                <span class="al-row-urgent" *ngIf="joursRestants(p.dateExpiration) <= 7">Urgent</span>
+              </span>
+              <span class="al-row-emplacement" *ngIf="p.emplacement">{{ p.emplacement }}</span>
+            </div>
+          </div>
+          <span class="al-row-qty">{{ p.quantiteEnStock }} u.</span>
+        </div>
+      </div>
+
+      <nav class="al-pager" *ngIf="totalPages > 1">
+        <button class="al-pg-btn" (click)="goTo(page - 1)" [disabled]="page === 0">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Prec.
+        </button>
+        <span class="al-pg-info">{{ page + 1 }} / {{ totalPages }}</span>
+        <button class="al-pg-btn" (click)="goTo(page + 1)" [disabled]="page >= totalPages - 1">
+          Suiv.
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </nav>
+    </div>
+
+  </ng-template>
 </section>
