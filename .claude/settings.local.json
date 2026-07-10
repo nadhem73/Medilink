@@ -120,7 +120,9 @@
       "Bash(npx --no-install tsc --noEmit -p tsconfig.app.json)",
       "Bash(echo \"TSC_DONE=$?\")",
       "Bash(grep -nE '\\\\$violet|\\\\$ink|\\\\$muted|\\\\$card|\\\\$border|\\\\$surface|:.*#')",
-      "Bash(grep -rnE '\\\\$violet\\(-deep|-light\\)?\\\\s*:|\\\\$ink\\\\s*:|\\\\$muted\\\\s*:|\\\\$card\\\\s*:|\\\\$border\\\\s*:|\\\\$surface\\\\s*:' pharmacy-stock.component.scss)"
+      "Bash(grep -rnE '\\\\$violet\\(-deep|-light\\)?\\\\s*:|\\\\$ink\\\\s*:|\\\\$muted\\\\s*:|\\\\$card\\\\s*:|\\\\$border\\\\s*:|\\\\$surface\\\\s*:' pharmacy-stock.component.scss)",
+      "Bash(export PGPASSWORD=postgres)",
+      "Bash(psql -h localhost -U postgres -d medilink_auth -t -c ' *)"
     ]
   }
 }

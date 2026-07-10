@@ -66,6 +66,26 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
+export interface AdminUserDto {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  suspendUntil?: string;
+  specialty?: string;
+  licenseNumber?: string;
+  pharmacyName?: string;
+}
+
+export interface AdminUserActionRequest {
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  suspendUntil?: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -183,6 +203,14 @@ export class AuthService {
   hasRole(role: string): boolean {
     const roles = this.getUserRole();
     return roles.includes(role);
+  }
+
+  getAllUsers(): Observable<AdminUserDto[]> {
+    return this.http.get<AdminUserDto[]>(`${this.API_URL}/admin/users`);
+  }
+
+  updateUserStatus(userId: number, data: AdminUserActionRequest): Observable<MessageResponse> {
+    return this.http.put<MessageResponse>(`${this.API_URL}/admin/users/${userId}/status`, data);
   }
 
   private handleAuthResponse(response: AuthResponse): void {

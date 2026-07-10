@@ -73,7 +73,6 @@ export class SidebarComponent {
   // Liens du panneau administrateur (supervision technique de la plateforme)
   adminLinks: SidebarLink[] = [
     { label: 'Tableau de bord', route: '/dashboard/admin', icon: 'dashboard', exact: true },
-    { label: 'Validation comptes medicaux', route: '/dashboard/admin/approvals', icon: 'shield', badge: 4 },
     { label: 'Gestion utilisateurs', route: '/dashboard/admin/users', icon: 'users' },
     { label: 'Monitoring systeme', route: '/dashboard/admin/monitoring', icon: 'activity' },
     { label: 'Securite & acces', route: '/dashboard/admin/security', icon: 'lock' },
