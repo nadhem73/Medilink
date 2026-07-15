@@ -45,6 +45,7 @@ export class SidebarComponent {
     { label: 'Agenda', route: '/dashboard/doctor/appointments', icon: 'calendar' },
     { label: 'Consultations', route: '/dashboard/doctor/consultations', icon: 'stethoscope' },
     { label: 'Dossiers medicaux', route: '/dashboard/doctor/medical-records', icon: 'folder' },
+    { label: 'Comparer docteurs', route: '/dashboard/doctor/compare', icon: 'activity' },
     { label: 'Ordonnances', route: '/dashboard/doctor/prescriptions', icon: 'pill' },
     { label: 'Teleconsultation', route: '/dashboard/doctor/teleconsultation', icon: 'video' },
     { label: "Resultats d'analyses", route: '/dashboard/doctor/labs', icon: 'flask' },
@@ -72,7 +73,6 @@ export class SidebarComponent {
   // Liens du panneau administrateur (supervision technique de la plateforme)
   adminLinks: SidebarLink[] = [
     { label: 'Tableau de bord', route: '/dashboard/admin', icon: 'dashboard', exact: true },
-    { label: 'Validation comptes medicaux', route: '/dashboard/admin/approvals', icon: 'shield', badge: 4 },
     { label: 'Gestion utilisateurs', route: '/dashboard/admin/users', icon: 'users' },
     { label: 'Monitoring systeme', route: '/dashboard/admin/monitoring', icon: 'activity' },
     { label: 'Securite & acces', route: '/dashboard/admin/security', icon: 'lock' },

@@ -336,33 +336,247 @@
     </section>
 
     <!-- Section Ordonnances -->
-    <section *ngSwitchCase="'prescriptions'" class="section-grid">
-      <article class="card wide-card">
-        <div class="card-header">
-          <h2>Ordonnances actives</h2>
-          <span class="badge accent-green">Traitements en cours</span>
-        </div>
-        <div class="list-cards">
-          <article class="mini-card" *ngFor="let prescription of prescriptions">
-            <div class="mini-card-top">
-              <h3>{{ prescription.medication }}</h3>
-              <span class="status">{{ prescription.status }}</span>
+    <section *ngSwitchCase="'prescriptions'" class="prescriptions-section">
+      <div class="presc-list-col">
+        <article class="card presc-list-card" [class.detail-open]="!!selectedPrescription">
+          <div class="card-header">
+            <div>
+              <p class="section-kicker">Vos prescriptions</p>
+              <h2>Mes ordonnances</h2>
             </div>
-            <p>{{ prescription.dosage }}</p>
-            <span>Prescripteur: {{ prescription.prescriber }}</span>
-            <strong>{{ prescription.renewal }}</strong>
-          </article>
-        </div>
-      </article>
+            <div class="card-header-actions">
+              <span class="badge badge-total" *ngIf="!loadingPrescriptions && prescriptions.length > 0">{{ prescriptions.length }} ordonnance(s)</span>
+              <button class="btn-archive-link" *ngIf="archivedPrescriptions.length > 0" (click)="openArchiveModal()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="21 8 21 21 3 21 3 8"/>
+                  <rect x="1" y="3" width="22" height="5"/>
+                  <line x1="10" y1="12" x2="14" y2="12"/>
+                </svg>
+                Archives ({{ archivedPrescriptions.length }})
+              </button>
+            </div>
+          </div>
 
-      <article class="card side-card">
-        <h2>Conseils observance</h2>
-        <ul class="checklist">
-          <li>Activer les rappels si un traitement doit etre pris a heure fixe.</li>
-          <li>Contacter votre medecin si un effet secondaire apparait.</li>
-          <li>Anticiper le renouvellement avant rupture du traitement.</li>
-        </ul>
-      </article>
+          <div *ngIf="loadingPrescriptions" class="loading-state">
+            <div class="spinner"></div>
+            <p>Chargement de vos ordonnances...</p>
+          </div>
+
+          <div *ngIf="!loadingPrescriptions && prescriptions.length === 0" class="empty-state">
+            <span class="empty-icon">📋</span>
+            <h3>Aucune ordonnance</h3>
+            <p>Vous n'avez pas encore d'ordonnance. Consultez un médecin pour obtenir une prescription.</p>
+          </div>
+
+          <div class="presc-toolbar" *ngIf="!loadingPrescriptions">
+            <div class="presc-search">
+              <svg class="presc-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="presc-search-input" placeholder="Rechercher par n° ou médecin..." [(ngModel)]="prescSearchQuery" (input)="applyFiltersAndPagination()">
+            </div>
+            <button class="presc-sort-btn" (click)="prescSortOrder = prescSortOrder === 'recent' ? 'ancien' : 'recent'; applyFiltersAndPagination()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+              {{ prescSortOrder === 'recent' ? 'Récent' : 'Ancien' }}
+            </button>
+          </div>
+
+          <div *ngIf="!loadingPrescriptions && filteredPrescriptions.length === 0 && prescriptions.length > 0" class="empty-state">
+            <span class="empty-icon">🔍</span>
+            <h3>Aucun résultat</h3>
+            <p>Essaye de modifier tes critères de recherche.</p>
+          </div>
+
+          <div *ngIf="!loadingPrescriptions && filteredPrescriptions.length > 0" class="presc-card-list">
+            <article class="presc-card"
+              *ngFor="let prescription of pagedPrescriptions; let i = index"
+              [class.selected]="selectedPrescription?.id === prescription.id"
+              [style.animation-delay]="i * 0.06 + 's'"
+              (click)="selectPrescription(prescription)">
+              <div class="presc-card-accent" [ngClass]="getPrescriptionStatusClass(prescription.status)"></div>
+              <div class="presc-card-body">
+                <div class="presc-card-top">
+                  <div class="presc-card-heading">
+                    <span class="presc-badge-id">#{{ prescription.id }}</span>
+                    <span class="presc-doctor">{{ getDoctorDetails(prescription.doctorId).name }}</span>
+                  </div>
+                  <span class="status-badge" [ngClass]="getPrescriptionStatusClass(prescription.status)">
+                    {{ getPrescriptionStatusLabel(prescription.status) }}
+                  </span>
+                </div>
+                <div class="presc-card-footer">
+                  <span class="presc-date">Créée le {{ prescription.createdAt | date:'dd/MM/yyyy' }}</span>
+                  <span class="presc-items-count" *ngIf="prescription.items.length">{{ prescription.items.length }} médicament(s)</span>
+                </div>
+                <div *ngIf="prescription.notes" class="presc-notes">
+                  {{ prescription.notes }}
+                </div>
+                <button class="presc-archive-btn" *ngIf="canArchive(prescription.status)" (click)="$event.stopPropagation(); archivePrescription(prescription.id)" title="Archiver">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="21 8 21 21 3 21 3 8"/>
+                    <rect x="1" y="3" width="22" height="5"/>
+                    <line x1="10" y1="12" x2="14" y2="12"/>
+                  </svg>
+                </button>
+              </div>
+            </article>
+          </div>
+
+          <div class="presc-pagination" *ngIf="filteredPrescriptions.length > prescPageSize">
+            <button class="pag-btn" [disabled]="prescPage === 0" (click)="goToPrescPage(prescPage - 1)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span class="pag-info">{{ prescPage + 1 }} / {{ prescTotalPages }}</span>
+            <button class="pag-btn" [disabled]="prescPage >= prescTotalPages - 1" (click)="goToPrescPage(prescPage + 1)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="presc-detail-col">
+        <!-- Détail de l'ordonnance sélectionnée -->
+        <article class="card presc-detail-card" *ngIf="selectedPrescription">
+          <div class="detail-card-header">
+            <div>
+              <p class="section-kicker">Consultation</p>
+              <h2>Ordonnance #{{ selectedPrescription.id }}</h2>
+            </div>
+            <button class="btn-close-detail" (click)="deselectPrescription()" aria-label="Fermer le détail">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div class="detail-summary">
+            <div class="detail-summary-item">
+              <span class="detail-summary-label">Prescripteur</span>
+              <span class="detail-summary-value">{{ getDoctorDetails(selectedPrescription.doctorId).name }}</span>
+            </div>
+            <div class="detail-summary-item">
+              <span class="detail-summary-label">Date</span>
+              <span class="detail-summary-value">{{ selectedPrescription.createdAt | date:'dd MMM yyyy' }}</span>
+            </div>
+            <div class="detail-summary-item">
+              <span class="detail-summary-label">Statut</span>
+              <span class="status-badge" [ngClass]="getPrescriptionStatusClass(selectedPrescription.status)">
+                {{ getPrescriptionStatusLabel(selectedPrescription.status) }}
+              </span>
+            </div>
+            <div class="detail-summary-item" *ngIf="selectedPrescription.notes">
+              <span class="detail-summary-label">Notes</span>
+              <span class="detail-summary-value">{{ selectedPrescription.notes }}</span>
+            </div>
+          </div>
+
+          <div class="detail-actions" *ngIf="canArchive(selectedPrescription.status)">
+            <button class="btn-archive" (click)="archivePrescription(selectedPrescription.id)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="21 8 21 21 3 21 3 8"/>
+                <rect x="1" y="3" width="22" height="5"/>
+                <line x1="10" y1="12" x2="14" y2="12"/>
+              </svg>
+              Traitement terminé — Archiver
+            </button>
+          </div>
+
+          <div class="detail-divider"></div>
+
+          <div class="detail-medicaments">
+            <div class="detail-medicaments-header">
+              <h3>Médicaments prescrits</h3>
+              <span class="badge badge-total">{{ selectedPrescription.items.length }} produit(s)</span>
+            </div>
+            <div class="detail-med-list">
+              <div class="detail-med-item" *ngFor="let item of selectedPrescription.items">
+                <div class="detail-med-item-header">
+                  <div class="detail-med-name">
+                    <strong>{{ item.medicamentName }}</strong>
+                    <span class="detail-med-dosage">{{ item.dosage }}</span>
+                  </div>
+                </div>
+                <div class="detail-med-grid">
+                  <div class="detail-med-field" *ngIf="item.posologie">
+                    <span class="field-label">Posologie</span>
+                    <span class="field-value">{{ item.posologie }}</span>
+                  </div>
+                  <div class="detail-med-field" *ngIf="item.voieAdministration">
+                    <span class="field-label">Voie</span>
+                    <span class="field-value">{{ item.voieAdministration }}</span>
+                  </div>
+                  <div class="detail-med-field" *ngIf="item.dureeTraitement">
+                    <span class="field-label">Durée</span>
+                    <span class="field-value">{{ item.dureeTraitement }} jours</span>
+                  </div>
+                  <div class="detail-med-field" *ngIf="item.quantitePrescrite">
+                    <span class="field-label">Quantité</span>
+                    <span class="field-value">{{ item.quantitePrescrite }}</span>
+                  </div>
+                </div>
+                <div class="detail-med-field detail-med-instructions" *ngIf="item.instructions">
+                  <span class="field-label">Instructions</span>
+                  <span class="field-value">{{ item.instructions }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Conseil par défaut -->
+        <article class="card presc-default-card" *ngIf="!selectedPrescription">
+          <div class="default-card-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <h3>Sélectionnez une ordonnance</h3>
+          <p>Cliquez sur une ordonnance dans la liste pour voir le détail des médicaments prescrits.</p>
+        </article>
+      </div>
+
+      <!-- Modal archives -->
+      <div class="modal-overlay" *ngIf="showArchiveModal" (click)="closeArchiveModal()">
+        <div class="modal-container" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <p class="section-kicker">Archives</p>
+              <h2>Ordonnances archivées</h2>
+            </div>
+            <button class="btn-close-detail" (click)="closeArchiveModal()" aria-label="Fermer">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div *ngIf="archivedPrescriptions.length === 0" class="empty-state">
+            <span class="empty-icon">📦</span>
+            <h3>Aucune ordonnance archivée</h3>
+          </div>
+
+          <div class="presc-card-list" *ngIf="archivedPrescriptions.length > 0">
+            <article class="presc-card archived"
+              *ngFor="let prescription of archivedPrescriptions; let i = index"
+              [style.animation-delay]="i * 0.05 + 's'"
+              (click)="selectPrescription(prescription); closeArchiveModal()">
+              <div class="presc-card-accent status-archived"></div>
+              <div class="presc-card-body">
+                <div class="presc-card-top">
+                  <div class="presc-card-heading">
+                    <span class="presc-badge-id">#{{ prescription.id }}</span>
+                    <span class="presc-doctor">{{ getDoctorDetails(prescription.doctorId).name }}</span>
+                  </div>
+                  <span class="status-badge status-archived">Archivée</span>
+                </div>
+                <div class="presc-card-footer">
+                  <span class="presc-date">Créée le {{ prescription.createdAt | date:'dd/MM/yyyy' }}</span>
+                  <span class="presc-items-count" *ngIf="prescription.items.length">{{ prescription.items.length }} médicament(s)</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Section Labo -->

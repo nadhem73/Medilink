@@ -102,10 +102,10 @@ public class AppointmentController {
     public ResponseEntity<List<String>> getAvailableSlots(
             @RequestParam Long doctorId,
             @RequestParam String date,
-            @RequestParam String debutMatin,
-            @RequestParam String finMatin,
-            @RequestParam String debutApresMidi,
-            @RequestParam String finApresMidi) {
+            @RequestParam(required = false, defaultValue = "09:00") String debutMatin,
+            @RequestParam(required = false, defaultValue = "12:00") String finMatin,
+            @RequestParam(required = false, defaultValue = "14:00") String debutApresMidi,
+            @RequestParam(required = false, defaultValue = "17:00") String finApresMidi) {
         log.info("GET /api/patients/appointments/available-slots - doctorId={}, date={}", doctorId, date);
         return ResponseEntity.ok(service.getAvailableSlots(
                 doctorId, date, debutMatin, finMatin, debutApresMidi, finApresMidi));

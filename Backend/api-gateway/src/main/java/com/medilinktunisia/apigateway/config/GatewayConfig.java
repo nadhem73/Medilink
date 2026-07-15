@@ -82,7 +82,7 @@ public class GatewayConfig {
                 // PHARMACY SERVICE - Pharmacies
                 // ========================================
                 .route("pharmacy-service", r -> r
-                        .path("/api/pharmacies/**")
+                        .path("/api/pharmacy/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
@@ -192,10 +192,7 @@ public class GatewayConfig {
                 .route("ai-service", r -> r
                         .path("/api/ai/**")
                         .filters(f -> f
-                                .stripPrefix(0)
-                                .circuitBreaker(config -> config
-                                        .setName("aiServiceCircuitBreaker")
-                                        .setFallbackUri("forward:/fallback/ai")))
+                                .stripPrefix(0))
                         .uri("lb://AI-SERVICE"))
 
                 // ========================================
