@@ -122,6 +122,8 @@ resilience4j:
         base-config: default
       paymentServiceCircuitBreaker:
         base-config: default
+      aiServiceCircuitBreaker:
+        base-config: default
 
   timelimiter:
     configs:

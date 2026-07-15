@@ -1,7 +1,7 @@
 # MediLink Tunisia – Session Context
 
 ## Goal
-Finaliser le flux notifications Telegram patient via n8n. Ajouter la recherche/filtres sur la page ordonnances pharmacie.
+Finaliser le flux notifications Telegram patient via n8n. Ajouter la recherche/filtres sur la page ordonnances pharmacie. Terminer l'IA et la navigation mobile.
 
 ## Constraints & Preferences
 - **Gratuit** : Telegram Bot API uniquement.
@@ -10,6 +10,8 @@ Finaliser le flux notifications Telegram patient via n8n. Ajouter la recherche/f
 
 ## Progress
 ### ✅ Done
+- **Migration Drawer → Bottom Tabs (Mobile)** : Remplacement du menu Drawer par une barre d'onglets en bas avec 5 tabs (Accueil, Rendez-vous, Scan, Dossier, Profil). Bouton Scan central surélevé. Écrans existants réutilisés via réexportation. Navigation secondaire (ai-chat, explore, settings, modal) conservée dans un Stack `(drawer)`. `CustomDrawer.tsx` supprimé. Build OK.
+- **Correction AI Service** : Gemini Flash Lite, Eureka init async, HS384 JWT, auth-service `/api/auth/doctors` public, search_doctors tool avec filtrage spécialité/ville, mapping spécialités.
 - **Recherche + Filtres (Pharmacy) — redesign** : Barre de recherche avec icône SVG, bouton tri avec libellé (Récent/Ancien), filtres par statut en pillules cliquables (remplace le `<select>`), état vide filtré avec bouton "Effacer les filtres". Layout en 3 zones distinctes (header/search+pills/liste). Build OK.
 - **FIFO dispensation backend** : `POST /stock/dispenser` endpoint, `PrescriptionService.deduireStock()` on `DISPENSEE`, `quantitePrescrite` added to DTO, 16 JUnit tests for `MedicationStockServiceTest` + 14 for `MedicationStockControllerTest`.
 - **FIFO dispensation frontend tests** : Fixed 3 flaky stock component tests — corrected `getStockStatus` thresholds (0→rupture, ≤10→critique, ≤50→faible, >50→suffisant), aligned `priceRange` expectations, fixed `nextPage` page boundary assertions. All 33 stock tests now pass.
@@ -62,3 +64,8 @@ Webhook POST → Code node (validation + Telegram API) → Respond to Webhook
 - **`~/.n8n/n8nEventLog.log`** : logs exécutions
 - **`Backend/prescription-service/.../service/PrescriptionService.java`** : `notifyN8n()` avec `N8N_WEBHOOK_PATHS` map
 - **`Backend/prescription-service/src/main/resources/application.yml`** : `n8n.webhook.base-url`
+- **`Mobile App/app/(tabs)/_layout.tsx`** : Bottom tab navigator (5 tabs, scan central surélevé)
+- **`Mobile App/app/(tabs)/scan.tsx`** : Écran Scan (placeholder avec caméra/galerie/IA)
+- **`Mobile App/app/(tabs)/home.tsx`** : Réexport de `(drawer)/home`
+- **`Mobile App/app/(drawer)/home.tsx`** : Navigation Drawer → router (ai-chat remplace hamburger)
+- **`Mobile App/app/(drawer)/_layout.tsx`** : Stack navigator (secondaires : ai-chat, explore, settings, modal)
