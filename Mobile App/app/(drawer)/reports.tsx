@@ -27,11 +27,7 @@ export default function ReportScreen() {
   const [prescriptions, setPrescriptions] = useState<PrescriptionResponse[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [mr, rxns] = await Promise.all([
         patientService.getMyMedicalRecord(),
@@ -40,13 +36,17 @@ export default function ReportScreen() {
       setRecord(mr);
       setPrescriptions(Array.isArray(rxns) ? rxns : []);
     } catch {}
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
-  }, []);
+  }, [loadData]);
 
   const initials = user
     ? `${(user.firstName?.[0] || "").toUpperCase()}${(user.lastName?.[0] || "").toUpperCase()}`
@@ -55,11 +55,6 @@ export default function ReportScreen() {
   const fullName = user
     ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
     : "Patient";
-
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return `${d.getDate()} ${FRENCH_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-  };
 
   const getRxStatus = (s: string) => {
     switch (s.toUpperCase()) {
@@ -166,7 +161,7 @@ export default function ReportScreen() {
       {/* ================= CONTACT URGENCE ================= */}
       {record?.emergencyContactName || record?.emergencyContactPhone ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact d'urgence</Text>
+          <Text style={styles.sectionTitle}>Contact d{"'"}urgence</Text>
           <View style={styles.emergencyCard}>
             <View style={styles.emergencyIcon}>
               <Ionicons name="alert-circle" size={28} color="#EF4444" />

@@ -21,6 +21,19 @@ const LIGHT = "#F0F6FA";
 const WHITE = "#FFFFFF";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
+interface Tip { title: string; text: string; img: number; link: string }
+
+const ALL_TIPS: Tip[] = [
+  { title: "Restez hydraté", text: "Buvez au moins 8 verres d'eau par jour pour maintenir une bonne santé.", img: require("../../assets/images/tips/hydratation.jpg"), link: "https://www.who.int/fr/news-room/fact-sheets/detail/drinking-water" },
+  { title: "Renforcez votre immunité", text: "Mangez des fruits riches en vitamine C chaque matin.", img: require("../../assets/images/tips/immunite.jpg"), link: "https://www.who.int/fr/news-room/fact-sheets/detail/healthy-diet" },
+  { title: "Améliorez votre sommeil", text: "Évitez les écrans 1h avant le coucher pour un sommeil réparateur.", img: require("../../assets/images/tips/sommeil.jpg"), link: "https://www.who.int/fr/news-room/fact-sheets/detail/sleep" },
+  { title: "Faites de l'exercice", text: "30 minutes de marche par jour réduisent les risques cardiovasculaires.", img: require("../../assets/images/tips/exercice.jpg"), link: "https://www.who.int/fr/news-room/fact-sheets/detail/physical-activity" },
+  { title: "Gérez votre stress", text: "La méditation 5 minutes par jour améliore votre bien-être mental.", img: require("../../assets/images/tips/stress.jpg"), link: "https://www.who.int/fr/news-room/fact-sheets/detail/mental-health-strengthening-our-response" },
+  { title: "Alimentation équilibrée", text: "Privilégiez les légumes, protéines maigres et bonnes graisses.", img: require("../../assets/images/tips/alimentation.jpg"), link: "https://www.who.int/fr/news-room/fact-sheets/detail/healthy-diet" },
+  { title: "Hygiène des mains", text: "Lavez-vous les mains régulièrement pour éviter les infections.", img: require("../../assets/images/tips/hygiene.jpg"), link: "https://www.who.int/fr/news-room/fact-sheets/detail/hand-hygiene" },
+  { title: "Examen annuel", text: "Consultez votre médecin au moins une fois par an pour un bilan.", img: require("../../assets/images/tips/examen.jpg"), link: "https://www.who.int/fr/news-room/fact-sheets/detail/universal-health-coverage-(uhc)" },
+];
+
 export default function Home() {
 
   const [activeTab, setActiveTab] = useState("Upcoming");
@@ -37,61 +50,10 @@ export default function Home() {
     { title: "Bien-être", subtitle: "Sport et hygiène de vie", bg: "#FFECEC", iconBg: "#FFD4D4", icon: "barbell-outline" },
   ];
 
-  const allTips = [
-    {
-      title: "Restez hydraté",
-      text: "Buvez au moins 8 verres d'eau par jour pour maintenir une bonne santé.",
-      img: require("../../assets/images/tips/hydratation.jpg"),
-      link: "https://www.who.int/fr/news-room/fact-sheets/detail/drinking-water",
-    },
-    {
-      title: "Renforcez votre immunité",
-      text: "Mangez des fruits riches en vitamine C chaque matin.",
-      img: require("../../assets/images/tips/immunite.jpg"),
-      link: "https://www.who.int/fr/news-room/fact-sheets/detail/healthy-diet",
-    },
-    {
-      title: "Améliorez votre sommeil",
-      text: "Évitez les écrans 1h avant le coucher pour un sommeil réparateur.",
-      img: require("../../assets/images/tips/sommeil.jpg"),
-      link: "https://www.who.int/fr/news-room/fact-sheets/detail/sleep",
-    },
-    {
-      title: "Faites de l'exercice",
-      text: "30 minutes de marche par jour réduisent les risques cardiovasculaires.",
-      img: require("../../assets/images/tips/exercice.jpg"),
-      link: "https://www.who.int/fr/news-room/fact-sheets/detail/physical-activity",
-    },
-    {
-      title: "Gérez votre stress",
-      text: "La méditation 5 minutes par jour améliore votre bien-être mental.",
-      img: require("../../assets/images/tips/stress.jpg"),
-      link: "https://www.who.int/fr/news-room/fact-sheets/detail/mental-health-strengthening-our-response",
-    },
-    {
-      title: "Alimentation équilibrée",
-      text: "Privilégiez les légumes, protéines maigres et bonnes graisses.",
-      img: require("../../assets/images/tips/alimentation.jpg"),
-      link: "https://www.who.int/fr/news-room/fact-sheets/detail/healthy-diet",
-    },
-    {
-      title: "Hygiène des mains",
-      text: "Lavez-vous les mains régulièrement pour éviter les infections.",
-      img: require("../../assets/images/tips/hygiene.jpg"),
-      link: "https://www.who.int/fr/news-room/fact-sheets/detail/hand-hygiene",
-    },
-    {
-      title: "Examen annuel",
-      text: "Consultez votre médecin au moins une fois par an pour un bilan.",
-      img: require("../../assets/images/tips/examen.jpg"),
-      link: "https://www.who.int/fr/news-room/fact-sheets/detail/universal-health-coverage-(uhc)",
-    },
-  ];
-
-  const [displayedTips, setDisplayedTips] = useState<typeof allTips>([]);
+  const [displayedTips, setDisplayedTips] = useState<Tip[]>([]);
 
   useEffect(() => {
-    const shuffled = [...allTips].sort(() => Math.random() - 0.5);
+    const shuffled = [...ALL_TIPS].sort(() => Math.random() - 0.5);
     setDisplayedTips(shuffled.slice(0, 3));
   }, []);
 

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -47,8 +47,6 @@ export default function ScanResultScreen() {
   const [editingResult, setEditingResult] = useState<BilanResultDto | null>(null);
   const [editValue, setEditValue] = useState("");
   const [editAncienneValue, setEditAncienneValue] = useState("");
-  const [editRefMin, setEditRefMin] = useState("");
-  const [editRefMax, setEditRefMax] = useState("");
   const [editRefText, setEditRefText] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -56,20 +54,20 @@ export default function ScanResultScreen() {
     if (bilanId) {
       loadBilan();
     }
-  }, [bilanId]);
+  }, [loadBilan, bilanId]);
 
-  const loadBilan = async () => {
+  const loadBilan = useCallback(async () => {
     try {
       const data = await bilanService.getBilan(bilanId!);
       setBilan(data);
-    } catch (error) {
+    } catch {
       Alert.alert("Erreur", "Impossible de charger les données du bilan.", [
         { text: "Retour", onPress: () => router.back() },
       ]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [bilanId]);
 
   const handleConfirm = async () => {
     setConfirming(true);
@@ -84,7 +82,7 @@ export default function ScanResultScreen() {
       } catch {
         // Doctors fetch failed, modal shows empty state
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Erreur", "Impossible de confirmer le bilan.");
     } finally {
       setConfirming(false);
@@ -101,7 +99,7 @@ export default function ScanResultScreen() {
     try {
       await bilanService.assignDoctor(bilanId!, selectedDoctorId);
       router.back();
-    } catch (error) {
+    } catch {
       Alert.alert("Erreur", "Impossible d'assigner le médecin.");
     } finally {
       setAssigning(false);

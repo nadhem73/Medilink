@@ -4,7 +4,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -156,7 +155,7 @@ export default function LoginScreen() {
 
             {/* Footer */}
             <Text style={styles.footer}>
-              Vous n'avez pas de compte ?{" "}
+              Vous n{"'"}avez pas de compte ?{" "}
               <Text
                 style={[styles.footerLink, { color: COLORS.secondary }]}
                 onPress={() => router.push("/(auth)/register")}

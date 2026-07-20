@@ -53,14 +53,6 @@ const NEWSLETTERS = [
   },
 ];
 
-const TRENDS = [
-  { title: "AI in Radiology", icon: "sparkles-outline" },
-  { title: "Robotic Surgeries", icon: "hardware-chip-outline" },
-  { title: "Wearable Diagnostics", icon: "watch-outline" },
-  { title: "Telemedicine Growth", icon: "wifi-outline" },
-  { title: "Smart Health Monitoring", icon: "pulse-outline" },
-];
-
 // ----------------------------------------------------
 // MAIN COMPONENT
 // ----------------------------------------------------

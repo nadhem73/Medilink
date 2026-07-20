@@ -282,7 +282,6 @@ export default function AppointmentsScreen() {
             myAppointments.map((appt) => {
               const doc = allDoctors.find((d: any) => d.id === appt.doctorId);
               const d = new Date(appt.dateTime);
-              const dateStr = `${FRENCH_DAYS[d.getDay()]} ${d.getDate()} ${FRENCH_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
               const timeStr = `${d.getHours().toString().padStart(2, "0")}h${d.getMinutes().toString().padStart(2, "0")}`;
               const status = getStatusLabel(appt.status);
               const statusColor = getStatusColor(appt.status);

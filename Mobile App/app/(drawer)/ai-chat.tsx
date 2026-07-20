@@ -7,8 +7,6 @@ import {
   Animated,
   FlatList,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -22,7 +20,6 @@ import { aiService, DoctorInfo } from "@/services/aiService";
 const PRIMARY = "#0066A2";
 const LIGHT_BG = "#F0F6FA";
 const WHITE = "#FFFFFF";
-const BOT_BG = "#E8F2FA";
 const USER_BG = "#0066A2";
 
 interface Suggestion {
@@ -117,7 +114,7 @@ function AnimatedMessage({ item, index }: { item: Suggestion; index: number }) {
       Animated.timing(fade, { toValue: 1, duration: 350, delay: 30, useNativeDriver: true }),
       Animated.timing(slide, { toValue: 0, duration: 350, delay: 30, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [fade, slide]);
 
   const isUser = item.sender === "user";
 
@@ -160,7 +157,7 @@ function TypingIndicator() {
     pulse(d1, 0).start();
     pulse(d2, 200).start();
     pulse(d3, 400).start();
-  }, []);
+  }, [d1, d2, d3]);
 
   const t = (d: Animated.Value) => d.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
   const s = (d: Animated.Value) => d.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.2] });
@@ -189,7 +186,6 @@ export default function AiChatScreen() {
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [showQuestions, setShowQuestions] = useState(true);
-  const [headerHeight, setHeaderHeight] = useState(0);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatRef = useRef<FlatList>(null);
 

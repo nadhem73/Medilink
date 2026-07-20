@@ -97,7 +97,7 @@ export default function ScanScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Scanner un bilan</Text>
         <Text style={styles.headerSub}>
-          Prenez une photo de votre bilan médical pour l'enregistrer
+           Prenez une photo de votre bilan médical pour l{"'"}enregistrer
           automatiquement dans votre dossier.
         </Text>
       </View>
@@ -157,7 +157,7 @@ export default function ScanScreen() {
           color={PRIMARY}
         />
         <Text style={styles.manualBtnText}>
-          Saisir manuellement via l'IA
+           Saisir manuellement via l{"'"}IA
         </Text>
       </TouchableOpacity>
     </View>

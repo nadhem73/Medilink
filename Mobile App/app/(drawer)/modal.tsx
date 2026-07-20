@@ -16,7 +16,6 @@ import {
 
 const PRIMARY = "#0C5D5F";
 const PRIMARY_DARK = "#0A4A4C";
-const CARD_BG = "#F4F7FB";
 const LIGHT_BG = "#F8FAFA";
 const WHITE = "#FFFFFF";
 const MUTED = "#6C7A7A";

@@ -20,7 +20,7 @@ function RootGuard() {
     } else if (user && (inAuthGroup || !segments[0])) {
       router.replace("/(tabs)/home");
     }
-  }, [user, loading, segments, navState]);
+  }, [user, loading, segments, navState, router]);
 
   if (loading) {
     return (

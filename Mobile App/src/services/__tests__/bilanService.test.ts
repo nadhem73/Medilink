@@ -166,7 +166,7 @@ describe("bilanService", () => {
   it("updateResult should PUT /bilans/{bilanId}/results/{resultId}", async () => {
     mockedAxios.put.mockResolvedValue({ data: mockBilan });
 
-    const result = await bilanService.updateResult("uuid-1", 1, { valeur: "6.5" });
+    await bilanService.updateResult("uuid-1", 1, { valeur: "6.5" });
 
     expect(mockedAxios.put).toHaveBeenCalledWith(
       `${API_BASE_URL}/bilans/uuid-1/results/1`,
