@@ -172,7 +172,7 @@ function SupportCard({ icon, title, subtitle }: { icon: string; title: string; s
   return (
     <BlurView intensity={80} tint="light" style={styles.supportCard}>
       <View style={styles.supportIconBox}>
-        <Ionicons name={icon} size={26} color={PRIMARY} />
+        <Ionicons name={icon as any} size={26} color={PRIMARY} />
       </View>
 
       <View style={{ flex: 1 }}>

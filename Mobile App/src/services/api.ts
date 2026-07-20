@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { create, AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, { create, AxiosError, InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "@/config";
 
 const api = create({

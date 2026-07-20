@@ -50,12 +50,6 @@ export default function ScanResultScreen() {
   const [editRefText, setEditRefText] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (bilanId) {
-      loadBilan();
-    }
-  }, [loadBilan, bilanId]);
-
   const loadBilan = useCallback(async () => {
     try {
       const data = await bilanService.getBilan(bilanId!);
@@ -68,6 +62,12 @@ export default function ScanResultScreen() {
       setLoading(false);
     }
   }, [bilanId]);
+
+  useEffect(() => {
+    if (bilanId) {
+      loadBilan();
+    }
+  }, [loadBilan, bilanId]);
 
   const handleConfirm = async () => {
     setConfirming(true);
@@ -128,8 +128,6 @@ export default function ScanResultScreen() {
     setEditingResult(result);
     setEditValue(result.valeur || "");
     setEditAncienneValue(result.valeurAncienne || "");
-    setEditRefMin(result.referenceMin != null ? String(result.referenceMin) : "");
-    setEditRefMax(result.referenceMax != null ? String(result.referenceMax) : "");
     setEditRefText(result.referenceText || "");
   };
 
@@ -137,8 +135,6 @@ export default function ScanResultScreen() {
     setEditingResult(null);
     setEditValue("");
     setEditAncienneValue("");
-    setEditRefMin("");
-    setEditRefMax("");
     setEditRefText("");
   };
 

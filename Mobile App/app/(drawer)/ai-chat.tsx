@@ -241,7 +241,7 @@ export default function AiChatScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.header, { paddingTop: insets.top + 8 }]}
-        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+        onLayout={(e) => { const _h = e.nativeEvent.layout.height; }}
       >
         <View style={styles.headerDeco1} />
         <View style={styles.headerDeco2} />
