@@ -152,4 +152,85 @@ describe('PrescriptionService', () => {
     const req = httpMock.expectOne('http://localhost:8765/api/prescriptions/999');
     req.flush('Not found', { status: 404, statusText: 'Not Found' });
   });
+
+  it('should get all prescriptions', () => {
+    const mockResponse = [{ id: 1 }, { id: 2 }];
+    service.getAllPrescriptions().subscribe(res => {
+      expect(res).toEqual(mockResponse as any);
+    });
+
+    const req = httpMock.expectOne('http://localhost:8765/api/prescriptions');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockResponse);
+  });
+
+  it('should get prescriptions by pharmacy', () => {
+    const mockResponse = [{ id: 1 }];
+    service.getPrescriptionsByPharmacy(5).subscribe(res => {
+      expect(res).toEqual(mockResponse as any);
+    });
+
+    const req = httpMock.expectOne('http://localhost:8765/api/prescriptions/pharmacy/5');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockResponse);
+  });
+
+  it('should update status', () => {
+    const mockResponse = { id: 1, status: 'EN_PREPARATION' };
+    service.updateStatus(1, 'EN_PREPARATION').subscribe(res => {
+      expect(res).toEqual(mockResponse as any);
+    });
+
+    const req = httpMock.expectOne('http://localhost:8765/api/prescriptions/1/status');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ status: 'EN_PREPARATION' });
+    req.flush(mockResponse);
+  });
+
+  it('should assign pharmacy', () => {
+    const mockResponse = { id: 1, pharmacieId: 5 };
+    service.assignPharmacy(1, 5).subscribe(res => {
+      expect(res).toEqual(mockResponse as any);
+    });
+
+    const req = httpMock.expectOne('http://localhost:8765/api/prescriptions/1/assign-pharmacy');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ pharmacyId: 5 });
+    req.flush(mockResponse);
+  });
+
+  it('should store pickup code', () => {
+    const mockResponse = { id: 1, prescriptionId: 1, code: '123456', used: false };
+    service.storePickupCode(1, '123456').subscribe(res => {
+      expect(res).toEqual(mockResponse as any);
+    });
+
+    const req = httpMock.expectOne('http://localhost:8765/api/prescriptions/1/pickup-code');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ code: '123456' });
+    req.flush(mockResponse);
+  });
+
+  it('should get pickup code', () => {
+    const mockResponse = { id: 1, prescriptionId: 1, code: '123456', used: false };
+    service.getPickupCode(1).subscribe(res => {
+      expect(res).toEqual(mockResponse as any);
+    });
+
+    const req = httpMock.expectOne('http://localhost:8765/api/prescriptions/1/pickup-code');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockResponse);
+  });
+
+  it('should validate pickup code', () => {
+    const mockResponse = { id: 1, status: 'RETIREE' };
+    service.validatePickupCode(1, '123456').subscribe(res => {
+      expect(res).toEqual(mockResponse as any);
+    });
+
+    const req = httpMock.expectOne('http://localhost:8765/api/prescriptions/1/validate-pickup');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ code: '123456' });
+    req.flush(mockResponse);
+  });
 });

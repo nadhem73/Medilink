@@ -19,4 +19,7 @@ public class PrescriptionResponse {
     private List<PrescriptionItemResponse> items;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String patientTelegramChatId;
+    private String baseUrl;
+    private String pickupCode;
 }

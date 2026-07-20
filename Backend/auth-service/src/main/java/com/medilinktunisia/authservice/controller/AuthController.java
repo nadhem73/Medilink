@@ -1,12 +1,15 @@
 package com.medilinktunisia.authservice.controller;
 
+import com.medilinktunisia.authservice.dto.request.AdminUserActionRequest;
 import com.medilinktunisia.authservice.dto.request.ForgotPasswordRequest;
+import com.medilinktunisia.authservice.dto.request.LinkTelegramRequest;
 import com.medilinktunisia.authservice.dto.request.LoginRequest;
 import com.medilinktunisia.authservice.dto.request.PrescriptionEmailRequest;
 import com.medilinktunisia.authservice.dto.request.RefreshTokenRequest;
 import com.medilinktunisia.authservice.dto.request.RegisterRequest;
 import com.medilinktunisia.authservice.dto.request.OtpVerificationRequest;
 import com.medilinktunisia.authservice.dto.request.ResetPasswordRequest;
+import com.medilinktunisia.authservice.dto.response.AdminUserDto;
 import com.medilinktunisia.authservice.dto.response.AuthResponse;
 import com.medilinktunisia.authservice.dto.response.DoctorListDto;
 import com.medilinktunisia.authservice.dto.response.PatientListDto;
@@ -24,6 +27,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -88,6 +92,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.getAllActivePatients());
     }
 
+    @GetMapping("/patients/{id}/telegram")
+    public ResponseEntity<Map<String, String>> getPatientTelegramChatId(@PathVariable Long id) {
+        String chatId = authService.getPatientTelegramChatId(id);
+        return ResponseEntity.ok(Map.of("telegramChatId", chatId != null ? chatId : ""));
+    }
+
     /**
      * Demande l'envoi d'un code OTP par email pour l'utilisateur connecté.
      */
@@ -145,6 +155,29 @@ public class AuthController {
         emailService.sendPrescriptionEmail(request);
         log.info("Prescription email sent to: {}", request.getPatientEmail());
         return ResponseEntity.ok(new MessageResponse("Email envoyé avec succès.", true));
+    }
+
+    @PutMapping("/patients/telegram")
+    public ResponseEntity<MessageResponse> linkTelegram(@Valid @RequestBody LinkTelegramRequest request) {
+        log.info("Telegram link request for email: {}", request.getEmail());
+        authService.linkTelegram(request);
+        log.info("Telegram linked successfully for email: {}", request.getEmail());
+        return ResponseEntity.ok(new MessageResponse("Compte Telegram lié avec succès.", true));
+    }
+
+    @GetMapping("/admin/users")
+    public ResponseEntity<List<AdminUserDto>> getAllUsers() {
+        log.info("Admin request: list all users");
+        return ResponseEntity.ok(authService.getAllUsers());
+    }
+
+    @PutMapping("/admin/users/{id}/status")
+    public ResponseEntity<MessageResponse> updateUserStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody AdminUserActionRequest request) {
+        log.info("Admin request: update status for user {} to {}", id, request.getStatus());
+        authService.updateUserStatus(id, request);
+        return ResponseEntity.ok(new MessageResponse("Statut mis à jour avec succès.", true));
     }
 }
 

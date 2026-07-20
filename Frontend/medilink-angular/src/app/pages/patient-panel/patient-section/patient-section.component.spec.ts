@@ -6,6 +6,7 @@ import { PatientSectionComponent } from './patient-section.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { DoctorService, DoctorWithProfile } from '../../../core/services/doctor.service';
 import { AppointmentService, AppointmentDto } from '../../../core/services/appointment.service';
+import { BilanService, BilanSummary, ScanBilanResponse } from '../../../core/services/bilan.service';
 
 describe('PatientSectionComponent', () => {
   let component: PatientSectionComponent;
@@ -351,5 +352,127 @@ describe('PatientSectionComponent', () => {
     component.bookAppointment();
 
     expect(component.errorMessage).toBe('Ce creneau est deja pris.');
+  });
+});
+
+describe('PatientSectionComponent - Bilan', () => {
+  let component: PatientSectionComponent;
+  let fixture: ComponentFixture<PatientSectionComponent>;
+  let bilanServiceSpy: jasmine.SpyObj<BilanService>;
+
+  const mockBilans: BilanSummary[] = [
+    { id: 'uuid-1', typeBilan: 'Bilan sanguin', dateBilan: '2026-06-15', status: 'PENDING', resultCount: 3, abnormalCount: 1, reviewStatus: '', patientId: 1, doctorId: 0 },
+    { id: 'uuid-2', typeBilan: 'Bilan urinaire', dateBilan: '2026-05-10', status: 'CONFIRMED', resultCount: 2, abnormalCount: 0, reviewStatus: '', patientId: 1, doctorId: 2 }
+  ];
+
+  beforeEach(async () => {
+    bilanServiceSpy = jasmine.createSpyObj('BilanService', ['getBilans', 'getBilan', 'deleteBilan']);
+
+    const authSpy = jasmine.createSpyObj('AuthService', ['getCurrentUser']);
+    authSpy.getCurrentUser.and.returnValue({ firstName: 'Test', lastName: 'User' });
+
+    bilanServiceSpy.getBilans.and.returnValue(of({ content: mockBilans }));
+
+    await TestBed.configureTestingModule({
+      declarations: [PatientSectionComponent],
+      providers: [
+        { provide: ActivatedRoute, useValue: { data: of({ section: 'labs', title: 'Mes Analyses' }) } },
+        { provide: AuthService, useValue: authSpy },
+        { provide: BilanService, useValue: bilanServiceSpy }
+      ],
+      schemas: [NO_ERRORS_SCHEMA]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(PatientSectionComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should load bilans on init when section is labs', () => {
+    expect(component.section).toBe('labs');
+    expect(component.bilans.length).toBe(2);
+    expect(bilanServiceSpy.getBilans).toHaveBeenCalled();
+  });
+
+  it('should set filteredBilans after loading', () => {
+    expect(component.filteredBilans.length).toBe(2);
+  });
+
+  it('should select and deselect a bilan', () => {
+    const mockDetail: ScanBilanResponse = { id: 'uuid-1', typeBilan: 'Bilan sanguin', format: 'NOUVEAU_PATIENT', dateBilan: '2026-06-15', laboratoire: 'Labo', status: 'PENDING', reviewStatus: '', patientId: 1, doctorId: 0, resultats: [] };
+    bilanServiceSpy.getBilan.and.returnValue(of(mockDetail));
+
+    component.selectBilan('uuid-1');
+
+    expect(bilanServiceSpy.getBilan).toHaveBeenCalledWith('uuid-1');
+    expect(component.selectedBilan).toEqual(mockDetail);
+  });
+
+  it('should deselect bilan', () => {
+    component.deselectBilan();
+    expect(component.selectedBilan).toBeNull();
+  });
+
+  it('should handle bilan load error', () => {
+    bilanServiceSpy.getBilans.and.returnValue(throwError(() => new Error('error')));
+    component.loadBilans();
+    expect(component.loadingBilans).toBeFalse();
+  });
+
+  it('should handle select bilan error', () => {
+    bilanServiceSpy.getBilan.and.returnValue(throwError(() => new Error('error')));
+    component.selectBilan('invalid');
+    expect(component.loadingBilanDetail).toBeFalse();
+  });
+
+  it('should filter bilans by search query', () => {
+    component.bilanSearchQuery = 'urinaire';
+    component.applyBilanFilters();
+    expect(component.filteredBilans.length).toBe(1);
+    expect(component.filteredBilans[0].typeBilan).toBe('Bilan urinaire');
+  });
+
+  it('should sort bilans by date (recent first)', () => {
+    component.bilanSortOrder = 'recent';
+    component.applyBilanFilters();
+    expect(component.filteredBilans[0].dateBilan).toBe('2026-06-15');
+  });
+
+  it('should sort bilans by date (ancien first)', () => {
+    component.bilanSortOrder = 'ancien';
+    component.applyBilanFilters();
+    expect(component.filteredBilans[0].dateBilan).toBe('2026-05-10');
+  });
+
+  it('should clear selection when filtered list no longer contains it', () => {
+    component.selectedBilan = { id: 'uuid-999' } as any;
+    component.bilanSearchQuery = 'nonexistent';
+    component.applyBilanFilters();
+    expect(component.selectedBilan).toBeNull();
+  });
+
+  it('should return correct bilan status label', () => {
+    expect(component.getBilanStatusLabel('PENDING')).toBe('En attente');
+    expect(component.getBilanStatusLabel('CONFIRMED')).toBe('Confirmé');
+    expect(component.getBilanStatusLabel('UNKNOWN')).toBe('UNKNOWN');
+  });
+
+  it('should return correct bilan status class', () => {
+    expect(component.getBilanStatusClass('CONFIRMED')).toBe('status-confirmed');
+    expect(component.getBilanStatusClass('PENDING')).toBe('status-pending');
+  });
+
+  it('should return correct result status label', () => {
+    expect(component.getResultStatusLabel('NORMAL')).toBe('Normal');
+    expect(component.getResultStatusLabel('ANORMAL')).toBe('Anormal');
+    expect(component.getResultStatusLabel('CRITIQUE')).toBe('Critique');
+    expect(component.getResultStatusLabel('UNKNOWN')).toBe('N/A');
+  });
+
+  it('should return correct result status class', () => {
+    expect(component.getResultStatusClass('NORMAL')).toBe('result-normal');
+    expect(component.getResultStatusClass('ANORMAL')).toBe('result-anormal');
+    expect(component.getResultStatusClass('CRITIQUE')).toBe('result-critique');
+    expect(component.getResultStatusClass('UNKNOWN')).toBe('result-na');
   });
 });

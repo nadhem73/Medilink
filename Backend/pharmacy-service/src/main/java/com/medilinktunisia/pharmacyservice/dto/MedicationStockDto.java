@@ -15,6 +15,7 @@ public class MedicationStockDto {
     private Long id;
     private Long medicamentId;
     private String medicamentName;
+    private String numeroLot;
     private Integer quantiteEnStock;
     private LocalDate dateFabrication;
     private LocalDate dateExpiration;

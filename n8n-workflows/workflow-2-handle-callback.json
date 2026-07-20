@@ -1,0 +1,50 @@
+{
+  "name": "2 - Callback Telegram → Assignation pharmacie",
+  "nodes": [
+    {
+      "id": "n2-webhook",
+      "name": "Webhook Callback",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram-callback",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "n2-code",
+      "name": "Parser + Assigner + Repondre",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [750, 300],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\n\n// Parse callback data\nconst callbackData = body.callback_query?.data || '';\nconst chatId = body.callback_query?.from?.id;\nconst callbackQueryId = body.callback_query?.id;\n\nif (!callbackData || !chatId || !callbackQueryId) {\n  return [{ json: { error: 'Invalid callback data' } }];\n}\n\n// Format: \"pick:{prescriptionId}:{pharmacyId}\"\nconst parts = callbackData.split(':');\nif (parts[0] !== 'pick' || parts.length < 3) {\n  return [{ json: { error: 'Invalid callback format: ' + callbackData } }];\n}\n\nconst prescriptionId = parseInt(parts[1]);\nconst pharmacyId = parseInt(parts[2]);\nconst token = \"8644047281:AAHywXMMM9zpDThyBj_FOgme46RZi_GhzRk\";\n\n// Fetch pharmacy name\nlet pharmacyName = 'Pharmacie #' + pharmacyId;\ntry {\n  const pharmacies = await this.helpers.httpRequest({\n    method: 'GET',\n    url: 'http://localhost:8081/api/pharmacies',\n    headers: { 'Content-Type': 'application/json' }\n  });\n  const pharmacy = (Array.isArray(pharmacies) ? pharmacies : []).find(p => p.id === pharmacyId);\n  if (pharmacy) pharmacyName = pharmacy.pharmacyName;\n} catch(e) {}\n\n// Assign pharmacy via backend\ntry {\n  await this.helpers.httpRequest({\n    method: 'PUT',\n    url: 'http://localhost:8765/api/prescriptions/' + prescriptionId + '/assign-pharmacy',\n    headers: { 'Content-Type': 'application/json' },\n    body: { pharmacyId: pharmacyId }\n  });\n} catch(e) {\n  // Continue even if backend fails - still answer callback\n}\n\n// Answer callback query\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://api.telegram.org/bot' + token + '/answerCallbackQuery',\n  headers: { 'Content-Type': 'application/json' },\n  body: {\n    callback_query_id: callbackQueryId,\n    text: '\\u2705 Pharmacie s\\u00E9lectionn\\u00E9e !'\n  }\n});\n\n// Send confirmation to patient\nconst confirmText = '\\u2705 *' + pharmacyName + '* s\\u00E9lectionn\\u00E9e pour l\\'ordonnance #' + prescriptionId + '.\\n\\nVous serez notifi\\u00E9 d\\u00E8s que l\\'ordonnance sera pr\\u00EAte.';\n\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://api.telegram.org/bot' + token + '/sendMessage',\n  headers: { 'Content-Type': 'application/json' },\n  body: {\n    chat_id: chatId,\n    text: confirmText,\n    parse_mode: 'Markdown'\n  }\n});\n\nreturn [{ json: { success: true, prescriptionId, pharmacyId, pharmacyName } }];"
+      }
+    },
+    {
+      "id": "n2-respond",
+      "name": "Repondre",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Callback": {
+      "main": [[{ "node": "Parser + Assigner + Repondre", "index": 0 }]]
+    },
+    "Parser + Assigner + Repondre": {
+      "main": [[{ "node": "Repondre", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "tags": []
+}

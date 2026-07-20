@@ -34,6 +34,7 @@ public class SecurityConfig {
                         // Endpoints medicaments et stock (accessibles aux docteurs)
                         .requestMatchers(HttpMethod.GET, "/medicaments/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/medicaments/stock-check").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/medicaments/resolve-images").permitAll()
                         .requestMatchers(HttpMethod.GET, "/stock/**").authenticated()
                         // Le reste (ex. /pharmacy-profiles/me) necessite un JWT valide
                         .anyRequest().authenticated())

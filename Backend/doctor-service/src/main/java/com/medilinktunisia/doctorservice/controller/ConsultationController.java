@@ -66,6 +66,12 @@ public class ConsultationController {
         return ResponseEntity.ok(service.completeConsultation(id, doctorId, body));
     }
 
+    @GetMapping("/doctor/{doctorId}")
+    public ResponseEntity<List<ConsultationResponse>> getConsultationsByDoctorId(
+            @PathVariable Long doctorId) {
+        return ResponseEntity.ok(service.getConsultationsByDoctorId(doctorId));
+    }
+
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<ConsultationResponse>> getConsultationsByPatient(
             HttpServletRequest request,

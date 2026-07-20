@@ -61,6 +61,13 @@ export interface PrescriptionResponse {
   updatedAt: string;
 }
 
+export interface PickupCodeResponse {
+  id: number;
+  prescriptionId: number;
+  code: string;
+  used: boolean;
+}
+
 export interface PrescriptionEmailRequest {
   patientEmail: string;
   patientName: string;
@@ -80,6 +87,12 @@ export class PrescriptionService {
 
   constructor(private http: HttpClient) {}
 
+  getAllMedicaments(page: number = 0, size: number = 50): Observable<any> {
+    return this.http.get(`${this.PHARMACY_API}/medicaments`, {
+      params: { page: page.toString(), size: size.toString() }
+    });
+  }
+
   searchMedicaments(name: string, page: number = 0): Observable<any> {
     return this.http.get(`${this.PHARMACY_API}/medicaments/search`, {
       params: { name, page: page.toString(), size: '20' }
@@ -92,6 +105,30 @@ export class PrescriptionService {
 
   checkStock(medicamentIds: number[]): Observable<Record<number, number>> {
     return this.http.post<Record<number, number>>(`${this.PHARMACY_API}/medicaments/stock-check`, medicamentIds);
+  }
+
+  getStockLots(medicamentId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PHARMACY_API}/stock/medicament/${medicamentId}/lots`);
+  }
+
+  createMedicament(data: any): Observable<any> {
+    return this.http.post(`${this.PHARMACY_API}/medicaments`, data);
+  }
+
+  createStock(data: any): Observable<any> {
+    return this.http.post(`${this.PHARMACY_API}/stock`, data);
+  }
+
+  getAlertsRupture(seuil: number = 20): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PHARMACY_API}/stock/alerts/rupture`, {
+      params: { seuil: seuil.toString() }
+    });
+  }
+
+  getAlertsPerimes(jours: number = 30): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PHARMACY_API}/stock/alerts/perimes`, {
+      params: { jours: jours.toString() }
+    });
   }
 
   createPrescription(request: PrescriptionCreateRequest): Observable<PrescriptionResponse> {
@@ -108,6 +145,34 @@ export class PrescriptionService {
 
   getPrescriptionsByPatient(patientId: number): Observable<PrescriptionResponse[]> {
     return this.http.get<PrescriptionResponse[]>(`${this.PRESCRIPTION_API}/patient/${patientId}`);
+  }
+
+  getAllPrescriptions(): Observable<PrescriptionResponse[]> {
+    return this.http.get<PrescriptionResponse[]>(this.PRESCRIPTION_API);
+  }
+
+  getPrescriptionsByPharmacy(pharmacyId: number): Observable<PrescriptionResponse[]> {
+    return this.http.get<PrescriptionResponse[]>(`${this.PRESCRIPTION_API}/pharmacy/${pharmacyId}`);
+  }
+
+  updateStatus(id: number, status: string): Observable<PrescriptionResponse> {
+    return this.http.put<PrescriptionResponse>(`${this.PRESCRIPTION_API}/${id}/status`, { status });
+  }
+
+  assignPharmacy(id: number, pharmacyId: number): Observable<PrescriptionResponse> {
+    return this.http.put<PrescriptionResponse>(`${this.PRESCRIPTION_API}/${id}/assign-pharmacy`, { pharmacyId });
+  }
+
+  storePickupCode(id: number, code: string): Observable<PickupCodeResponse> {
+    return this.http.post<PickupCodeResponse>(`${this.PRESCRIPTION_API}/${id}/pickup-code`, { code });
+  }
+
+  getPickupCode(id: number): Observable<PickupCodeResponse> {
+    return this.http.get<PickupCodeResponse>(`${this.PRESCRIPTION_API}/${id}/pickup-code`);
+  }
+
+  validatePickupCode(id: number, code: string): Observable<PrescriptionResponse> {
+    return this.http.post<PrescriptionResponse>(`${this.PRESCRIPTION_API}/${id}/validate-pickup`, { code });
   }
 
   cancelPrescription(id: number): Observable<void> {

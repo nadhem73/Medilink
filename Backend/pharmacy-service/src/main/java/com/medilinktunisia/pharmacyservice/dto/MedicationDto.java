@@ -23,6 +23,9 @@ public class MedicationDto {
     private String dci;
     private String type;
     private Boolean prescriptionRequired;
+    private String imageUrl;
     private Integer stockTotal;
+    /** Nombre de lots physiques en stock pour ce médicament. */
+    private Integer nbLots;
     private Set<String> voieAdministration;
 }

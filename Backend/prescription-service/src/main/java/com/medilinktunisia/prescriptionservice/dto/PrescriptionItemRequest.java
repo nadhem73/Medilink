@@ -25,4 +25,6 @@ public class PrescriptionItemRequest {
     private String voieAdministration;
 
     private String instructions;
+
+    private Integer quantitePrescrite;
 }

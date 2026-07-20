@@ -1,8 +1,10 @@
 package com.medilinktunisia.pharmacyservice.controller;
 
-import com.medilinktunisia.pharmacyservice.dto.MedicationStockDto;
+import com.medilinktunisia.pharmacyservice.dto.*;
 import com.medilinktunisia.pharmacyservice.service.MedicationStockService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,8 +28,30 @@ public class MedicationStockController {
         ));
     }
 
+    @GetMapping("/alerts/rupture")
+    public ResponseEntity<List<StockRuptureAlert>> getRuptureAlerts(
+            @RequestParam(defaultValue = "20") int seuil) {
+        return ResponseEntity.ok(medicationStockService.getRuptureAlerts(seuil));
+    }
+
+    @GetMapping("/alerts/perimes")
+    public ResponseEntity<List<MedicationStockDto>> getPerimesAlerts(
+            @RequestParam(defaultValue = "30") int jours) {
+        return ResponseEntity.ok(medicationStockService.getPerimesAlerts(jours));
+    }
+
+    @PostMapping
+    public ResponseEntity<MedicationStockDto> createStock(@RequestBody StockRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(medicationStockService.createStock(request));
+    }
+
     @GetMapping("/medicament/{medicamentId}/lots")
     public ResponseEntity<List<MedicationStockDto>> getLots(@PathVariable Long medicamentId) {
         return ResponseEntity.ok(medicationStockService.getLotsByMedicament(medicamentId));
+    }
+
+    @PostMapping("/dispenser")
+    public ResponseEntity<DispensationResult> dispenserStock(@RequestBody @Valid DispensationRequest request) {
+        return ResponseEntity.ok(medicationStockService.dispenserStock(request.getItems()));
     }
 }
