@@ -41,8 +41,8 @@ describe('AlertsComponent', () => {
   });
 
   function setupAlerts() {
-    prescriptionServiceSpy.getAlertsRupture.and.returnValue(of(mockRuptureAlerts as any));
-    prescriptionServiceSpy.getAlertsPerimes.and.returnValue(of(mockPerimesAlerts as any));
+    prescriptionServiceSpy.getAlertsRupture.and.returnValue(of([...mockRuptureAlerts] as any));
+    prescriptionServiceSpy.getAlertsPerimes.and.returnValue(of([...mockPerimesAlerts] as any));
 
     fixture = TestBed.createComponent(AlertsComponent);
     component = fixture.componentInstance;

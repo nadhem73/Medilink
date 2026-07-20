@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DoctorSectionComponent } from './doctor-section.component';
 import { AuthService, PatientListDto } from '../../../core/services/auth.service';
 import { AppointmentService, AppointmentDto } from '../../../core/services/appointment.service';
@@ -47,13 +48,15 @@ describe('DoctorSectionComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [DoctorSectionComponent],
+      imports: [HttpClientTestingModule],
       providers: [
         { provide: ActivatedRoute, useValue: activatedRouteStub },
         { provide: AuthService, useValue: authServiceSpy },
         { provide: AppointmentService, useValue: appointmentServiceSpy },
         { provide: ConsultationService, useValue: consultationServiceSpy },
         { provide: PatientService, useValue: patientServiceSpy },
-        { provide: BilanService, useValue: bilanServiceSpy }
+        { provide: BilanService, useValue: bilanServiceSpy },
+        { provide: Router, useValue: jasmine.createSpyObj('Router', ['navigate']) }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -444,13 +447,15 @@ describe('DoctorSectionComponent - Bilan', () => {
 
     await TestBed.configureTestingModule({
       declarations: [DoctorSectionComponent],
+      imports: [HttpClientTestingModule],
       providers: [
         { provide: ActivatedRoute, useValue: { data: of({ section: 'labs', title: 'Resultats de laboratoire' }) } },
         { provide: AuthService, useValue: authSpy },
         { provide: AppointmentService, useValue: jasmine.createSpyObj('AppointmentService', ['getDoctorAppointments', 'confirmAppointment']) },
         { provide: ConsultationService, useValue: jasmine.createSpyObj('ConsultationService', ['getPatientConsultations']) },
         { provide: PatientService, useValue: jasmine.createSpyObj('PatientService', ['getPatientMedicalRecord']) },
-        { provide: BilanService, useValue: bilanServiceSpy }
+        { provide: BilanService, useValue: bilanServiceSpy },
+        { provide: Router, useValue: jasmine.createSpyObj('Router', ['navigate']) }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();

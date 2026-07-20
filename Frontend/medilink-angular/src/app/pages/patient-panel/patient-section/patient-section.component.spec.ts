@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { PatientSectionComponent } from './patient-section.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { DoctorService, DoctorWithProfile } from '../../../core/services/doctor.service';
@@ -48,6 +49,7 @@ describe('PatientSectionComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [PatientSectionComponent],
+      imports: [HttpClientTestingModule],
       providers: [
         { provide: ActivatedRoute, useValue: activatedRouteStub },
         { provide: AuthService, useValue: authServiceSpy },
@@ -375,6 +377,7 @@ describe('PatientSectionComponent - Bilan', () => {
 
     await TestBed.configureTestingModule({
       declarations: [PatientSectionComponent],
+      imports: [HttpClientTestingModule],
       providers: [
         { provide: ActivatedRoute, useValue: { data: of({ section: 'labs', title: 'Mes Analyses' }) } },
         { provide: AuthService, useValue: authSpy },

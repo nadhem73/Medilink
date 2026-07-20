@@ -44,7 +44,7 @@ describe('ConsultationsComponent', () => {
 
   const mockPatients = [
     { id: 10, firstName: 'John', lastName: 'Doe', email: 'john@test.com', gender: 'Homme', phone: '', role: 'PATIENT' },
-    { id: 11, firstName: 'Jane', lastName: 'Smith', email: 'jane@test.com', gender: 'Femme', phone: '', role: 'PATIENT' }
+    { id: 11, firstName: 'Jane', lastName: 'Smith', email: '', gender: 'Femme', phone: '', role: 'PATIENT' }
   ];
 
   const mockDoctorProfile = {
@@ -258,7 +258,7 @@ describe('ConsultationsComponent', () => {
   });
 
   it('should complete consultation without email when no patient email', () => {
-    const completedConsultation = { ...mockConsultations[0], status: 'COMPLETED' };
+    const completedConsultation = { ...mockConsultations[1], status: 'COMPLETED' };
     mockConsultationService.completeConsultation.and.returnValue(of(completedConsultation));
     mockPatientService.updatePatientMedicalRecord.and.returnValue(of({} as any));
     spyOn(console, 'warn');
