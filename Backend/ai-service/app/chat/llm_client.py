@@ -41,11 +41,7 @@ class LLMClient:
 
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
-                resp = await client.post(
-                    self.base_url,
-                    json=body,
-                )
-                resp.raise_for_status()
+                resp = await self._post_with_retry(client, body)
                 data = resp.json()
                 text = self._extract_text(data)
                 return text if text else "Désolé, je n'ai pas pu traiter votre demande."
@@ -64,47 +60,6 @@ class LLMClient:
             resp.raise_for_status()
             return resp
         raise httpx.HTTPStatusError("429 Too Many Requests — quota épuisé", request=None, response=resp)
-
-    async def generate_with_image(
-        self,
-        system_prompt: str,
-        base64_image: str,
-    ) -> str:
-        body = {
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [
-                        {"inlineData": {"mimeType": "image/jpeg", "data": base64_image}},
-                    ],
-                }
-            ],
-            "systemInstruction": {"parts": [{"text": system_prompt}]},
-            "generationConfig": {
-                "temperature": settings.LLM_TEMPERATURE,
-                "maxOutputTokens": settings.LLM_MAX_TOKENS_OCR,
-            },
-        }
-
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                resp = await self._post_with_retry(client, body)
-                data = resp.json()
-                usage = data.get("usageMetadata", {})
-                logger.info("Gemini tokens: prompt=%s, output=%s, thoughts=%s, total=%s",
-                           usage.get("promptTokenCount"),
-                           usage.get("candidatesTokenCount"),
-                           usage.get("thoughtsTokenCount"),
-                           usage.get("totalTokenCount"))
-                text = self._extract_text(data)
-                logger.info("Gemini OCR response (%d chars): %s", len(text or ""), (text or "")[:500])
-                return text or ""
-        except httpx.HTTPStatusError as e:
-            logger.error("Gemini Vision API error (final): %s", e)
-            raise
-        except Exception as e:
-            logger.error("Gemini Vision API error: %s", e)
-            raise
 
     def _extract_text(self, data: dict) -> str | None:
         candidates = data.get("candidates", [])

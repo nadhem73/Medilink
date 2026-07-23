@@ -11,7 +11,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -262,37 +261,37 @@ export default function AiChatScreen() {
         </View>
       </LinearGradient>
 
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.flex}>
-          <FlatList
-            ref={flatRef}
-            data={data}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item, index }) => {
-              if (item.id === "typing") return <TypingIndicator />;
-              return <AnimatedMessage item={item} index={index} />;
-            }}
-            onContentSizeChange={() => flatRef.current?.scrollToEnd()}
-            style={styles.flex}
-            contentContainerStyle={styles.listPad}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          />
+      <View style={styles.flex}>
+        <FlatList
+          ref={flatRef}
+          data={data}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => {
+            if (item.id === "typing") return <TypingIndicator />;
+            return <AnimatedMessage item={item} index={index} />;
+          }}
+          onContentSizeChange={() => flatRef.current?.scrollToEnd()}
+          onScroll={() => Keyboard.dismiss()}
+          scrollEventThrottle={16}
+          style={styles.flex}
+          contentContainerStyle={styles.listPad}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        />
 
-          {showQuestions && (
-            <View style={styles.qSection}>
-              <Text style={styles.qTitle}>Questions fréquentes</Text>
-              <View style={styles.qRow}>
-                {QUICK_QUESTIONS.map((q, i) => (
-                  <TouchableOpacity key={i} style={styles.qChip} onPress={() => send(q)} activeOpacity={0.7}>
-                    <Text style={styles.qChipText}>{q}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+        {showQuestions && (
+          <View style={styles.qSection}>
+            <Text style={styles.qTitle}>Questions fréquentes</Text>
+            <View style={styles.qRow}>
+              {QUICK_QUESTIONS.map((q, i) => (
+                <TouchableOpacity key={i} style={styles.qChip} onPress={() => send(q)} activeOpacity={0.7}>
+                  <Text style={styles.qChipText}>{q}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          )}
-        </View>
-      </TouchableWithoutFeedback>
+          </View>
+        )}
+      </View>
 
       <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, 8) + 8, marginBottom: keyboardHeight }]}>
         <View style={styles.inputWrap}>

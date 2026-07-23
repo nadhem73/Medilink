@@ -11,3 +11,6 @@ chromadb==1.5.9
 sqlalchemy==2.0.36
 asyncpg==0.30.0
 aiosqlite==0.20.0
+pytesseract==0.3.13
+easyocr==1.7.2
+Pillow==12.3.0

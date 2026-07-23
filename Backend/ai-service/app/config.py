@@ -71,6 +71,37 @@ class Settings:
         return float(self._get("LLM_TEMPERATURE", "0.5"))
 
     @property
+    def OCR_ENGINE(self) -> str:
+        return self._get("OCR_ENGINE", "tesseract")
+
+    @property
+    def TESSERACT_PATH(self) -> str:
+        return self._get("TESSERACT_PATH", "C:\\Program Files\\Tesseract-OCR\\tesseract.exe")
+
+    @property
+    def GROK_API_KEY(self) -> str:
+        key = self._get("GROK_API_KEY", "")
+        if not key:
+            key = os.getenv("XAI_API_KEY", "")
+        return key
+
+    @property
+    def GROK_MODEL(self) -> str:
+        return self._get("GROK_MODEL", "grok-2-vision-1212")
+
+    @property
+    def GEMINI_VISION_MODEL(self) -> str:
+        return self._get("GEMINI_VISION_MODEL", "gemini-2.0-flash")
+
+    @property
+    def GROQ_API_KEY(self) -> str:
+        return self._get("GROQ_API_KEY", "")
+
+    @property
+    def GROQ_MODEL(self) -> str:
+        return self._get("GROQ_MODEL", "llama-3.2-90b-vision-preview")
+
+    @property
     def DATABASE_URL(self) -> str:
         return self._get("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/medilink_ai")
 

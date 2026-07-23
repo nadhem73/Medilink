@@ -1,10 +1,10 @@
 import uuid
 import logging
 import re
-from app.llm_client import LLMClient
-from app.rag import rag
-from app.prompts import INTERNAL_PROMPT
-from app.tools import search_doctors, check_availability, book_appointment
+from app.chat.llm_client import LLMClient
+from app.chat.rag import rag
+from app.chat.prompts import INTERNAL_PROMPT
+from app.chat.tools import search_doctors, check_availability, book_appointment
 from app.database import Conversation, Message, AIAnalysis, AsyncSessionLocal
 from app.models import ChatResponse, DoctorInfo
 

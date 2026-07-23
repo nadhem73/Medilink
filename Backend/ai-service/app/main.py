@@ -5,7 +5,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
-from app.routes import router
+from app.chat.router import router as chat_router
+from app.ocr.router import router as ocr_router
 from app.eureka import register_with_eureka
 from app.database import init_db
 
@@ -25,7 +26,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="MediLink AI Service",
-    description="Service d'IA médicale avec LLM Gemini + RAG + Tool Calling",
+    description="Service d'IA médicale avec Chat (LLM Gemini + RAG) et OCR (bilan parsing)",
     version="2.0.0",
     docs_url="/api/ai/docs",
     redoc_url="/api/ai/redoc",
@@ -40,7 +41,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
+app.include_router(chat_router)
+app.include_router(ocr_router)
 
 
 @app.exception_handler(Exception)

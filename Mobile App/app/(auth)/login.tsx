@@ -91,17 +91,17 @@ export default function LoginScreen() {
             {/* Form */}
             <View style={styles.form}>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Email</Text>
+                <Text style={styles.inputLabel}>Numéro CIN</Text>
                 <View style={styles.inputWrap}>
-                  <Ionicons name="mail-outline" size={18} color="#5A6A7A" style={styles.inputIcon} />
+                  <Ionicons name="card-outline" size={18} color="#5A6A7A" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
-                    placeholder="exemple@email.com"
+                    placeholder="Ex : 12345678"
                     placeholderTextColor="rgba(90,106,122,0.5)"
                     value={identifier}
                     onChangeText={setIdentifier}
                     autoCapitalize="none"
-                    keyboardType="email-address"
+                    keyboardType="default"
                   />
                 </View>
               </View>

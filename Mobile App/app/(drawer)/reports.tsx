@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import {
@@ -13,6 +14,8 @@ import {
   MedicalRecord,
   PrescriptionResponse,
 } from "@/services/patientService";
+import { bilanService, BilanSummary } from "@/services/bilanService";
+import { router } from "expo-router";
 
 const PRIMARY = "#0066A2";
 const LIGHT_BG = "#F0F6FA";
@@ -25,16 +28,19 @@ export default function ReportScreen() {
   const { user } = useAuth();
   const [record, setRecord] = useState<MedicalRecord | null>(null);
   const [prescriptions, setPrescriptions] = useState<PrescriptionResponse[]>([]);
+  const [bilans, setBilans] = useState<BilanSummary[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
-      const [mr, rxns] = await Promise.all([
+      const [mr, rxns, b] = await Promise.all([
         patientService.getMyMedicalRecord(),
         user?.id ? patientService.getPatientPrescriptions(user.id) : Promise.resolve([]),
+        bilanService.getBilans(0, 20).catch(() => ({ content: [] })),
       ]);
       setRecord(mr);
       setPrescriptions(Array.isArray(rxns) ? rxns : []);
+      setBilans(b?.content ?? []);
     } catch {}
   }, [user]);
 
@@ -228,6 +234,46 @@ export default function ReportScreen() {
               </View>
             );
           })()
+        )}
+      </View>
+
+      {/* ================= BILANS ================= */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Analyses (bilans)</Text>
+        {bilans.length === 0 ? (
+          <Text style={styles.emptyText}>Aucun bilan</Text>
+        ) : (
+          bilans.map((b) => {
+            const date = b.dateBilan ? new Date(b.dateBilan) : null;
+            const dateStr = date
+              ? `${date.getDate()} ${FRENCH_MONTHS[date.getMonth()]} ${date.getFullYear()}`
+              : "Date inconnue";
+            return (
+              <TouchableOpacity
+                key={b.id}
+                style={styles.bilanCard}
+                activeOpacity={0.7}
+                onPress={() => router.push(`/(tabs)/scan-result?bilanId=${b.id}` as any)}
+              >
+                <View style={styles.bilanRow}>
+                  <View style={styles.bilanIcon}>
+                    <Ionicons name="flask-outline" size={22} color={PRIMARY} />
+                  </View>
+                  <View style={styles.bilanInfo}>
+                    <Text style={styles.bilanType}>{b.typeBilan || "Bilan"}</Text>
+                    <Text style={styles.bilanDate}>{dateStr}</Text>
+                  </View>
+                  <View style={styles.bilanBadge}>
+                    <Text style={styles.bilanCount}>{b.resultCount} tests</Text>
+                    {b.abnormalCount > 0 && (
+                      <Text style={styles.bilanAbnormal}>{b.abnormalCount} anormaux</Text>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+                </View>
+              </TouchableOpacity>
+            );
+          })
         )}
       </View>
 
@@ -574,5 +620,59 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: "#F1F5F9",
+  },
+
+  /* BILAN CARD */
+  bilanCard: {
+    backgroundColor: WHITE,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  bilanRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  bilanIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: LIGHT_BG,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  bilanInfo: {
+    flex: 1,
+  },
+  bilanType: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: TEXT_DARK,
+  },
+  bilanDate: {
+    fontSize: 12,
+    color: TEXT_MUTED,
+    marginTop: 2,
+  },
+  bilanBadge: {
+    alignItems: "flex-end",
+    marginRight: 8,
+  },
+  bilanCount: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: PRIMARY,
+  },
+  bilanAbnormal: {
+    fontSize: 11,
+    color: "#EF4444",
+    fontWeight: "600",
+    marginTop: 1,
   },
 });

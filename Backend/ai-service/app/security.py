@@ -5,7 +5,7 @@ from app.config import settings
 
 security = HTTPBearer()
 
-ALGORITHM = "HS384"
+ALGORITHM = "HS384"  # force reload
 
 
 def verify_jwt(token: str) -> dict:
