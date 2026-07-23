@@ -1,0 +1,315 @@
+<div class="modal-backdrop" (click)="onClose()"></div>
+<div class="prescription-modal">
+  <div class="modal-header">
+    <div>
+      <p class="dp-kicker">Prescription médicale</p>
+      <h2>Nouvelle ordonnance</h2>
+    </div>
+    <button type="button" class="close-btn" (click)="onClose()">&times;</button>
+  </div>
+
+  <div class="modal-body split-layout">
+    <!-- ===== PANEL GAUCHE : Tabs + Contenu ===== -->
+    <div class="left-panel">
+
+      <!-- Tabs -->
+      <div class="dp-tabs">
+        <button type="button" class="dp-tab" [class.active]="activeTab === 'medicaments'" (click)="setActiveTab('medicaments')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+          Médicaments
+        </button>
+        <button type="button" class="dp-tab" [class.active]="activeTab === 'analyses'" (click)="setActiveTab('analyses')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+          Analyses
+        </button>
+      </div>
+
+      <!-- Tab : Médicaments -->
+      <ng-container *ngIf="activeTab === 'medicaments'">
+        <div class="search-card dp-card">
+          <label class="field-label">Rechercher un médicament</label>
+          <div class="search-wrapper">
+            <span class="search-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input type="text" class="form-input" [value]="searchTerm"
+                   (input)="onSearchChange($any($event.target).value)"
+                   placeholder="Nom du médicament..." />
+          </div>
+          <div class="search-results" *ngIf="searchResults.length > 0 && !selectedMedication">
+            <div class="result-group" *ngFor="let name of uniqueNames">
+              <div class="result-group-header" (click)="toggleExpand(name)">
+                <strong>{{ name }}</strong>
+                <span class="variant-count">{{ getVariantsForName(name).length }} forme(s)</span>
+                <svg class="expand-icon" [class.open]="expandedName === name" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="result-variants" *ngIf="expandedName === name">
+                <div class="result-item" *ngFor="let m of getVariantsForName(name)" (click)="selectMedication(m)">
+                  <div class="result-info">
+                    <span class="variant-detail">{{ m.dosage }} — {{ m.forme }}</span>
+                  </div>
+                  <span class="stock-badge" [ngClass]="getStockClass(m.stockTotal)">
+                    {{ getStockLabel(m.stockTotal) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dp-card form-card" *ngIf="selectedMedication">
+          <div class="dp-card-header">
+            <h2>Détails de prescription</h2>
+          </div>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>Médicament</label>
+              <input class="form-input" [value]="currentItem.medicamentName + ' — ' + currentItem.dosage" readonly />
+            </div>
+            <div class="form-group">
+              <label>Forme</label>
+              <input class="form-input" [value]="currentItem.forme" readonly />
+            </div>
+            <div class="form-group">
+              <label>Posologie *</label>
+              <select class="form-input" [ngModel]="posologieCustom ? '__custom__' : currentItem.posologie" (ngModelChange)="onPosologieChange($event)">
+                <option value="" disabled>Sélectionner</option>
+                <option *ngFor="let p of posologieOptions" [value]="p">{{ p }}</option>
+                <option value="__custom__">Autre (saisie libre)</option>
+              </select>
+              <input *ngIf="posologieCustom" class="form-input custom-input" [(ngModel)]="currentItem.posologie" placeholder="Saisir..." />
+            </div>
+            <div class="form-group">
+              <label>Durée (jours)</label>
+              <input class="form-input" type="number" [(ngModel)]="currentItem.dureeTraitement" min="1" />
+            </div>
+            <div class="form-group">
+              <label>Voie d'administration</label>
+              <select class="form-input" [(ngModel)]="currentItem.voieAdministration" (ngModelChange)="onVoieChange()">
+                <option *ngFor="let v of filteredVoieOptions" [value]="v">{{ v }}</option>
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label>Instructions</label>
+              <select class="form-input" [ngModel]="instructionsCustom ? '__custom__' : currentItem.instructions" (ngModelChange)="onInstructionsChange($event)">
+                <option value="" disabled>Sélectionner</option>
+                <option *ngFor="let i of instructionsOptions" [value]="i">{{ i }}</option>
+                <option value="__custom__">Autre (saisie libre)</option>
+              </select>
+              <textarea *ngIf="instructionsCustom" class="form-input custom-input" [(ngModel)]="currentItem.instructions" rows="2" placeholder="Saisir..."></textarea>
+            </div>
+          </div>
+          <button type="button" class="dp-btn" (click)="addItem()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Ajouter
+          </button>
+        </div>
+
+        <div class="dp-card items-card" *ngIf="items.length > 0">
+          <div class="dp-card-header">
+            <h2>Prescrits</h2>
+            <span class="dp-badge green">{{ items.length }}</span>
+          </div>
+          <div class="dp-list">
+            <div class="dp-item" *ngFor="let item of items; let i = index">
+              <div style="flex:1;min-width:0">
+                <h3>{{ item.medicamentName }}</h3>
+                <p>{{ item.posologie }} — {{ item.dureeTraitement }}j</p>
+              </div>
+              <button type="button" class="btn-remove-sm" (click)="removeItem(i)" title="Retirer">&times;</button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Tab : Analyses -->
+      <ng-container *ngIf="activeTab === 'analyses'">
+        <div class="dp-card">
+          <div class="dp-card-header">
+            <h2>Examens d'analyse</h2>
+            <span class="dp-badge blue" *ngIf="hasAnalyses">{{ analysesList.length }}</span>
+          </div>
+          <p class="analyses-hint">Sélectionnez les catégories d'analyses à prescrire</p>
+          <div class="analysis-grid">
+            <label class="analysis-chip" *ngFor="let type of analysisTypes"
+                   [class.selected]="hasAnalysis(type)">
+              <input type="checkbox" [checked]="hasAnalysis(type)" (change)="toggleAnalysis(type, $any($event.target).checked)" />
+              <span>{{ type }}</span>
+            </label>
+          </div>
+          <div class="analyses-summary" *ngIf="hasAnalyses">
+            <span class="dp-badge blue">{{ analysesList.length }} sélectionnée(s)</span>
+          </div>
+        </div>
+      </ng-container>
+
+      <div class="error-msg" *ngIf="error">{{ error }}</div>
+    </div>
+
+    <!-- ===== PANEL DROIT : Template ordonnance (document) ===== -->
+    <div class="right-panel">
+      <div class="prescription-sheet" id="prescription-sheet">
+        <div class="ps-top-accent"></div>
+
+        <!-- En-tête Ministère -->
+        <div class="ps-header">
+          <div class="ps-ministry">
+            <img src="/assets/images/partners/Minist%C3%A8re%20de%20la%20Sant%C3%A9%20-%20Tunisie.png" alt="Ministère de la Santé" class="ps-ministry-logo" />
+            <div class="ps-ministry-text">
+              <span class="ps-republic">République Tunisienne</span>
+              <span class="ps-ministry-name">Ministère de la Santé</span>
+            </div>
+          </div>
+          <div class="ps-title-area">
+            <h1>ORDONNANCE MÉDICALE</h1>
+            <span class="ps-ref">N° TOM : {{ doctorLicenseNumber || '__________' }}</span>
+          </div>
+        </div>
+
+        <!-- Médecin -->
+        <div class="ps-doctor">
+          <div class="ps-doctor-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--vert-oasis)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+          </div>
+          <div class="ps-doctor-body">
+            <div class="ps-doctor-name">Dr. {{ doctorFirstName }} {{ doctorLastName }}</div>
+            <div class="ps-doctor-details">
+              <span *ngIf="doctorSpecialty">{{ doctorSpecialty }}</span>
+              <span class="ps-dot" *ngIf="doctorSpecialty">·</span>
+              <span>{{ doctorPhone || '__________' }}</span>
+              <span class="ps-dot">·</span>
+              <span>{{ doctorEmail || '__________' }}</span>
+            </div>
+            <div class="ps-doctor-hospital" *ngIf="doctorHospital">
+              📍 {{ doctorHospital }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient + Date -->
+        <div class="ps-divider"></div>
+
+        <div class="ps-meta">
+          <div class="ps-meta-item">
+            <span class="ps-label">Patient</span>
+            <span class="ps-value">{{ patientName || '____________________' }}</span>
+          </div>
+          <div class="ps-meta-item" *ngIf="patientCnam">
+            <span class="ps-label">N° CNAM</span>
+            <span class="ps-value">{{ patientCnam }}</span>
+          </div>
+          <div class="ps-meta-item">
+            <span class="ps-label">Date</span>
+            <span class="ps-value">{{ today | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+
+        <!-- Médicaments prescrits -->
+        <div class="ps-divider"></div>
+        <div class="ps-section">
+          <div class="ps-section-header ps-section-header-meds">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+            <span>Médicaments prescrits</span>
+          </div>
+          <table class="ps-table">
+            <thead>
+              <tr>
+                <th class="col-medoc">Médicament</th>
+                <th class="col-poso">Posologie</th>
+                <th class="col-voie">Voie</th>
+                <th class="col-duree">Durée</th>
+                <th class="col-instr" *ngIf="hasInstructions">Instructions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of items; trackBy: trackByIndex">
+                <td class="col-medoc">
+                  <strong>{{ item.medicamentName }}</strong>
+                  <span class="td-detail">{{ item.dosage }} — {{ item.forme }}</span>
+                </td>
+                <td class="col-poso">{{ item.posologie }}</td>
+                <td class="col-voie">{{ item.voieAdministration }}</td>
+                <td class="col-duree">{{ item.dureeTraitement }} jours</td>
+                <td class="col-instr" *ngIf="hasInstructions">{{ item.instructions || '—' }}</td>
+              </tr>
+              <tr *ngIf="items.length === 0">
+                <td [attr.colspan]="hasInstructions ? 5 : 4" class="td-empty">
+                  Aucun médicament prescrit
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Analyses demandées -->
+        <div class="ps-divider"></div>
+        <div class="ps-section">
+          <div class="ps-section-header ps-section-header-analyses">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+            <span>Analyses demandées</span>
+          </div>
+          <div class="ps-analyses-body" *ngIf="hasAnalyses; else noAnalyses">
+            <div class="ps-analysis-item" *ngFor="let a of analysesList; trackBy: trackByIndex">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>{{ a }}</span>
+            </div>
+          </div>
+          <ng-template #noAnalyses>
+            <p class="ps-analyses-empty">Aucune analyse demandée</p>
+          </ng-template>
+        </div>
+
+        <!-- Instructions -->
+        <div class="ps-instructions" *ngIf="hasInstructions">
+          <div class="ps-instructions-title">Observations :</div>
+          <ul>
+            <li *ngFor="let item of itemsWithInstructions; trackBy: trackByIndex">
+              <strong>{{ item.medicamentName }}</strong> : {{ item.instructions }}
+            </li>
+          </ul>
+        </div>
+
+        <!-- Signature + Cachet -->
+        <div class="ps-signature">
+          <div class="sig-line">
+            <svg class="sig-swish" viewBox="0 0 260 40">
+              <path class="swish-path" d="M 10 25 Q 60 5, 100 20 T 160 18 T 210 22 Q 230 23, 250 20" />
+            </svg>
+            <div class="sig-name">
+              <span class="sig-char" *ngFor="let sc of signatureChars; trackBy: trackByIndex"
+                    [style.--delay]="sc.delay">{{ sc.char }}</span>
+            </div>
+          </div>
+          <div class="sig-label">Cachet &amp; signature du médecin</div>
+
+          <!-- Cachet rectangulaire sur la signature -->
+          <div class="cachet" *ngIf="showStamp">
+            <div class="cachet-mark">
+              <div class="cachet-rect">
+                <div class="cachet-inner">
+                  <span class="cachet-approved">VALIDÉ</span>
+                  <span class="cachet-sub">MediLink Tunisia</span>
+                </div>
+              </div>
+              <div class="cachet-ink"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ps-footer">
+          Document généré par MediLink Tunisia — valable 3 mois à compter de la date d'émission
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="dp-btn ghost" (click)="onClose()">Annuler</button>
+    <button type="button" class="dp-btn" [disabled]="saving || items.length === 0" (click)="savePrescription()">
+      <svg *ngIf="!saving" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <span *ngIf="!saving">Valider l'ordonnance</span>
+      <span *ngIf="saving" class="btn-spinner"></span>
+      <span *ngIf="saving">Création en cours...</span>
+    </button>
+  </div>
+</div>

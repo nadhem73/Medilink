@@ -2,6 +2,7 @@ package com.medilinktunisia.apigateway.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -75,27 +76,35 @@ public class JwtAuthenticationFilter implements WebFilter {
                     return chain.filter(mutatedExchange)
                             .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication));
                 } else {
-                    log.warn("Invalid token provided for path: {}", path);
+                    log.warn("Invalid/expired token for path: {}", path);
+                    exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                    return exchange.getResponse().setComplete();
                 }
             } catch (Exception e) {
                 log.error("JWT authentication error for path {}: {}", path, e.getMessage());
-                // Token invalide, continuer sans authentification
-                return chain.filter(exchange);
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
             }
         } else {
             log.debug("No Bearer token found in request for path: {}", path);
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
         }
-
-        return chain.filter(exchange);
     }
 
     private boolean isPublicPath(String path) {
-        return path.startsWith("/api/auth/register") ||
+        return path.equals("/api/auth/doctors") ||
+                path.startsWith("/api/auth/register") ||
                 path.startsWith("/api/auth/login") ||
                 path.startsWith("/api/auth/refresh") ||
                 path.startsWith("/api/auth/forgot-password") ||
                 path.startsWith("/api/auth/reset-password") ||
                 path.startsWith("/api/auth/verify-email") ||
+                path.startsWith("/api/doctors/search") ||
+                path.startsWith("/api/doctors/*/public") ||
+                path.startsWith("/api/pharmacies/search") ||
+                path.startsWith("/api/pharmacies/nearby") ||
+                path.startsWith("/api/laboratories/search") ||
                 path.startsWith("/actuator") ||
                 path.startsWith("/fallback");
     }

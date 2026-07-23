@@ -82,13 +82,25 @@ public class GatewayConfig {
                 // PHARMACY SERVICE - Pharmacies
                 // ========================================
                 .route("pharmacy-service", r -> r
-                        .path("/api/pharmacies/**")
+                        .path("/api/pharmacy/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
                                         .setName("pharmacyServiceCircuitBreaker")
                                         .setFallbackUri("forward:/fallback/pharmacy")))
                         .uri("lb://PHARMACY-SERVICE"))
+
+                // ========================================
+                // BILAN SERVICE - Scan et gestion des bilans médicaux
+                // ========================================
+                .route("bilan-service", r -> r
+                        .path("/api/bilans/**")
+                        .filters(f -> f
+                                .stripPrefix(0)
+                                .circuitBreaker(config -> config
+                                        .setName("bilanServiceCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/bilan")))
+                        .uri("lb://BILAN-SERVICE"))
 
                 // ========================================
                 // LABORATORY SERVICE - Laboratoires
@@ -192,10 +204,7 @@ public class GatewayConfig {
                 .route("ai-service", r -> r
                         .path("/api/ai/**")
                         .filters(f -> f
-                                .stripPrefix(0)
-                                .circuitBreaker(config -> config
-                                        .setName("aiServiceCircuitBreaker")
-                                        .setFallbackUri("forward:/fallback/ai")))
+                                .stripPrefix(0))
                         .uri("lb://AI-SERVICE"))
 
                 // ========================================

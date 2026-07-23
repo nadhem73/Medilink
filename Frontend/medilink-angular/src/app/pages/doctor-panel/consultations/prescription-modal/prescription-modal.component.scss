@@ -1,0 +1,996 @@
+@import '../../doctor-page';
+
+// ── Smart Health Tunisia Palette ────────────────────────────────
+$bleu:   #0066A2;
+$turq:   #00A8B5;
+$vert:   #2E8B57;
+$gold:   #D4A843;
+$nuit:   #0F2C4C;
+$gris:   #5A6A7A;
+$clair:  #F0F4F8;
+$sable:  #E8DCC8;
+$blanc:  #FFFFFF;
+$profo:  #1A2B3C;
+$menthe: #3EB489;
+$corail: #E85D4E;
+
+// ── MODAL OVERLAY ──────────────────────────────────────────────
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba($nuit, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 1040;
+}
+
+.prescription-modal {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1360px;
+  max-width: 97vw;
+  max-height: 93vh;
+  background: $clair;
+  border-radius: 24px;
+  box-shadow: 0 25px 80px rgba(15, 44, 76, 0.35);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// ── HEADER ─────────────────────────────────────────────────────
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 28px 18px;
+  background: $blanc;
+  border-bottom: 1px solid $clair;
+
+  h2 {
+    margin: 0;
+    font-size: 22px;
+    color: $nuit;
+  }
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  color: $gris;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.15s;
+  &:hover { color: $profo; }
+}
+
+// ── BODY ────────────────────────────────────────────────────────
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.split-layout {
+  display: flex;
+  gap: 24px;
+  height: 100%;
+}
+
+// ── LEFT PANEL (Form tools) ─────────────────────────────────────
+.left-panel {
+  flex: 0 0 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: $nuit;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+// ── Tabs ────────────────────────────────────────────────────────
+.dp-tabs {
+  display: flex;
+  gap: 0;
+  background: color-mix(in srgb, $gris 6%, $blanc);
+  border-radius: 12px;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.dp-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 600;
+  color: $gris;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  &:hover { color: $nuit; }
+
+  &.active {
+    background: $blanc;
+    color: $vert;
+    box-shadow: 0 2px 8px rgba(15, 44, 76, 0.08);
+  }
+}
+
+.search-wrapper {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $gris;
+  pointer-events: none;
+  display: flex;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid $clair;
+  border-radius: 12px;
+  font-family: var(--font-primary);
+  font-size: 14px;
+  color: $profo;
+  background: $blanc;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &::placeholder { color: $gris; font-size: 13px; }
+
+  &:focus {
+    outline: none;
+    border-color: $vert;
+    box-shadow: 0 0 0 3px color-mix(in srgb, $vert 15%, transparent);
+  }
+
+  &[readonly] {
+    background: color-mix(in srgb, $clair 60%, $blanc);
+    color: $gris;
+    cursor: default;
+  }
+}
+
+.search-wrapper .form-input {
+  padding-left: 40px;
+}
+
+select.form-input {
+  padding: 9px 12px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235A6A7A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+textarea.form-input {
+  resize: vertical;
+  min-height: 44px;
+}
+
+.custom-input {
+  margin-top: 8px;
+}
+
+// ── Search results ─────────────────────────────────────────────
+.search-results {
+  margin-top: 8px;
+  border: 1px solid $clair;
+  border-radius: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: $blanc;
+}
+
+.result-group {
+  border-bottom: 1px solid $clair;
+  &:last-child { border-bottom: none; }
+}
+
+.result-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+  &:hover { background: color-mix(in srgb, $vert 6%, $blanc); }
+
+  strong { flex: 1; font-size: 14px; color: $nuit; }
+  .variant-count { font-size: 12px; color: $bleu; font-weight: 600; }
+}
+
+.expand-icon {
+  width: 14px;
+  height: 14px;
+  color: $gris;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+
+  &.open { transform: rotate(180deg); }
+}
+
+.result-variants {
+  .result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px 10px 28px;
+    cursor: pointer;
+    border-top: 1px solid mix($clair, $blanc, 60%);
+    transition: background 0.12s;
+
+    &:hover { background: color-mix(in srgb, $bleu 6%, $blanc); }
+    &:last-child { border-radius: 0 0 12px 12px; }
+  }
+}
+
+.result-info .variant-detail {
+  font-size: 13px;
+  color: $gris;
+}
+
+.stock-badge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  &.stock-ok   { background: color-mix(in srgb, $vert 12%, $blanc); color: darken($vert, 5%); }
+  &.stock-low  { background: color-mix(in srgb, $gold 18%, $blanc); color: darken($gold, 15%); }
+  &.stock-none { background: color-mix(in srgb, $corail 12%, $blanc); color: darken($corail, 5%); }
+}
+
+// ── Form card ──────────────────────────────────────────────────
+.form-card {
+  .dp-card-header {
+    margin-bottom: 16px;
+    h2 { font-size: 16px; }
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  .full-width { grid-column: 1 / -1; }
+}
+
+.form-group {
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: $gris;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+// ── Items card ─────────────────────────────────────────────────
+.items-card {
+  .dp-card-header {
+    margin-bottom: 0;
+    h2 { font-size: 16px; }
+  }
+}
+
+.btn-remove-sm {
+  background: none;
+  border: none;
+  color: $corail;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.12s;
+
+  &:hover { background: color-mix(in srgb, $corail 10%, $blanc); }
+}
+
+// ── Analyses tab ─────────────────────────────────────────────────
+.analyses-hint {
+  font-size: 13px;
+  color: $gris;
+  margin: 0 0 12px;
+}
+
+.analysis-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.analysis-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, $clair 60%, $blanc);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+
+  input { display: none; }
+  span { font-size: 13px; font-weight: 600; color: $gris; white-space: nowrap; }
+
+  &:hover {
+    background: color-mix(in srgb, $bleu 6%, $blanc);
+    border-color: color-mix(in srgb, $bleu 20%, transparent);
+    span { color: $bleu; }
+  }
+
+  &.selected {
+    background: color-mix(in srgb, $vert 10%, $blanc);
+    border-color: $vert;
+    span { color: darken($vert, 8%); }
+  }
+}
+
+.analyses-summary {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+}
+
+// ── Error ──────────────────────────────────────────────────────
+.error-msg {
+  background: color-mix(in srgb, $corail 8%, $blanc);
+  color: darken($corail, 8%);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid color-mix(in srgb, $corail 18%, transparent);
+}
+
+// ── RIGHT PANEL (Prescription document) ─────────────────────────
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRESCRIPTION SHEET — Document papier
+// ═══════════════════════════════════════════════════════════════
+.prescription-sheet {
+  width: 100%;
+  max-width: 620px;
+  background: color-mix(in srgb, $sable 12%, $blanc);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(15, 44, 76, 0.1);
+  padding: 36px 40px 28px;
+  position: relative;
+  margin: 8px 0;
+}
+
+.ps-top-accent {
+  position: absolute;
+  top: 0; left: 40px; right: 40px;
+  height: 4px;
+  background: linear-gradient(90deg, $gold, color-mix(in srgb, $gold 60%, $vert), $gold);
+  border-radius: 0 0 2px 2px;
+}
+
+// ── Header ────────────────────────────────────────────────────
+.ps-ministry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ps-ministry-logo {
+  height: 42px;
+  width: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.ps-ministry-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.ps-republic {
+  font-size: 11px;
+  font-weight: 700;
+  color: $gris;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.ps-ministry-name {
+  font-size: 9px;
+  color: lighten($gris, 12%);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.ps-title-area {
+  text-align: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid color-mix(in srgb, $sable 40%, transparent);
+
+  h1 {
+    margin: 0;
+    font-family: var(--font-headings);
+    font-size: 18px;
+    font-weight: 700;
+    color: $nuit;
+    letter-spacing: 0.06em;
+  }
+
+  .ps-ref {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: $gris;
+    font-weight: 500;
+  }
+}
+
+// ── Doctor block ──────────────────────────────────────────────
+.ps-doctor {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, $vert 5%, $blanc);
+  border-radius: 12px;
+  border-left: 3px solid $vert;
+}
+
+.ps-doctor-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  background: color-mix(in srgb, $vert 10%, $blanc);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ps-doctor-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ps-doctor-name {
+  font-family: var(--font-headings);
+  font-size: 15px;
+  font-weight: 700;
+  color: $nuit;
+  margin-bottom: 4px;
+}
+
+.ps-doctor-details {
+  font-size: 12px;
+  color: $gris;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+.ps-dot {
+  color: lighten($gris, 25%);
+}
+
+.ps-doctor-hospital {
+  font-size: 12px;
+  color: $gris;
+  margin-top: 2px;
+}
+
+// ── Divider (gold) ──────────────────────────────────────────
+.ps-divider {
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, $gold, transparent);
+  margin: 16px 0;
+  opacity: 0.5;
+}
+
+// ── Patient + Date ───────────────────────────────────────────
+.ps-meta {
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+}
+
+.ps-meta-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+
+  .ps-label {
+    font-weight: 700;
+    color: $gris;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .ps-value {
+    color: $nuit;
+    font-weight: 600;
+  }
+}
+
+// ── Table ──────────────────────────────────────────────────────
+.ps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+
+  thead {
+    th {
+      text-align: left;
+      padding: 8px 6px 6px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: $gris;
+      border-bottom: 1.5px solid $gold;
+      font-weight: 700;
+    }
+  }
+
+  tbody {
+    td {
+      padding: 8px 6px;
+      border-bottom: 1px solid color-mix(in srgb, $sable 30%, transparent);
+      vertical-align: top;
+      line-height: 1.4;
+    }
+    tr:last-child td { border-bottom: none; }
+  }
+
+  .col-medoc {
+    min-width: 120px;
+    strong { display: block; font-size: 13px; color: $nuit; }
+    .td-detail { font-size: 11px; color: $gris; display: block; margin-top: 1px; }
+  }
+  .col-poso { min-width: 90px; }
+  .col-voie { min-width: 60px; }
+  .col-duree { min-width: 55px; }
+  .col-instr { min-width: 80px; }
+
+  .td-empty {
+    text-align: center;
+    color: lighten($gris, 20%);
+    font-style: italic;
+    padding: 20px 8px !important;
+  }
+}
+
+// ── Sections (Médicaments | Analyses) dans l'ordonnance ──────
+.ps-section {
+  margin: 0;
+}
+
+.ps-section-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+
+  svg { flex-shrink: 0; }
+}
+
+.ps-section-header-meds {
+  color: darken($vert, 8%);
+  background: color-mix(in srgb, $vert 6%, $blanc);
+  border-left: 3px solid $vert;
+}
+
+.ps-section-header-analyses {
+  color: darken($bleu, 5%);
+  background: color-mix(in srgb, $bleu 6%, $blanc);
+  border-left: 3px solid $bleu;
+}
+
+.ps-analyses-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ps-analysis-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $nuit;
+  background: color-mix(in srgb, $bleu 5%, $blanc);
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, $bleu 14%, transparent);
+
+  svg {
+    color: $bleu;
+    flex-shrink: 0;
+  }
+}
+
+.ps-analyses-empty {
+  font-size: 12px;
+  color: lighten($gris, 20%);
+  font-style: italic;
+  margin: 6px 0;
+}
+
+// ── Instructions ─────────────────────────────────────────────
+.ps-instructions {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, $bleu 4%, $blanc);
+  border-radius: 8px;
+  border-left: 3px solid $bleu;
+
+  .ps-instructions-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: $gris;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 16px;
+    li {
+      font-size: 12px;
+      color: $gris;
+      margin-bottom: 2px;
+      strong { color: $nuit; }
+    }
+  }
+}
+
+// ── Signature ──────────────────────────────────────────────────
+.ps-signature {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.sig-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sig-swish {
+  width: 180px;
+  height: 28px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.swish-path {
+  fill: none;
+  stroke: $nuit;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: drawSwish 1.2s ease forwards;
+}
+
+@keyframes drawSwish {
+  to { stroke-dashoffset: 0; }
+}
+
+.sig-name {
+  font-family: 'Caveat', 'Segoe Script', cursive;
+  font-size: 22px;
+  font-weight: 600;
+  color: $nuit;
+  margin-bottom: 6px;
+  min-height: 28px;
+}
+
+.sig-char {
+  opacity: 0;
+  animation: appearChar 0.35s ease forwards;
+  animation-delay: var(--delay);
+}
+
+@keyframes appearChar {
+  0%   { opacity: 0; transform: translateY(4px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.sig-label {
+  font-size: 10px;
+  color: lighten($gris, 15%);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CACHET — Empreinte rectangulaire sur la signature
+// ═══════════════════════════════════════════════════════════════
+.cachet {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  z-index: 10;
+  pointer-events: none;
+  animation: cachetDrop 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.cachet-mark {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: markReveal 0.35s ease 0.25s both;
+}
+
+.cachet-rect {
+  width: 130px;
+  height: 48px;
+  background: radial-gradient(ellipse at 40% 35%, rgba(190, 50, 40, 0.03), transparent 50%),
+              rgba(192, 57, 43, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(192, 57, 43, 0.18);
+  border-radius: 2px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border: 1.5px solid rgba(192, 57, 43, 0.50);
+    border-radius: 1px;
+  }
+}
+
+.cachet-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  position: relative;
+  z-index: 1;
+  line-height: 1.15;
+}
+
+.cachet-approved {
+  font-size: 12px;
+  font-weight: 800;
+  color: #b83a2e;
+  letter-spacing: 0.18em;
+}
+
+.cachet-sub {
+  font-size: 7px;
+  font-weight: 600;
+  color: rgba(184, 58, 46, 0.55);
+  letter-spacing: 0.06em;
+}
+
+// Effet d'encre fraîche qui s'étale
+.cachet-ink {
+  position: absolute;
+  top: 2px; left: 2px; right: 2px; bottom: 2px;
+  border: 1px solid rgba(192, 57, 43, 0.05);
+  animation: inkSpread 0.5s ease 0.35s both;
+}
+
+// ── Keyframes ────────────────────────────────────────────────
+@keyframes cachetDrop {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) rotate(-6deg) scale(0.7);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(2px) rotate(1deg) scale(1.02);
+  }
+  55% {
+    transform: translateY(-2px) rotate(-0.5deg) scale(1);
+  }
+  75% {
+    transform: translateY(1px) rotate(0.2deg) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes markReveal {
+  0% { opacity: 0; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes inkSpread {
+  0% { opacity: 0; transform: scale(0.8); }
+  60% { opacity: 0.7; transform: scale(1.05); }
+  100% { opacity: 0.4; transform: scale(1); }
+}
+
+// ── Footer ─────────────────────────────────────────────────────
+.ps-footer {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, $sable 40%, transparent);
+  font-size: 9.5px;
+  color: lighten($gris, 20%);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+// ── MODAL FOOTER ───────────────────────────────────────────────
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 28px;
+  background: $blanc;
+  border-top: 1px solid $clair;
+
+  .dp-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dp-btn svg { flex-shrink: 0; }
+}
+
+// ── Spinner ────────────────────────────────────────────────────
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── Font import (Caveat pour signature manuscrite ; Inter/Poppins déjà dans styles.scss) ─
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap');
+
+// ── PRINT ──────────────────────────────────────────────────────
+@media print {
+  body * { visibility: hidden; }
+  #prescription-sheet, #prescription-sheet * {
+    visibility: visible;
+  }
+  #prescription-sheet {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    max-width: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 20px 24px;
+    background: #fff;
+  }
+  .modal-header, .modal-footer, .left-panel, .btn-print,
+  .modal-backdrop, .close-btn, .ps-top-accent {
+    display: none !important;
+  }
+  .swish-path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .sig-char {
+    animation: none;
+    opacity: 1;
+  }
+  .cachet {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    position: relative;
+    right: auto;
+    bottom: auto;
+    margin: 12px auto 0;
+  }
+  .cachet-mark { animation: none; opacity: 1; }
+  .cachet-ink { animation: none; opacity: 0.4; }
+  .cachet-rect { box-shadow: none; }
+   .ps-divider {
+    background: $gold;
+  }
+  .ps-section-header-meds {
+    border-left-color: $vert;
+  }
+  .ps-section-header-analyses {
+    border-left-color: $bleu;
+  }
+  .ps-analysis-item {
+    border-color: color-mix(in srgb, $bleu 20%, transparent);
+  }
+}
+
+// ── RESPONSIVE ─────────────────────────────────────────────────
+@media (max-width: 1024px) {
+  .split-layout { flex-direction: column; }
+  .left-panel { flex: none; width: 100%; max-height: 50vh; }
+  .right-panel { flex: none; }
+  .prescription-sheet { max-width: 100%; }
+}
+
+@media (max-width: 640px) {
+  .prescription-modal {
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    width: 100%;
+  }
+  .modal-header { padding: 16px 18px; }
+  .modal-body { padding: 16px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .prescription-sheet { padding: 24px 20px; }
+  .ps-meta { flex-direction: column; gap: 8px; }
+  .ps-analyses-body { flex-direction: column; }
+  .modal-footer { padding: 14px 18px; flex-direction: column; }
+  .modal-footer .dp-btn { width: 100%; justify-content: center; }
+}

@@ -30,10 +30,7 @@ export class SidebarComponent {
     { label: 'Dossiers medicaux', route: '/dashboard/patient/medical-records', icon: 'folder' },
     { label: 'Ordonnances', route: '/dashboard/patient/prescriptions', icon: 'pill' },
     { label: "Resultats d'analyses", route: '/dashboard/patient/labs', icon: 'flask' },
-    { label: 'Teleconsultation', route: '/dashboard/patient/teleconsultation', icon: 'video' },
-    { label: 'Messages', route: '/dashboard/patient/messages', icon: 'message', badge: 3 },
     { label: 'Notifications', route: '/dashboard/patient/notifications', icon: 'bell', badge: 5 },
-    { label: 'Facturation', route: '/dashboard/patient/billing', icon: 'card' },
     { label: 'Parametres', route: '/dashboard/patient/settings', icon: 'settings' },
     { label: "Centre d'aide", route: '/dashboard/patient/help', icon: 'help' }
   ];
@@ -46,9 +43,7 @@ export class SidebarComponent {
     { label: 'Consultations', route: '/dashboard/doctor/consultations', icon: 'stethoscope' },
     { label: 'Dossiers medicaux', route: '/dashboard/doctor/medical-records', icon: 'folder' },
     { label: 'Ordonnances', route: '/dashboard/doctor/prescriptions', icon: 'pill' },
-    { label: 'Teleconsultation', route: '/dashboard/doctor/teleconsultation', icon: 'video' },
     { label: "Resultats d'analyses", route: '/dashboard/doctor/labs', icon: 'flask' },
-    { label: 'Messages', route: '/dashboard/doctor/messages', icon: 'message', badge: 3 },
     { label: 'Notifications', route: '/dashboard/doctor/notifications', icon: 'bell', badge: 5 },
     { label: 'Parametres', route: '/dashboard/doctor/settings', icon: 'settings' },
     { label: "Centre d'aide", route: '/dashboard/doctor/help', icon: 'help' }
@@ -59,11 +54,8 @@ export class SidebarComponent {
     { label: 'Tableau de bord', route: '/dashboard/pharmacy', icon: 'dashboard', exact: true },
     { label: 'Ordonnances recues', route: '/dashboard/pharmacy/prescriptions', icon: 'pill' },
     { label: 'Stock medicaments', route: '/dashboard/pharmacy/stock', icon: 'box' },
-    { label: 'Commandes', route: '/dashboard/pharmacy/orders', icon: 'cart' },
-    { label: 'Ventes / Dispensation', route: '/dashboard/pharmacy/sales', icon: 'card' },
     { label: 'Alertes de stock', route: '/dashboard/pharmacy/alerts', icon: 'alert', badge: 5 },
     { label: 'Previsions IA', route: '/dashboard/pharmacy/forecast', icon: 'chart' },
-    { label: 'Messages', route: '/dashboard/pharmacy/messages', icon: 'message', badge: 3 },
     { label: 'Notifications', route: '/dashboard/pharmacy/notifications', icon: 'bell', badge: 5 },
     { label: 'Parametres', route: '/dashboard/pharmacy/settings', icon: 'settings' },
     { label: "Centre d'aide", route: '/dashboard/pharmacy/help', icon: 'help' }
@@ -72,7 +64,6 @@ export class SidebarComponent {
   // Liens du panneau administrateur (supervision technique de la plateforme)
   adminLinks: SidebarLink[] = [
     { label: 'Tableau de bord', route: '/dashboard/admin', icon: 'dashboard', exact: true },
-    { label: 'Validation comptes medicaux', route: '/dashboard/admin/approvals', icon: 'shield', badge: 4 },
     { label: 'Gestion utilisateurs', route: '/dashboard/admin/users', icon: 'users' },
     { label: 'Monitoring systeme', route: '/dashboard/admin/monitoring', icon: 'activity' },
     { label: 'Securite & acces', route: '/dashboard/admin/security', icon: 'lock' },

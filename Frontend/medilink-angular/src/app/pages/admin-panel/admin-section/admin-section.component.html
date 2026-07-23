@@ -12,65 +12,110 @@
   </header>
 
   <ng-container [ngSwitch]="section">
-    <!-- Validation des comptes medicaux -->
-    <section *ngSwitchCase="'approvals'" class="section-grid">
+    <!-- Gestion utilisateurs -->
+    <section *ngSwitchCase="'users'" class="section-grid">
       <article class="card wide-card">
         <div class="card-header">
-          <h2>Demandes en attente de validation</h2>
-          <span class="badge accent-red">{{ approvals.length }} a traiter</span>
+          <h2>Comptes de la plateforme</h2>
+          <span class="badge">{{ filteredUsers.length }} comptes</span>
         </div>
-        <div class="list-cards">
-          <article class="mini-card" *ngFor="let approval of approvals">
-            <div class="mini-card-top">
-              <h3>{{ approval.name }}</h3>
-              <span class="status">{{ approval.status }}</span>
+
+        <!-- Filtres par role -->
+        <div class="filter-tabs">
+          <button type="button" class="filter-tab"
+                  [class.active]="userFilter === 'ALL'"
+                  (click)="userFilter = 'ALL'">Tous</button>
+          <button type="button" class="filter-tab"
+                  [class.active]="userFilter === 'DOCTOR'"
+                  (click)="userFilter = 'DOCTOR'">Medecins</button>
+          <button type="button" class="filter-tab"
+                  [class.active]="userFilter === 'PHARMACY'"
+                  (click)="userFilter = 'PHARMACY'">Pharmacies</button>
+          <button type="button" class="filter-tab"
+                  [class.active]="userFilter === 'PATIENT'"
+                  (click)="userFilter = 'PATIENT'">Patients</button>
+        </div>
+
+        <!-- Recherche + tri -->
+        <div class="search-sort-row">
+          <div class="search-box">
+            <input type="text" [(ngModel)]="userSearch"
+                   placeholder="Rechercher un nom, email, telephone, licence..." />
+            <button type="button" class="clear-search" *ngIf="userSearch"
+                    (click)="userSearch = ''" aria-label="Effacer">×</button>
+          </div>
+          <div class="sort-box">
+            <select [(ngModel)]="userSortBy" class="sort-select">
+              <option value="name">Nom</option>
+              <option value="status">Statut</option>
+              <option value="date">Date d inscription</option>
+            </select>
+            <button type="button" class="sort-dir" (click)="toggleSortDir()"
+                    [title]="userSortDir === 'asc' ? 'Ordre croissant' : 'Ordre decroissant'">
+              {{ userSortDir === 'asc' ? '↑' : '↓' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Chargement -->
+        <div class="state-msg" *ngIf="loadingUsers">Chargement des comptes...</div>
+
+        <!-- Erreur -->
+        <div class="state-msg error" *ngIf="usersError && !loadingUsers">{{ usersError }}</div>
+
+        <!-- Vide -->
+        <div class="state-msg" *ngIf="!loadingUsers && !usersError && filteredUsers.length === 0">
+          Aucun compte a afficher pour ce filtre.
+        </div>
+
+        <!-- Liste -->
+        <div class="user-list" *ngIf="!loadingUsers && !usersError && filteredUsers.length > 0">
+          <article class="user-card" *ngFor="let user of filteredUsers">
+            <div class="user-main">
+              <div class="user-id">
+                <h3>{{ getUserDisplayName(user) }}</h3>
+                <span class="role-tag" [class.role-doctor]="user.role === 'DOCTOR'"
+                      [class.role-pharmacy]="user.role === 'PHARMACY'"
+                      [class.role-patient]="user.role === 'PATIENT'">
+                  {{ getUserRoleLabel(user.role) }}
+                </span>
+              </div>
+              <span class="status" [ngClass]="getUserStatusClass(user.status)">
+                {{ user.status === 'SUSPENDED' ? getSuspendLabel(user) : getUserStatusLabel(user.status) }}
+              </span>
             </div>
-            <p>{{ approval.type }}</p>
-            <span>Demande recue le {{ approval.date }}</span>
+
+            <div class="user-meta">
+              <span>{{ user.email }}</span>
+              <span *ngIf="user.phone">· {{ user.phone }}</span>
+              <span *ngIf="user.specialty">· {{ user.specialty }}</span>
+              <span *ngIf="user.licenseNumber">· N° {{ user.licenseNumber }}</span>
+            </div>
+
             <div class="action-row">
-              <button type="button" class="mini-btn approve">Approuver</button>
-              <button type="button" class="mini-btn reject">Refuser</button>
+              <button type="button" class="mini-btn approve"
+                      [disabled]="user.status === 'ACTIVE'"
+                      (click)="activateUser(user)">Activer</button>
+              <button type="button" class="mini-btn warn-btn"
+                      (click)="openSuspendModal(user)">Suspendre</button>
+              <button type="button" class="mini-btn reject"
+                      [disabled]="user.status === 'INACTIVE'"
+                      (click)="deactivateUser(user)">Desactiver</button>
             </div>
           </article>
         </div>
       </article>
 
       <article class="card side-card">
-        <h2>Criteres de validation</h2>
-        <ul class="checklist">
-          <li>Verifier le diplome ou l agrement professionnel.</li>
-          <li>Controler le numero d enregistrement officiel.</li>
-          <li>Confirmer l identite et l etablissement de rattachement.</li>
-        </ul>
-      </article>
-    </section>
-
-    <!-- Gestion utilisateurs -->
-    <section *ngSwitchCase="'users'" class="section-grid">
-      <article class="card wide-card">
-        <div class="card-header">
-          <h2>Comptes de la plateforme</h2>
-          <span class="badge">{{ users.length }} utilisateurs</span>
-        </div>
-        <div class="table-like">
-          <div class="table-row" *ngFor="let user of users">
-            <div>
-              <strong>{{ user.name }}</strong>
-              <p>{{ user.email }}</p>
-            </div>
-            <div>{{ user.role }}</div>
-            <div><span class="status" [class.danger]="user.status === 'Suspendu'">{{ user.status }}</span></div>
-          </div>
-        </div>
-      </article>
-
-      <article class="card side-card">
         <h2>Actions de moderation</h2>
         <ul class="checklist">
-          <li>Suspendre un compte en cas d activite frauduleuse.</li>
-          <li>Reinitialiser l acces d un utilisateur a sa demande.</li>
-          <li>Verifier les doublons et fusionner les comptes.</li>
+          <li>Activer un compte pour autoriser l acces a la plateforme.</li>
+          <li>Suspendre temporairement un compte pour une duree precise.</li>
+          <li>Desactiver un compte en cas d activite frauduleuse.</li>
         </ul>
+        <p class="side-note">
+          Un compte suspendu est reactive automatiquement a la fin de la periode definie.
+        </p>
       </article>
     </section>
 
@@ -197,4 +242,34 @@
       </article>
     </section>
   </ng-container>
+
+  <!-- Modal de suspension -->
+  <div class="modal-overlay" *ngIf="showSuspendModal" (click)="closeSuspendModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <h2>Suspendre le compte</h2>
+      <p class="modal-target" *ngIf="suspendTarget">
+        {{ getUserDisplayName(suspendTarget) }}
+      </p>
+
+      <div class="modal-field">
+        <label>Duree de la suspension</label>
+        <div class="duration-row">
+          <input type="number" min="1" [(ngModel)]="suspendDuration" class="duration-input" />
+          <select [(ngModel)]="suspendUnit" class="duration-select">
+            <option value="HOURS">Heures</option>
+            <option value="DAYS">Jours</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="mini-btn reject" (click)="closeSuspendModal()">Annuler</button>
+        <button type="button" class="mini-btn warn-btn"
+                [disabled]="suspending || !suspendDuration || suspendDuration < 1"
+                (click)="confirmSuspend()">
+          {{ suspending ? 'Suspension...' : 'Confirmer' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </section>
