@@ -22,6 +22,7 @@
         <module>pharmacy-service</module>
         <module>prescription-service</module>
         <module>bilan-service</module>
+        <module>monitoring-service</module>
     </modules>
 
     <repositories>

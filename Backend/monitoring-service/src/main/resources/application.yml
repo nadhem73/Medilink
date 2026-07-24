@@ -1,0 +1,46 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: MONITORING-SERVICE
+  datasource:
+    url: jdbc:postgresql://localhost:5432/medilink_monitoring
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+monitoring:
+  polling:
+    interval-ms: 10000
+  services:
+    - auth-service
+    - patient-service
+    - doctor-service
+    - pharmacy-service
+    - prescription-service
+    - bilan-service
+    - ai-service
+    - api-gateway

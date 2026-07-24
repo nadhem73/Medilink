@@ -17,6 +17,25 @@ Finaliser le flux notifications Telegram patient via n8n. Ajouter la recherche/f
 - **FIFO dispensation frontend tests** : Fixed 3 flaky stock component tests — corrected `getStockStatus` thresholds (0→rupture, ≤10→critique, ≤50→faible, >50→suffisant), aligned `priceRange` expectations, fixed `nextPage` page boundary assertions. All 33 stock tests now pass.
 - **Alerts component tests** : 19/21 pass (2 intermittent failures due to Jasmine shared spy state with `throwError`/`of`).
 
+### ✅ Infrastructure & Analytics (Admin Panel — Monitoring, Security, Logs, Analytics)
+- **Backend monitoring-service** (port 8090) : module Spring Boot complet, données réelles CPU/RAM/Disk/JVM via JMX. 14 endpoints REST + 1 SSE + 1 Prometheus text endpoint.
+  - **Persistance PostgreSQL** : entité `ServiceHealthHistory`, repository avec 6 queries (latest, range, aggregate, service names, cleanup), retention 30 jours (cron 3h).
+  - **Nouveaux services** : `MetricsPersistenceService` (write/read/export), `DataRetentionService` (purge quotidienne), `MetricsQueryController` (4 endpoints REST).
+  - **Métriques Prometheus** : `GET /api/monitoring/metrics/prometheus` → format texte Prometheus (cpu, ram, disk, response_time, requests, errors, info).
+  - **Nouveaux endpoints** : `GET /metrics/latest`, `GET /metrics/range?metric=cpu&from=&to=`, `GET /metrics/summary?from=&to=`, `GET /metrics/export?from=&to=`.
+  - **Supprimé** : buffer mémoire `ConcurrentHashMap` dans MetricsAggregatorService, buffer mémoire dans AnalyticsService. Tout passe par PostgreSQL.
+  - **Micrometer** : dépendance `micrometer-registry-prometheus` + actuator expose `prometheus`.
+- **Frontend** : 4 composants Angular (SVG charts natifs, pas de ECharts), service HTTP/SSE dédié.
+  - `MonitoringOverviewComponent` : time range picker (30m→30j), 3 gauges SVG (CPU/RAM/Disk style Prometheus), cartes métriques SSE live, historiques CPU/RAM/response time.
+  - `LogExplorerComponent` : pagination + recherche debounced + 4 filtres (service/level/date ×2/length) + export CSV.
+  - `SecurityDashboardComponent` : 6 cartes sécurité + top IPs suspectes + liste alertes (filtre priorité/statut + acknowledge).
+  - `AnalyticsReportsComponent` : time range picker, bouton export CSV, superposition de métriques (CPU/RAM/tps réponse/disk), summary stats, incidents table.
+- **Docker** : `deploy/docker-compose.yml` + `deploy/prometheus/prometheus.yml` + `deploy/grafana/datasources/` (Prometheus + PostgreSQL data sources). Prometheus scrape 11 services via gateway, Grafana port 3000 (admin/medilink2025).
+- **Bugs corrigés** :
+  - **500 /metrics/range & /summary** : `LocalDateTime.parse()` ne supportait pas le suffixe `Z` (ISO 8601). Remplacé par `parseDateTime()` avec `Instant.parse()` + fallback.
+  - **401 /stream SSE** : `EventSource` ne peut pas envoyer de JWT. Ajouté `.pathMatchers(GET, "/api/monitoring/stream").permitAll()` dans `SecurityConfig.java`.
+  - **Design manquant monitoring/analytics** : 30+ classes CSS manquantes ajoutées (`.time-range-bar`, `.gauges-row`, `.gauge-card`, `.history-charts-row`, `.overlay-controls`, `.export-btn`, etc.). Build OK.
+
 ### ✅ Bilan OCR — Gemini Flash Vision + Tesseract fallback
 - **Architecture** : `GeminiVisionEngine` (appel API Gemini `generateContent` via httpx, `response_mime_type: application/json`) en priorité → fallback automatique sur `TesseractEngine` + `BilanParser` si échec ou quota épuisé
 - **Modèle** : `gemini-flash-lite-latest` (stable, free tier activé)
@@ -29,6 +48,14 @@ Finaliser le flux notifications Telegram patient via n8n. Ajouter la recherche/f
 
 ### ❌ Expression evaluation (non essentiel)
 - Les expressions n8n (`=$json.body.field` ou `{{ $json.field }}`) ne sont PAS évaluées dans n8n 2.8.4. Contourné : Code node + `this.helpers.httpRequest()`.
+
+## Next Steps
+1. **Reconstruire et tester le backend** avec les webhooks n8n.
+2. **Persistance n8n** : n8n est lancé manuellement via `.bat`. Prévoir un service Windows ou PM2 pour la production.
+3. **Nettoyer** : supprimer WF `TEST-Expression Evaluation` et les exécutions d'erreur.
+4. **Démarrer Prometheus + Grafana** : `docker-compose -f deploy/docker-compose.yml up -d` depuis la racine.
+5. **Tester les nouveaux endpoints** : `GET /metrics/range?metric=cpu&from=...&to=...`, `GET /metrics/prometheus`, `GET /metrics/export?from=...&to=...`.
+6. **Vérifier l'intégration frontend** : temps réel SSE + time range picker + gauges SVG.
 
 ## Current Architecture
 
@@ -89,3 +116,9 @@ Webhook POST → Code node (validation + Telegram API) → Respond to Webhook
 - **`Mobile App/app/(tabs)/scan.tsx`** : Écran Scan (caméra/galerie/upload via bilanService)
 - **`Mobile App/app/(tabs)/scan-result.tsx`** : Preview des données OCR avec confirmation
 - **`Mobile App/src/services/bilanService.ts`** : Service API pour le scan de bilans
+- **`Backend/monitoring-service/`** : Module Spring Boot complet (pom.xml, 7 packages, 10 endpoints REST + 1 SSE)
+- **`Frontend/.../admin-panel/core/services/monitoring.service.ts`** : Service Angular HTTP + SSE
+- **`Frontend/.../admin-panel/monitoring-overview/`** : MonitoringOverviewComponent (dashboard temps réel)
+- **`Frontend/.../admin-panel/log-explorer/`** : LogExplorerComponent (filtres, pagination, export CSV)
+- **`Frontend/.../admin-panel/security-dashboard/`** : SecurityDashboardComponent (sécurité + alertes)
+- **`Frontend/.../admin-panel/analytics-reports/`** : AnalyticsReportsComponent (graphiques ECharts)

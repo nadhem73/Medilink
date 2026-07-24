@@ -68,6 +68,13 @@ public class FallbackController {
                 "Le service de scan de bilans est temporairement indisponible.");
     }
 
+    @RequestMapping("/monitoring")
+    public ResponseEntity<Map<String, Object>> monitoringServiceFallback() {
+        log.warn("Fallback invoked for Monitoring Service");
+        return createFallbackResponse("Monitoring Service",
+                "Le service de monitoring est temporairement indisponible. Les métriques ne peuvent pas être actualisées.");
+    }
+
     @RequestMapping("/payment")
     public ResponseEntity<Map<String, Object>> paymentServiceFallback() {
         log.warn("Fallback invoked for Payment Service");

@@ -47,8 +47,12 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
                         .pathMatchers("/api/auth/verify-email/**").permitAll()
 
-                        // Actuator et monitoring
+                        // Actuator et monitoring (gateway + services)
                         .pathMatchers("/actuator/**").permitAll()
+                        .pathMatchers("/api/*/actuator/**").permitAll()
+
+                        // SSE stream monitoring (appelé sans JWT par EventSource)
+                        .pathMatchers(HttpMethod.GET, "/api/monitoring/stream").permitAll()
 
                         // Fallback endpoints
                         .pathMatchers("/fallback/**").permitAll()

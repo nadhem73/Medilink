@@ -106,6 +106,8 @@ public class JwtAuthenticationFilter implements WebFilter {
                 path.startsWith("/api/pharmacies/nearby") ||
                 path.startsWith("/api/laboratories/search") ||
                 path.startsWith("/actuator") ||
+                (path.startsWith("/api/") && path.contains("/actuator/")) ||
+                path.equals("/api/monitoring/stream") ||
                 path.startsWith("/fallback");
     }
 }

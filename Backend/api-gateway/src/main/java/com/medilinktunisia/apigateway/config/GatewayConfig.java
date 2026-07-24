@@ -199,6 +199,18 @@ public class GatewayConfig {
                         .uri("lb://ANALYTICS-SERVICE"))
 
                 // ========================================
+                // MONITORING SERVICE - Infrastructure & Analytics
+                // ========================================
+                .route("monitoring-service", r -> r
+                        .path("/api/monitoring/**")
+                        .filters(f -> f
+                                .stripPrefix(0)
+                                .circuitBreaker(config -> config
+                                        .setName("monitoringServiceCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/monitoring")))
+                        .uri("lb://MONITORING-SERVICE"))
+
+                // ========================================
                 // AI SERVICE - Intelligence Artificielle
                 // ========================================
                 .route("ai-service", r -> r

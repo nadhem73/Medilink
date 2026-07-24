@@ -45,6 +45,11 @@ app.include_router(chat_router)
 app.include_router(ocr_router)
 
 
+@app.get("/health")
+async def health():
+    from app.config import settings
+    return {"status": "ok", "service": "ai-service", "llm_provider": settings.LLM_PROVIDER, "model": settings.LLM_MODEL}
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error("Unhandled error on %s: %s", request.url.path, exc)
