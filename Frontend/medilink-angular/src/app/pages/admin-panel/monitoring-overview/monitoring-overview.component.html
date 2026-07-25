@@ -1,0 +1,192 @@
+<section class="monitoring-page">
+  <header class="section-header">
+    <div>
+      <p class="section-kicker">Panel administrateur</p>
+      <h1>Monitoring système</h1>
+      <p class="section-copy">
+        Surveillance en temps réel de l'ensemble des microservices, métriques et indicateurs de performance de la plateforme MediLink Tunisia.
+      </p>
+    </div>
+    <a routerLink="/dashboard/admin" class="back-link">Retour au tableau de bord</a>
+  </header>
+
+  <div class="state-msg" *ngIf="loading">Chargement des métriques...</div>
+  <div class="state-msg error" *ngIf="error">{{ error }}</div>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <div class="time-range-bar">
+      <span class="time-label">Plage :</span>
+      <button *ngFor="let r of timeRanges"
+              class="time-btn"
+              [class.active]="selectedTimeRange === r.key"
+              (click)="selectedTimeRange = r.key; onTimeRangeChange()">
+        {{ r.label }}
+      </button>
+    </div>
+
+    <div class="gauges-row">
+      <div class="gauge-card">
+        <svg viewBox="0 0 60 60" class="gauge-svg">
+          <circle cx="30" cy="30" r="24" fill="none" stroke="#e5e7eb" stroke-width="5"/>
+          <circle cx="30" cy="30" r="24" fill="none"
+                  [attr.stroke]="gaugeColor(gaugeCpu)" stroke-width="5"
+                  stroke-linecap="round"
+                  transform="rotate(-90 30 30)"
+                  [attr.stroke-dasharray]="gaugeStrokeDash(gaugeCpu)"/>
+          <text x="30" y="28" text-anchor="middle" class="gauge-val" [attr.fill]="gaugeColor(gaugeCpu)">{{ gaugeCpu.toFixed(0) }}%</text>
+          <text x="30" y="40" text-anchor="middle" class="gauge-label">CPU</text>
+        </svg>
+      </div>
+      <div class="gauge-card">
+        <svg viewBox="0 0 60 60" class="gauge-svg">
+          <circle cx="30" cy="30" r="24" fill="none" stroke="#e5e7eb" stroke-width="5"/>
+          <circle cx="30" cy="30" r="24" fill="none"
+                  [attr.stroke]="gaugeColor(gaugeRam)" stroke-width="5"
+                  stroke-linecap="round"
+                  transform="rotate(-90 30 30)"
+                  [attr.stroke-dasharray]="gaugeStrokeDash(gaugeRam)"/>
+          <text x="30" y="28" text-anchor="middle" class="gauge-val" [attr.fill]="gaugeColor(gaugeRam)">{{ gaugeRam.toFixed(0) }}%</text>
+          <text x="30" y="40" text-anchor="middle" class="gauge-label">RAM</text>
+        </svg>
+      </div>
+      <div class="gauge-card">
+        <svg viewBox="0 0 60 60" class="gauge-svg">
+          <circle cx="30" cy="30" r="24" fill="none" stroke="#e5e7eb" stroke-width="5"/>
+          <circle cx="30" cy="30" r="24" fill="none"
+                  [attr.stroke]="gaugeColor(gaugeDisk)" stroke-width="5"
+                  stroke-linecap="round"
+                  transform="rotate(-90 30 30)"
+                  [attr.stroke-dasharray]="gaugeStrokeDash(gaugeDisk)"/>
+          <text x="30" y="28" text-anchor="middle" class="gauge-val" [attr.fill]="gaugeColor(gaugeDisk)">{{ gaugeDisk.toFixed(0) }}%</text>
+          <text x="30" y="40" text-anchor="middle" class="gauge-label">Disk</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="cards-grid">
+      <article class="metric-card" *ngFor="let card of overviewCards" [style.--accent]="card.color">
+        <div class="metric-top">
+          <span class="metric-icon" [ngSwitch]="card.icon">
+            <svg *ngSwitchCase="'server'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg>
+            <svg *ngSwitchCase="'activity'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <svg *ngSwitchCase="'clock'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <svg *ngSwitchCase="'users'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg *ngSwitchCase="'file-text'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <svg *ngSwitchCase="'bell'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <svg *ngSwitchCase="'alert-circle'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </span>
+          <span class="metric-variation" [class.negative]="card.variation < 0">
+            {{ card.variation >= 0 ? '+' : '' }}{{ card.variation.toFixed(1) }}
+          </span>
+        </div>
+        <div class="metric-value">{{ card.value }}</div>
+        <div class="metric-label">{{ card.label }}</div>
+        <div class="metric-sparkline">
+          <svg viewBox="0 0 100 30" class="sparkline-svg">
+            <polyline
+              [attr.points]="getSparklinePoints(card.sparkline)"
+              fill="none"
+              [attr.stroke]="card.color"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="sparkline-path"/>
+          </svg>
+        </div>
+      </article>
+    </div>
+
+    <div class="history-charts-row">
+      <div class="history-card" *ngIf="historyCpu.length > 0">
+        <div class="history-header">
+          <h3>CPU ({{ selectedTimeRange }})</h3>
+          <span class="history-current">{{ historyCpu[historyCpu.length - 1].value.toFixed(1) }}%</span>
+        </div>
+        <svg viewBox="0 0 100 44" preserveAspectRatio="none" class="history-svg">
+          <polygon [attr.points]="getHistoryFill(historyCpu)" fill="rgba(59,130,246,0.15)"/>
+          <polyline [attr.points]="getHistoryPoints(historyCpu)" fill="none" stroke="#3b82f6" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="history-card" *ngIf="historyRam.length > 0">
+        <div class="history-header">
+          <h3>RAM ({{ selectedTimeRange }})</h3>
+          <span class="history-current">{{ historyRam[historyRam.length - 1].value.toFixed(1) }}%</span>
+        </div>
+        <svg viewBox="0 0 100 44" preserveAspectRatio="none" class="history-svg">
+          <polygon [attr.points]="getHistoryFill(historyRam)" fill="rgba(139,92,246,0.15)"/>
+          <polyline [attr.points]="getHistoryPoints(historyRam)" fill="none" stroke="#8b5cf6" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="history-card" *ngIf="historyResponse.length > 0">
+        <div class="history-header">
+          <h3>Temps réponse ({{ selectedTimeRange }})</h3>
+          <span class="history-current">{{ historyResponse[historyResponse.length - 1].value.toFixed(0) }}ms</span>
+        </div>
+        <svg viewBox="0 0 100 44" preserveAspectRatio="none" class="history-svg">
+          <polygon [attr.points]="getHistoryFill(historyResponse)" fill="rgba(245,158,11,0.15)"/>
+          <polyline [attr.points]="getHistoryPoints(historyResponse)" fill="none" stroke="#f59e0b" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
+
+    <section class="services-panel">
+      <div class="panel-header">
+        <h2>État des microservices</h2>
+        <span class="live-badge">Live</span>
+      </div>
+      <div class="services-table">
+        <div class="table-header">
+          <span class="col-name">Service</span>
+          <span class="col-status">Statut</span>
+          <span class="col-cpu">CPU</span>
+          <span class="col-ram">RAM</span>
+          <span class="col-response">Temps rép.</span>
+          <span class="col-requests">Requêtes</span>
+          <span class="col-errors">Erreurs</span>
+          <span class="col-uptime">Uptime</span>
+          <span class="col-actions"></span>
+        </div>
+        <div class="table-row" *ngFor="let svc of services"
+             [class.expanded]="expandedService === svc.name"
+             (click)="toggleService(svc.name)">
+          <span class="col-name">{{ svc.name }}</span>
+          <span class="col-status">
+            <span class="status-badge" [ngClass]="getServiceStatusClass(svc.status)">{{ svc.status }}</span>
+          </span>
+          <span class="col-cpu">
+            <div class="bar-cell">
+              <div class="bar-fill" [style.width.%]="svc.cpuPercent" [style.background]="svc.cpuPercent > 80 ? '#ef4444' : svc.cpuPercent > 60 ? '#f59e0b' : '#22c55e'"></div>
+              <span>{{ svc.cpuPercent }}%</span>
+            </div>
+          </span>
+          <span class="col-ram">
+            <div class="bar-cell">
+              <div class="bar-fill" [style.width.%]="svc.ramPercent" [style.background]="svc.ramPercent > 80 ? '#ef4444' : svc.ramPercent > 60 ? '#f59e0b' : '#3b82f6'"></div>
+              <span>{{ svc.ramPercent }}%</span>
+            </div>
+          </span>
+          <span class="col-response">{{ svc.responseTimeMs }}ms</span>
+          <span class="col-requests">{{ svc.requestsCount }}</span>
+          <span class="col-errors">
+            <span class="error-count" [class.has-errors]="svc.errorsCount > 0">{{ svc.errorsCount }}</span>
+          </span>
+          <span class="col-uptime">{{ svc.uptimeHours.toFixed(0) }}h</span>
+          <span class="col-actions">
+            <button class="detail-btn" (click)="$event.stopPropagation(); toggleService(svc.name)">
+              {{ expandedService === svc.name ? 'Réduire' : 'Détails' }}
+            </button>
+          </span>
+        </div>
+        <div class="table-detail" *ngFor="let svc of services" [class.visible]="expandedService === svc.name">
+          <div class="detail-grid">
+            <div class="detail-item"><span>Version</span><strong>{{ svc.version }}</strong></div>
+            <div class="detail-item"><span>Dernier redémarrage</span><strong>{{ svc.lastRestart | date:'dd/MM/yy HH:mm' }}</strong></div>
+            <div class="detail-item"><span>Requêtes</span><strong>{{ svc.requestsCount }}</strong></div>
+            <div class="detail-item"><span>Erreurs</span><strong>{{ svc.errorsCount }}</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</section>

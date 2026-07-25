@@ -75,6 +75,9 @@ public class Consultation {
     @Column(name = "requested_exams", columnDefinition = "TEXT")
     private String requestedExams;
 
+    @Column(name = "prescribed_treatments", columnDefinition = "TEXT")
+    private String prescribedTreatments;
+
     @Column(name = "follow_up_date")
     private LocalDateTime followUpDate;
 

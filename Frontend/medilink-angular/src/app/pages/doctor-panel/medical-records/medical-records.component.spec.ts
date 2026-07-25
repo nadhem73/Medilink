@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { MedicalRecordsComponent } from './medical-records.component';
 import { AuthService, PatientListDto } from '../../../core/services/auth.service';
 import { PatientService, MedicalRecord } from '../../../core/services/patient.service';
@@ -33,6 +34,7 @@ describe('MedicalRecordsComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [MedicalRecordsComponent],
+      imports: [HttpClientTestingModule],
       providers: [
         { provide: AuthService, useValue: authServiceSpy },
         { provide: PatientService, useValue: patientServiceSpy }
