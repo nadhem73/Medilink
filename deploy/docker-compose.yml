@@ -1,3 +1,11 @@
+# =============================================================================
+# MediLink Tunisia — Docker Compose (Monitoring Stack Only)
+# =============================================================================
+# This compose file runs Prometheus + Grafana alongside existing services.
+# It is referenced by the root docker-compose.yml; use that for full stack.
+# For standalone monitoring: docker compose -f deploy/docker-compose.yml up -d
+# =============================================================================
+
 services:
   prometheus:
     image: prom/prometheus:latest
@@ -14,6 +22,8 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - medilink-net
 
   grafana:
     image: grafana/grafana:latest
@@ -32,7 +42,14 @@ services:
       - prometheus
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - medilink-net
 
 volumes:
   prometheus-data:
   grafana-data:
+
+networks:
+  medilink-net:
+    name: medilink-network
+    driver: bridge

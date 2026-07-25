@@ -1,62 +1,54 @@
-# ===== Logs =====
-*.log
-*.log.gz
-*.log.*
-logs/
-log/
-**/logs/
-**/log/
-spring.log
-spring.log.*
-access.log.*
-gc-*.log
-
-# ===== Java / Maven (Backend microservices) =====
-target/
-*.class
-*.jar
-*.war
-*.ear
-*.log
-*.tmp
-logs/
-log/
-**/logs/
-.mvn/wrapper/maven-wrapper.jar
-hs_err_pid*
-
-# ===== Code Coverage =====
-coverage/
-.nyc_output/
-
-# ===== Node / Angular (Frontend) =====
-node_modules/
-dist/
-.angular/
-*.tsbuildinfo
-npm-debug.log*
-yarn-error.log*
-
-# ===== Environment / secrets =====
-*.env
+# ===== Environment (secrets) =====
 .env
 .env.local
-application-local.properties
-application-local.yml
+Backend/**/.env
+Backend/**/.env.local
 
-# ===== Temp files =====
-tmp/
-temp/
+# ===== Logs =====
+Backend/**/logs/
+*.log
+logs/
 
-# ===== IDE / Editor =====
+# ===== Backend Build =====
+Backend/**/target/
+Backend/**/venv/
+Backend/**/__pycache__/
+
+# ===== Frontend Build =====
+Frontend/medilink-angular/dist/
+Frontend/medilink-angular/.angular/
+Frontend/medilink-angular/node_modules/
+
+# ===== Mobile App =====
+Mobile App/node_modules/
+Mobile App/.expo/
+Mobile App/dist/
+
+# ===== Chroma DB =====
+chroma_db/
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# ===== IDE =====
 .idea/
-*.iml
 .vscode/
-.settings/
-.project
-.classpath
-.factorypath
+*.iml
 
 # ===== OS =====
 .DS_Store
 Thumbs.db
+
+# ===== Temp =====
+tmp/
+temp/
+*.tmp
+
+# ===== Coverage =====
+coverage/
+.nyc_output/
+htmlcov/

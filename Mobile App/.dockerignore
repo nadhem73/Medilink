@@ -1,0 +1,40 @@
+# Node
+node_modules/
+.npm/
+
+# Build output
+dist/
+out/
+
+# Angular cache
+.angular/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+*.env
+
+# IDE
+.idea/
+.vscode/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# Docker
+.dockerignore
+Dockerfile
