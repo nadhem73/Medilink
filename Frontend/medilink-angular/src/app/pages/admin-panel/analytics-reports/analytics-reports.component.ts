@@ -137,7 +137,7 @@ export class AnalyticsReportsComponent implements OnInit {
       return { points: '', fillPoints: '', lineYMax: 0, lineYMin: 0, lineCurrent: 0, dateLabels: [], yMaxLabel: '', yMinLabel: '' };
     }
     const values = data.map(d => d.value);
-    let yMin = fixedMin ?? Math.min(...values);
+    const yMin = fixedMin ?? Math.min(...values);
     let yMax = fixedMax ?? Math.max(...values);
     if (yMin === yMax) yMax = yMin + 1;
     const yRange = yMax - yMin;

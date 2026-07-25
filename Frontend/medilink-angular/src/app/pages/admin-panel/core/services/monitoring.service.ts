@@ -169,12 +169,12 @@ export class MonitoringService {
   }
 
   getMetricsSummary(from: string, to: string): Observable<MetricSummaryDto> {
-    let params = new HttpParams().set('from', from).set('to', to);
+    const params = new HttpParams().set('from', from).set('to', to);
     return this.http.get<MetricSummaryDto>(`${this.baseUrl}/metrics/summary`, { params });
   }
 
   exportMetricsCsv(from: string, to: string): Observable<Blob> {
-    let params = new HttpParams().set('from', from).set('to', to);
+    const params = new HttpParams().set('from', from).set('to', to);
     return this.http.get(`${this.baseUrl}/metrics/export`, {
       params,
       responseType: 'blob'
