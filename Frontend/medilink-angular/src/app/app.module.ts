@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { HttpClientModule, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClientModule, provideHttpClient, withInterceptors, withJsonpSupport } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -24,7 +24,8 @@ import { errorInterceptor } from './core/interceptors/error.interceptor';
   ],
   providers: [
     provideHttpClient(
-      withInterceptors([authInterceptor, errorInterceptor])
+      withInterceptors([authInterceptor, errorInterceptor]),
+      withJsonpSupport()
     )
   ],
   bootstrap: [AppComponent]

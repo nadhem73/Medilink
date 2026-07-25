@@ -1,6 +1,6 @@
 ﻿# Configuration pour l'environnement de production
 server:
-  port: 8080
+  port: 8765
 
 eureka:
   client:

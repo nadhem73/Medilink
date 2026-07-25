@@ -1,0 +1,129 @@
+<section class="monitor">
+  <header class="monitor-header">
+    <div>
+      <p class="monitor-eyebrow">MediLink Tunisia &middot; Surveillance</p>
+      <h1>Analytics système</h1>
+      <p class="monitor-desc">Métriques de performance, disponibilité et ressources des services plateforme.</p>
+    </div>
+    <div class="monitor-actions">
+      <a routerLink="/dashboard/admin" class="monitor-back">Tableau de bord</a>
+      <button class="monitor-export" (click)="exportCsv()" [disabled]="loading">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+    </div>
+  </header>
+
+  <div class="monitor-state" *ngIf="loading">Chargement des métriques…</div>
+  <div class="monitor-state err" *ngIf="error">{{ error }}</div>
+
+  <ng-container *ngIf="!loading && !error && data">
+
+    <div class="monitor-range">
+      <button *ngFor="let r of ranges"
+              class="monitor-range-btn"
+              [class.on]="range === r.key"
+              (click)="range = r.key; onRangeChange()">{{ r.label }}</button>
+    </div>
+
+    <div class="monitor-kpis">
+      <div class="monitor-kpi">
+        <div class="monitor-kpi-icon" style="background:rgba(16,185,129,0.1);color:#10b981">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <p class="monitor-kpi-label">Résolution moyenne</p>
+          <p class="monitor-kpi-value">{{ data.avgResolutionTimeHours.toFixed(1) }}<small>h</small></p>
+        </div>
+      </div>
+      <div class="monitor-kpi">
+        <div class="monitor-kpi-icon" style="background:rgba(59,130,246,0.1);color:#3b82f6">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div>
+          <p class="monitor-kpi-label">CPU / RAM moy.</p>
+          <p class="monitor-kpi-value">{{ (summary?.avgCpu | number:'1.1-1') || '—' }}<small>%</small> / {{ (summary?.avgRam | number:'1.1-1') || '—' }}<small>%</small></p>
+        </div>
+      </div>
+      <div class="monitor-kpi">
+        <div class="monitor-kpi-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <p class="monitor-kpi-label">Incidents (30j)</p>
+          <p class="monitor-kpi-value">{{ data.incidents?.length || 0 }}<small>total</small></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="monitor-charts">
+      <div class="monitor-card">
+        <div class="monitor-card-top">
+          <div>
+            <p class="monitor-card-label">Uptime</p>
+            <p class="monitor-card-value" [style.color]="palette.uptime">{{ uptime!.current.toFixed(1) }}%</p>
+          </div>
+          <div class="monitor-card-stats">
+            <span>Max {{ uptime!.max.toFixed(1) }}%</span>
+            <span>Min {{ uptime!.min.toFixed(1) }}%</span>
+          </div>
+        </div>
+        <svg viewBox="0 0 180 26" class="monitor-spark">
+          <polygon [attr.points]="uptime!.points + ' 180,26 0,26'" [attr.fill]="palette.uptime + '14'" />
+          <polyline [attr.points]="uptime!.points" fill="none" [attr.stroke]="palette.uptime" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="monitor-card">
+        <div class="monitor-card-top">
+          <div>
+            <p class="monitor-card-label">CPU</p>
+            <p class="monitor-card-value" [style.color]="palette.cpu">{{ cpu!.current.toFixed(1) }}%</p>
+          </div>
+          <div class="monitor-card-stats">
+            <span>Max {{ cpu!.max.toFixed(1) }}%</span>
+            <span>Min {{ cpu!.min.toFixed(1) }}%</span>
+          </div>
+        </div>
+        <svg viewBox="0 0 180 26" class="monitor-spark">
+          <polygon [attr.points]="cpu!.points + ' 180,26 0,26'" [attr.fill]="palette.cpu + '14'" />
+          <polyline [attr.points]="cpu!.points" fill="none" [attr.stroke]="palette.cpu" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="monitor-card">
+        <div class="monitor-card-top">
+          <div>
+            <p class="monitor-card-label">RAM</p>
+            <p class="monitor-card-value" [style.color]="palette.ram">{{ ram!.current.toFixed(0) }}%</p>
+          </div>
+          <div class="monitor-card-stats">
+            <span>Max {{ ram!.maxLabel }}%</span>
+          </div>
+        </div>
+        <svg viewBox="0 0 180 28" class="monitor-spark">
+          <rect *ngFor="let b of ram!.bars"
+                [attr.x]="b.x" [attr.y]="b.y"
+                [attr.width]="b.w" [attr.height]="b.h"
+                [attr.fill]="barColor(b.value)"
+                rx="1" />
+        </svg>
+      </div>
+
+      <div class="monitor-card monitor-card--center">
+        <div class="monitor-card-top">
+          <div>
+            <p class="monitor-card-label">Stockage</p>
+            <p class="monitor-card-value" [style.color]="storage!.color">{{ storage!.value.toFixed(0) }}%</p>
+          </div>
+        </div>
+        <svg viewBox="0 0 100 55" class="monitor-gauge">
+          <path [attr.d]="storage!.bg" fill="none" stroke="#e5e7eb" stroke-width="7" stroke-linecap="round"/>
+          <path [attr.d]="storage!.arc" fill="none" [attr.stroke]="storage!.color" stroke-width="7" stroke-linecap="round"/>
+          <text x="50" y="35" text-anchor="middle" font-size="14" font-weight="800" [attr.fill]="storage!.color">{{ storage!.value.toFixed(0) }}%</text>
+        </svg>
+      </div>
+    </div>
+
+  </ng-container>
+</section>

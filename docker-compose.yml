@@ -1,0 +1,487 @@
+# =============================================================================
+# MediLink Tunisia — Docker Compose (Production)
+# =============================================================================
+# Usage:
+#   docker compose up -d                    # Start all services
+#   docker compose up -d <service-name>     # Start specific service(s)
+#   docker compose down                     # Stop all
+#   docker compose logs -f <service-name>   # Follow logs
+# =============================================================================
+
+services:
+  # ===== Infrastructure =====
+  postgres:
+    image: postgres:16-alpine
+    container_name: medilink-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  # ===== Service Discovery & Config =====
+  eureka-service:
+    build:
+      context: ./Backend/eureka-service
+      dockerfile: Dockerfile
+    container_name: medilink-eureka
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8761/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  config-server:
+    build:
+      context: ./Backend/config-server
+      dockerfile: Dockerfile
+    container_name: medilink-config
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8888/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  # ===== API Gateway =====
+  api-gateway:
+    build:
+      context: ./Backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: medilink-gateway
+    ports:
+      - "8765:8765"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8765/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  # ===== Business Services =====
+  auth-service:
+    build:
+      context: ./Backend/auth-service
+      dockerfile: Dockerfile
+    container_name: medilink-auth
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medilink_auth
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8084/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  patient-service:
+    build:
+      context: ./Backend/patient-service
+      dockerfile: Dockerfile
+    container_name: medilink-patient
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medilink_patients
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    volumes:
+      - patient-uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  doctor-service:
+    build:
+      context: ./Backend/doctor-service
+      dockerfile: Dockerfile
+    container_name: medilink-doctor
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medilink_doctors
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    volumes:
+      - doctor-uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8083/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  pharmacy-service:
+    build:
+      context: ./Backend/pharmacy-service
+      dockerfile: Dockerfile
+    container_name: medilink-pharmacy
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medilink_pharmacy
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8085/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  prescription-service:
+    build:
+      context: ./Backend/prescription-service
+      dockerfile: Dockerfile
+    container_name: medilink-prescription
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=8086
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=medilink_prescriptions
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medilink_prescriptions
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - N8N_WEBHOOK_URL=http://host.docker.internal:5678/webhook
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8086/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  bilan-service:
+    build:
+      context: ./Backend/bilan-service
+      dockerfile: Dockerfile
+    container_name: medilink-bilan
+    ports:
+      - "8087:8087"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medilink_bilan
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - APP_AI_SERVICE_URL=http://ai-service:8092
+    volumes:
+      - bilan-uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8087/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  monitoring-service:
+    build:
+      context: ./Backend/monitoring-service
+      dockerfile: Dockerfile
+    container_name: medilink-monitoring
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medilink_monitoring
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8090/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  # ===== AI Service (Python/FastAPI) =====
+  ai-service:
+    build:
+      context: ./Backend/ai-service
+      dockerfile: Dockerfile
+    container_name: medilink-ai
+    ports:
+      - "8092:8092"
+    env_file: .env
+    environment:
+      - AI_SERVER_PORT=8092
+      - AI_SERVER_HOST=0.0.0.0
+      - EUREKA_SERVER=http://eureka-service:8761/eureka/
+      - EUREKA_INSTANCE_HOST=ai-service
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/medilink_ai
+      - API_GATEWAY_URL=http://api-gateway:8765/api
+      - JWT_SECRET=medilinktunisia2025SecretKeyForJWTTokenGenerationAndValidation
+      - CHROMA_DB_PATH=/app/chroma_db
+      - LLM_PROVIDER=${LLM_PROVIDER:-gemini}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-gemini-2.0-flash}
+    volumes:
+      - chroma-data:/app/chroma_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  # ===== n8n Workflow Automation =====
+  # COMMENTÉ — n8n est lancé manuellement via n8n-start.bat
+  # pour garder la base SQLite existante (~/.n8n/database.sqlite)
+  # et le tunnel cloudflared pour les webhooks Telegram.
+  # n8n:
+  #   image: n8nio/n8n:latest
+  #   container_name: medilink-n8n
+  #   ports:
+  #     - "5678:5678"
+  #   environment:
+  #     - N8N_PORT=5678
+  #     - N8N_HOST=localhost
+  #     - N8N_PROTOCOL=http
+  #     - WEBHOOK_URL=http://localhost:5678/
+  #     - N8N_METRICS=false
+  #     - EXECUTIONS_DATA_PRUNE=true
+  #     - EXECUTIONS_DATA_MAX_AGE=168
+  #   volumes:
+  #     - n8n-data:/home/node/.n8n
+  #   restart: unless-stopped
+  #   networks:
+  #     - medilink-net
+
+  # ===== Frontend (Angular + Nginx) =====
+  frontend:
+    build:
+      context: ./Frontend/medilink-angular
+      dockerfile: Dockerfile
+    container_name: medilink-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  # ===== Mobile App (Expo Web Export) =====
+  mobile:
+    build:
+      context: ./Mobile App
+      dockerfile: Dockerfile
+    container_name: medilink-mobile
+    ports:
+      - "8080:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  # ===== Monitoring Stack =====
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: medilink-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: medilink-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./deploy/grafana/datasources:/etc/grafana/provisioning/datasources
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=medilink2025
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - medilink-net
+
+# ===== Volumes =====
+volumes:
+  postgres-data:
+  patient-uploads:
+  doctor-uploads:
+  bilan-uploads:
+  chroma-data:
+  prometheus-data:
+  grafana-data:
+  n8n-data:
+
+# ===== Networks =====
+networks:
+  medilink-net:
+    name: medilink-network
+    driver: bridge

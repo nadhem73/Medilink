@@ -1,13 +1,15 @@
 import { Component, HostBinding } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 
 interface SidebarLink {
   label: string;
-  route: string;
+  route?: string;
   icon: string;
   badge?: number;
   exact?: boolean;
+  children?: SidebarLink[];
 }
 
 @Component({
@@ -30,10 +32,7 @@ export class SidebarComponent {
     { label: 'Dossiers medicaux', route: '/dashboard/patient/medical-records', icon: 'folder' },
     { label: 'Ordonnances', route: '/dashboard/patient/prescriptions', icon: 'pill' },
     { label: "Resultats d'analyses", route: '/dashboard/patient/labs', icon: 'flask' },
-    { label: 'Teleconsultation', route: '/dashboard/patient/teleconsultation', icon: 'video' },
-    { label: 'Messages', route: '/dashboard/patient/messages', icon: 'message', badge: 3 },
     { label: 'Notifications', route: '/dashboard/patient/notifications', icon: 'bell', badge: 5 },
-    { label: 'Facturation', route: '/dashboard/patient/billing', icon: 'card' },
     { label: 'Parametres', route: '/dashboard/patient/settings', icon: 'settings' },
     { label: "Centre d'aide", route: '/dashboard/patient/help', icon: 'help' }
   ];
@@ -46,9 +45,7 @@ export class SidebarComponent {
     { label: 'Consultations', route: '/dashboard/doctor/consultations', icon: 'stethoscope' },
     { label: 'Dossiers medicaux', route: '/dashboard/doctor/medical-records', icon: 'folder' },
     { label: 'Ordonnances', route: '/dashboard/doctor/prescriptions', icon: 'pill' },
-    { label: 'Teleconsultation', route: '/dashboard/doctor/teleconsultation', icon: 'video' },
     { label: "Resultats d'analyses", route: '/dashboard/doctor/labs', icon: 'flask' },
-    { label: 'Messages', route: '/dashboard/doctor/messages', icon: 'message', badge: 3 },
     { label: 'Notifications', route: '/dashboard/doctor/notifications', icon: 'bell', badge: 5 },
     { label: 'Parametres', route: '/dashboard/doctor/settings', icon: 'settings' },
     { label: "Centre d'aide", route: '/dashboard/doctor/help', icon: 'help' }
@@ -59,11 +56,8 @@ export class SidebarComponent {
     { label: 'Tableau de bord', route: '/dashboard/pharmacy', icon: 'dashboard', exact: true },
     { label: 'Ordonnances recues', route: '/dashboard/pharmacy/prescriptions', icon: 'pill' },
     { label: 'Stock medicaments', route: '/dashboard/pharmacy/stock', icon: 'box' },
-    { label: 'Commandes', route: '/dashboard/pharmacy/orders', icon: 'cart' },
-    { label: 'Ventes / Dispensation', route: '/dashboard/pharmacy/sales', icon: 'card' },
     { label: 'Alertes de stock', route: '/dashboard/pharmacy/alerts', icon: 'alert', badge: 5 },
     { label: 'Previsions IA', route: '/dashboard/pharmacy/forecast', icon: 'chart' },
-    { label: 'Messages', route: '/dashboard/pharmacy/messages', icon: 'message', badge: 3 },
     { label: 'Notifications', route: '/dashboard/pharmacy/notifications', icon: 'bell', badge: 5 },
     { label: 'Parametres', route: '/dashboard/pharmacy/settings', icon: 'settings' },
     { label: "Centre d'aide", route: '/dashboard/pharmacy/help', icon: 'help' }
@@ -72,16 +66,38 @@ export class SidebarComponent {
   // Liens du panneau administrateur (supervision technique de la plateforme)
   adminLinks: SidebarLink[] = [
     { label: 'Tableau de bord', route: '/dashboard/admin', icon: 'dashboard', exact: true },
-    { label: 'Validation comptes medicaux', route: '/dashboard/admin/approvals', icon: 'shield', badge: 4 },
-    { label: 'Gestion utilisateurs', route: '/dashboard/admin/users', icon: 'users' },
-    { label: 'Monitoring systeme', route: '/dashboard/admin/monitoring', icon: 'activity' },
-    { label: 'Securite & acces', route: '/dashboard/admin/security', icon: 'lock' },
-    { label: "Logs d'activite", route: '/dashboard/admin/logs', icon: 'file' },
-    { label: 'Rapports analytics', route: '/dashboard/admin/analytics', icon: 'chart' },
+    {
+      label: 'Gestion utilisateurs', icon: 'users',
+      children: [
+        { label: 'Patients', route: '/dashboard/admin/users/patients', icon: 'users' },
+        { label: 'Medecins', route: '/dashboard/admin/users/doctors', icon: 'stethoscope' },
+        { label: 'Pharmaciens', route: '/dashboard/admin/users/pharmacies', icon: 'building' }
+      ]
+    },
+    {
+      label: 'Infrastructure & Analytics', icon: 'activity',
+      children: [
+        { label: 'Monitoring systeme', route: '/dashboard/admin/monitoring', icon: 'activity' },
+        { label: 'Securite & acces', route: '/dashboard/admin/security', icon: 'lock' },
+        { label: "Logs d'activite", route: '/dashboard/admin/logs', icon: 'file' },
+        { label: 'Rapports analytics', route: '/dashboard/admin/analytics', icon: 'chart' }
+      ]
+    },
     { label: 'Notifications', route: '/dashboard/admin/notifications', icon: 'bell', badge: 5 },
     { label: 'Parametres', route: '/dashboard/admin/settings', icon: 'settings' },
     { label: "Centre d'aide", route: '/dashboard/admin/help', icon: 'help' }
   ];
+
+  // Submenu expand/collapse — stocke le label du parent ouvert (un seul a la fois)
+  expandedMenu: string | null = null;
+
+  toggleSubmenu(label: string): void {
+    this.expandedMenu = this.expandedMenu === label ? null : label;
+  }
+
+  isSubmenuActive(children: SidebarLink[]): boolean {
+    return children.some(c => this.router.url === c.route);
+  }
 
   constructor(
     private authService: AuthService,
@@ -90,6 +106,17 @@ export class SidebarComponent {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       this.avatarError = false;
+    });
+
+    // Auto-expand le sous-menu si on arrive directement sur une route enfant
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
+      const links = this.links;
+      for (const link of links) {
+        if (link.children && this.isSubmenuActive(link.children)) {
+          this.expandedMenu = link.label;
+          break;
+        }
+      }
     });
   }
 

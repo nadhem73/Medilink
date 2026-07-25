@@ -18,7 +18,7 @@ spring:
       # Timeout global
       httpclient:
         connect-timeout: 5000
-        response-timeout: 30s
+        response-timeout: 120s
         pool:
           type: elastic
           max-connections: 500
@@ -82,7 +82,7 @@ management:
         enabled: true
   health:
     redis:
-      enabled: true
+      enabled: false
 
 # Logging
 logging:
@@ -122,11 +122,19 @@ resilience4j:
         base-config: default
       paymentServiceCircuitBreaker:
         base-config: default
+      aiServiceCircuitBreaker:
+        base-config: default
+      bilanServiceCircuitBreaker:
+        base-config: default
 
   timelimiter:
     configs:
       default:
         timeout-duration: 5s
+    instances:
+      bilanServiceCircuitBreaker:
+        base-config: default
+        timeout-duration: 120s
 
   retry:
     configs:

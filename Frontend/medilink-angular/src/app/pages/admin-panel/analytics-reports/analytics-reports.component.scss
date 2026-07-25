@@ -1,0 +1,115 @@
+@use '../monitoring-tokens' as *;
+
+.monitor {
+  display: grid; gap: 22px;
+}
+
+/* ── Header ── */
+.monitor-header {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 24px;
+  padding: 24px 28px;
+  background: rgba(255,255,255,0.72); backdrop-filter: blur(12px);
+  border: 1px solid rgba(226,232,240,0.6); border-radius: 20px;
+  h1 { margin: 0; font-size: 26px; font-weight: 700; color: $admin-ink; }
+}
+.monitor-eyebrow {
+  margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.12em;
+  font-size: 11px; font-weight: 700; color: $admin-gold;
+}
+.monitor-desc {
+  margin: 10px 0 0; color: $admin-muted; font-size: 14px; max-width: 600px;
+}
+.monitor-actions { display: flex; gap: 10px; align-items: center; }
+.monitor-back {
+  color: $admin-gold; font-weight: 700; text-decoration: none;
+  padding: 10px 16px; border-radius: 999px; white-space: nowrap; font-size: 13px;
+  background: rgba(245,196,81,0.12); border: 1px solid rgba(201,150,47,0.2);
+}
+.monitor-export {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; border-radius: 999px; border: none; white-space: nowrap;
+  background: linear-gradient(135deg,$admin-gold,$admin-gold-bright);
+  color: $admin-ink; font-size: 13px; font-weight: 700; cursor: pointer;
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+/* ── State ── */
+.monitor-state {
+  padding: 24px; text-align: center; color: $admin-muted;
+  background: $admin-soft; border: 1px dashed $admin-line; border-radius: 16px;
+  &.err { color: #b91c1c; background: rgba(185,28,28,0.06); border-color: rgba(185,28,28,0.25); }
+}
+
+/* ── Range picker ── */
+.monitor-range {
+  display: flex; gap: 6px;
+  padding: 10px 18px; background: $admin-surface;
+  border: 1px solid $admin-line; border-radius: 14px;
+}
+.monitor-range-btn {
+  padding: 6px 14px; border-radius: 999px; border: 1px solid transparent;
+  background: transparent; color: $admin-muted; font-size: 12px; font-weight: 600; cursor: pointer;
+  &:hover { border-color: rgba(201,150,47,0.25); color: $admin-ink; }
+  &.on { background: $admin-gold; border-color: $admin-gold; color: $admin-ink; font-weight: 700; }
+}
+
+/* ── KPI cards ── */
+.monitor-kpis {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+.monitor-kpi {
+  display: flex; align-items: center; gap: 16px;
+  background: $admin-surface; border: 1px solid $admin-line;
+  border-radius: 16px; padding: 18px 20px;
+}
+.monitor-kpi-icon {
+  width: 42px; height: 42px; flex-shrink: 0; display: grid; place-items: center; border-radius: 12px;
+  svg { width: 20px; height: 20px; }
+}
+.monitor-kpi-label { margin: 0; font-size: 12px; color: $admin-muted; font-weight: 600; }
+.monitor-kpi-value {
+  margin: 2px 0 0; font-size: 22px; font-weight: 800; color: $admin-ink; line-height: 1.1;
+  small { font-size: 13px; font-weight: 600; color: $admin-muted; margin-left: 2px; }
+}
+
+/* ── Chart grid ── */
+.monitor-charts {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+}
+
+.monitor-card {
+  background: $admin-surface; border: 1px solid $admin-line;
+  border-radius: 18px; padding: 20px 22px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.monitor-card--center {
+  align-items: center;
+  .monitor-card-top { width: 100%; }
+}
+
+.monitor-card-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.monitor-card-label { margin: 0; font-size: 13px; font-weight: 600; color: $admin-muted; text-transform: uppercase; letter-spacing: 0.06em; }
+.monitor-card-value { margin: 4px 0 0; font-size: 28px; font-weight: 800; line-height: 1; }
+.monitor-card-stats {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  font-size: 11px; color: $admin-muted; font-weight: 600;
+}
+
+.monitor-spark {
+  width: 100%; display: block;
+  aspect-ratio: 180 / 26;
+}
+
+.monitor-gauge {
+  width: 100%; max-width: 180px; display: block;
+  aspect-ratio: 100 / 55;
+}
+
+@media (max-width: 860px) {
+  .monitor-kpis { grid-template-columns: 1fr; }
+  .monitor-charts { grid-template-columns: 1fr; }
+  .monitor-header { flex-direction: column; align-items: flex-start; }
+  .monitor-gauge { max-width: 140px; }
+}

@@ -38,12 +38,6 @@ export class AdminDashboardComponent {
 
   quickActions = [
     {
-      title: 'Valider les comptes professionnels',
-      description: 'Approuver ou refuser les inscriptions de medecins, pharmacies et laboratoires.',
-      route: '/dashboard/admin/approvals',
-      cta: 'Ouvrir la validation'
-    },
-    {
       title: 'Gerer les utilisateurs',
       description: 'Rechercher, suspendre ou reactiver les comptes de la plateforme.',
       route: '/dashboard/admin/users',
@@ -54,27 +48,6 @@ export class AdminDashboardComponent {
       description: 'Analyser la croissance, les rendez-vous et l activite globale.',
       route: '/dashboard/admin/analytics',
       cta: 'Voir les rapports'
-    }
-  ];
-
-  pendingApprovals = [
-    {
-      name: 'Dr. Sami Khelifi',
-      type: 'Medecin - Cardiologie',
-      submitted: 'Demande il y a 2 heures',
-      status: 'En attente'
-    },
-    {
-      name: 'Pharmacie El Manar',
-      type: 'Pharmacie - Tunis',
-      submitted: 'Demande hier',
-      status: 'En attente'
-    },
-    {
-      name: 'Laboratoire Pasteur',
-      type: 'Laboratoire - Sfax',
-      submitted: 'Demande il y a 2 jours',
-      status: 'A verifier'
     }
   ];
 

@@ -1,0 +1,32 @@
+# Logs
+*.log
+logs/
+
+# Build
+target/
+*.jar
+*.war
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+Dockerfile
