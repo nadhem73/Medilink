@@ -134,7 +134,7 @@ export class LogExplorerComponent implements OnInit, OnDestroy {
     const maxVisible = 7;
     const half = Math.floor(maxVisible / 2);
     let start = Math.max(0, this.page - half);
-    let end = Math.min(this.totalPages, start + maxVisible);
+    const end = Math.min(this.totalPages, start + maxVisible);
     if (end - start < maxVisible) {
       start = Math.max(0, end - maxVisible);
     }
