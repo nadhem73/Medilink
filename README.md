@@ -1,34 +1,35 @@
 # MediLink Tunisia
 
-> **Plateforme de santé connectée** — Mise en relation des patients, médecins, pharmacies et laboratoires en Tunisie.
+> **Connected Healthcare Platform** — Connecting patients, doctors, pharmacies, and labs across Tunisia.
 
-| Aperçu | Scope |
-|--------|-------|
-| **Frontend** | Angular 18 (Administration, Médecins, Patients, Pharmacies) |
+| Overview | Stack |
+|----------|-------|
+| **Frontend** | Angular 18 (Admin, Doctors, Patients, Pharmacies) |
 | **Mobile** | React Native / Expo 54 (Patients) |
-| **Backend** | Spring Boot 3.2.0 — 10 microservices Java 21 |
-| **IA** | Python FastAPI (Gemini Flash Vision + Tesseract OCR, LLM Chat, RAG) |
-| **Messagerie** | Telegram Bot via n8n 2.8.4 |
+| **Backend** | Spring Boot 3.2.0 — 10 microservices (Java 21) |
+| **AI** | Python FastAPI (Gemini Flash Vision + Tesseract OCR, LLM Chat, RAG) |
+| **Messaging** | Telegram Bot via n8n 2.8.4 |
 | **Monitoring** | Prometheus + Grafana (Docker) |
 | **CI/CD** | GitHub Actions (3 pipelines) |
 
 ---
 
-## Table des matières
+## Table of Contents
 
 - [Architecture](#architecture)
-- [Services Backend](#services-backend)
+- [Backend Services](#backend-services)
 - [Frontend (Angular)](#frontend-angular)
 - [Mobile App (Expo / React Native)](#mobile-app-expo--react-native)
 - [AI Service](#ai-service)
-- [Notification Telegram (n8n)](#notification-telegram-n8n)
-- [Déploiement & Monitoring](#déploiement--monitoring)
-- [Jeux de données](#jeux-de-données)
-- [Prérequis](#prérequis)
-- [Installation rapide](#installation-rapide)
-- [Variables d'environnement](#variables-denvironnement)
-- [Tests](#tests)
-- [Structure du projet](#structure-du-projet)
+- [Telegram Notification (n8n)](#telegram-notification-n8n)
+- [Deployment & Monitoring](#deployment--monitoring)
+- [Datasets](#datasets)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+- [CI/CD](#cicd)
 
 ---
 
@@ -50,7 +51,7 @@
      │ :8087  │  │:8090   │  │:8888  │  │:8761   │     │
      └────────┘  └────────┘  └───────┘  └────────┘     │
                                                         │
-     ┌───────────────────────────────────────────────────▼────┐
+     ┌──────────────────────────────────────────────────▼─────┐
      │              AI Service (Python FastAPI :8093)         │
      │  OCR (Gemini Vision → Tesseract) + Chat LLM + RAG      │
      └────────────────────────────────────────────────────────┘
@@ -64,69 +65,69 @@
      └─────────────────────────────────────────────────────────┘
 ```
 
-Chaque microservice possède **sa propre base PostgreSQL** et s'enregistre dans **Eureka** au démarrage. L'**API Gateway** filtre, route et sécurise toutes les requêtes (`/api/**`).
+Each microservice has **its own PostgreSQL database** and registers with **Eureka** on startup. The **API Gateway** filters, routes, and secures all requests (`/api/**`).
 
 ---
 
-## Services Backend
+## Backend Services
 
-| Service | Port | DB | Rôle |
+| Service | Port | DB | Role |
 |---------|------|----|------|
-| **eureka-service** | 8761 | — | Annuaire des services (Netflix Eureka) |
-| **config-server** | 8888 | — | Configuration centralisée (Git) |
-| **api-gateway** | 8765 | — | Point d'entrée unique, JWT, rate-limiting, circuit breakers |
-| **auth-service** | 8084 | `medilink_auth` | Authentification, JWT, rôles (Patient/Médecin/Pharmacien/Admin), email |
-| **patient-service** | 8082 | `medilink_patients` | Dossiers médicaux, rendez-vous |
-| **doctor-service** | 8083 | `medilink_doctors` | Profils médecins, disponibilités, consultations |
-| **pharmacy-service** | 8085 | `medilink_pharmacy` | Pharmacies, catalogue médicaments, stock FIFO |
-| **prescription-service** | 8086 | `medilink_prescriptions` | Ordonnances (cycle de vie complet), codes de retrait, webhooks n8n |
-| **bilan-service** | 8087 | `medilink_bilan` | Analyses biologiques, OCR, partage médecin-patient |
-| **monitoring-service** | 8090 | `medilink_monitoring` | Métriques temps réel (CPU/RAM/Disk), logs, sécurité, analytics, SSE, Prometheus |
-| **ai-service** | 8093 | `medilink_ai` | (Python) OCR intelligente + Chat médical + RAG (ChromaDB) |
+| **eureka-service** | 8761 | — | Service registry (Netflix Eureka) |
+| **config-server** | 8888 | — | Centralized configuration (Git) |
+| **api-gateway** | 8765 | — | Single entry point, JWT, rate-limiting, circuit breakers |
+| **auth-service** | 8084 | `medilink_auth` | Authentication, JWT, roles (Patient/Doctor/Pharmacist/Admin), email |
+| **patient-service** | 8082 | `medilink_patients` | Medical records, appointments |
+| **doctor-service** | 8083 | `medilink_doctors` | Doctor profiles, availability, consultations |
+| **pharmacy-service** | 8085 | `medilink_pharmacy` | Pharmacies, medication catalog, FIFO stock |
+| **prescription-service** | 8086 | `medilink_prescriptions` | Prescriptions (full lifecycle), pickup codes, n8n webhooks |
+| **bilan-service** | 8087 | `medilink_bilan` | Lab reports, OCR, doctor-patient sharing |
+| **monitoring-service** | 8090 | `medilink_monitoring` | Real-time metrics (CPU/RAM/Disk), logs, security, analytics, SSE, Prometheus |
+| **ai-service** | 8093 | `medilink_ai` | (Python) Intelligent OCR + Medical Chat + RAG (ChromaDB) |
 
-### Cycle de vie d'une ordonnance
+### Prescription Lifecycle
 
 ```
-BROUILLON → SOUMISE → EN_PREPARATION → PREPAREE → RETIREE → DISPENSEE → ARCHIVEE
-                                                                       ↘ ANNULEE
+DRAFT → SUBMITTED → IN_PREPARATION → PREPARED → COLLECTED → DISPENSED → ARCHIVED
+                                                                        ↘ CANCELLED
 ```
 
-À chaque transition clé, le `PrescriptionService` notifie n8n qui envoie un message Telegram au patient.
+At each key transition, `PrescriptionService` notifies n8n, which sends a Telegram message to the patient.
 
 ### FIFO Dispensation
 
-Le `pharmacy-service` implémente un algorithme **FIFO** (`MedicationStockService.deduireStock()`) : les lots les plus anciens sont déduits en premier. Seuils de stock : `0 = rupture`, `≤10 = critique`, `≤50 = faible`, `>50 = suffisant`.
+The `pharmacy-service` implements a **FIFO** algorithm (`MedicationStockService.deduireStock()`): oldest lots are dispensed first. Stock thresholds: `0 = out of stock`, `≤10 = critical`, `≤50 = low`, `>50 = sufficient`.
 
 ---
 
 ## Frontend (Angular)
 
-**Stack** : Angular 18, Bootstrap 5.3, RxJS 7.8, ApexCharts, ECharts, Three.js
+**Stack**: Angular 18, Bootstrap 5.3, RxJS 7.8, ApexCharts, ECharts, Three.js
 
-### Panneaux
+### Panels
 
-| Panneau | Routes | Fonctionnalités principales |
-|---------|--------|----------------------------|
+| Panel | Routes | Key Features |
+|-------|--------|-------------|
 | **Public** | `/` | Landing page |
-| **Auth** | `/auth/*` | Login, register, forgot/reset password, vérification email |
-| **Patient** | `/dashboard/patient/*` | Dossier médical, rendez-vous, ordonnances, bilans, messagerie |
-| **Médecin** | `/dashboard/doctor/*` | Consultations, dossiers patients, ordonnances, téléconsultation |
-| **Pharmacie** | `/dashboard/pharmacy/*` | Stock médicaments (FIFO), ordonnances, alertes rupture/péremption, prévisions |
-| **Admin** | `/dashboard/admin/*` | Monitoring temps réel (CPU/RAM/Disk), logs, sécurité, analytics, utilisateurs |
-| **Laboratoire** | `/dashboard/laboratory/*` | (Structure prête) |
+| **Auth** | `/auth/*` | Login, register, forgot/reset password, email verification |
+| **Patient** | `/dashboard/patient/*` | Medical record, appointments, prescriptions, lab reports, messaging |
+| **Doctor** | `/dashboard/doctor/*` | Consultations, patient records, prescriptions, teleconsultation |
+| **Pharmacy** | `/dashboard/pharmacy/*` | Stock management (FIFO), prescriptions, out-of-stock/expiry alerts, forecasting |
+| **Admin** | `/dashboard/admin/*` | Real-time monitoring (CPU/RAM/Disk), logs, security, analytics, users |
+| **Laboratory** | `/dashboard/laboratory/*` | (Structure ready) |
 
-### Monitoring (Panel Admin)
+### Monitoring (Admin Panel)
 
-- **MonitoringOverviewComponent** : Gauges SVG CPU/RAM/Disk, flux SSE temps réel, historique temporel (30m à 30j), sélecteur de plage
-- **LogExplorerComponent** : Recherche avec debounce, pagination, 4 filtres (service/niveau/date), export CSV
-- **SecurityDashboardComponent** : 6 cartes sécurité, IPs suspectes, alertes avec accusé de réception
-- **AnalyticsReportsComponent** : Superposition de métriques, statistiques récapitulatives, export CSV
+- **MonitoringOverviewComponent**: SVG CPU/RAM/Disk gauges, SSE live stream, time range picker (30m to 30d), history charts
+- **LogExplorerComponent**: Debounced search, pagination, 4 filters (service/level/date range), CSV export
+- **SecurityDashboardComponent**: 6 security cards, suspicious IPs, alerts with acknowledge
+- **AnalyticsReportsComponent**: Metric overlays, summary statistics, CSV export
 
 ---
 
 ## Mobile App (Expo / React Native)
 
-**Stack** : React Native 0.81.5, Expo 54, Expo Router 6, NativeWind 4, Axios, AsyncStorage
+**Stack**: React Native 0.81.5, Expo 54, Expo Router 6, NativeWind 4, Axios, AsyncStorage
 
 ### Navigation
 
@@ -134,106 +135,106 @@ Le `pharmacy-service` implémente un algorithme **FIFO** (`MedicationStockServic
 (Root)
  ├── (auth)          → Login, Register
  └── (tabs)          → Bottom tabs (5)
-      ├── Accueil    → Tableau de bord, rendez-vous, astuces santé
-      ├── Rendez-vous→ Prise de rendez-vous (spécialités → médecins → créneaux)
-      ├── Scan       ← Bouton central surélevé — Caméra / Galerie / Upload
-      ├── Dossier    → Dossier médical, ordonnances, bilans
-      └── Profil     → Informations personnelles, paramètres
+      ├── Home       → Dashboard, appointments, health tips
+      ├── Appointments → Book appointments (specialties → doctors → slots)
+      ├── Scan       ← Elevated center button — Camera / Gallery / Upload
+      ├── Records    → Medical dossier, prescriptions, lab reports
+      └── Profile    → Personal info, settings
 ```
 
-### Fonctionnalités clés
+### Key Features
 
-| Fonctionnalité | Description |
-|----------------|-------------|
-| **Scan d'analyses** | Photo d'un bilan → OCR (Gemini Vision + fallback Tesseract) → Résultats structurés avec status Normal/Anormal/Critique |
-| **Chat IA** | Assistant médical (Gemini) — extraction symptômes, urgence, spécialité recommandée, recherche de médecins, prise de RDV |
-| **Rendez-vous** | Sélection spécialité → médecin → date (7 jours) → créneau (matin/après-midi/soir) |
-| **Dossier médical** | Infos personnelles, constantes (taille/poids/IMC/groupe sanguin), allergies, traitements, ordonnances, bilans |
-| **Télégram** | Notifications ordonnance créée, sélection pharmacie, code de retrait |
+| Feature | Description |
+|---------|-------------|
+| **Lab Scan** | Photo a lab report → OCR (Gemini Vision + Tesseract fallback) → Structured results with Normal/Abnormal/Critical flags |
+| **AI Chat** | Medical assistant (Gemini) — symptom extraction, urgency assessment, specialty recommendation, doctor search, appointment booking |
+| **Appointments** | Select specialty → doctor → date (7 days) → slot (morning/afternoon/evening) |
+| **Medical Dossier** | Personal info, vitals (height/weight/BMI/blood group), allergies, treatments, prescriptions, lab reports |
+| **Telegram** | Notifications: prescription created, pharmacy selection, pickup code |
 
 ---
 
 ## AI Service
 
-**Stack** : Python FastAPI, Google Gemini API, ChromaDB, Tesseract 5.5, SQLAlchemy async, asyncpg
+**Stack**: Python FastAPI, Google Gemini API, ChromaDB, Tesseract 5.5, SQLAlchemy async, asyncpg
 
 ### Modules
 
 | Module | Endpoint | Description |
 |--------|----------|-------------|
-| **OCR** | `POST /api/ai/ocr` | Analyse de bilan médical (image → JSON structuré). Moteur primaire Gemini Flash Vision, fallback Tesseract + parser heuristique (fuzzy matching ≥ 0.72). |
-| **Chat** | `POST /api/ai/chat` | Assistant médical conversationnel. Extraction symptômes/urgence/spécialité, RAG (ChromaDB), outils : `search_doctors`, `check_availability`, `book_appointment`. |
-| **Health** | `GET /health` | Statut du service + modèle LLM utilisé. |
+| **OCR** | `POST /api/ai/ocr` | Analyze lab report images (image → structured JSON). Primary: Gemini Flash Vision, fallback: Tesseract + heuristic parser (fuzzy matching ≥ 0.72). |
+| **Chat** | `POST /api/ai/chat` | Conversational medical assistant. Extracts symptoms/urgency/specialty, RAG (ChromaDB), tools: `search_doctors`, `check_availability`, `book_appointment`. |
+| **Health** | `GET /health` | Service status + active LLM model. |
 
-### OCR — Architecture
+### OCR Architecture
 
 ```
-Image uploadée (base64)
+Uploaded image (base64)
        │
        ▼
 GeminiVisionEngine (Gemini Flash Vision, response_mime_type: application/json)
        │
-       ▼ (échec / quota épuisé)
-TesseractEngine (preprocessing : grayscale + autocontrast + upscale 2× + median denoise)
+       ▼ (failure / quota exhausted)
+TesseractEngine (preprocessing: grayscale + autocontrast + upscale 2× + median denoise)
        │
        ▼
-BilanParser (extraction test+valeur+unité+référence, SequenceMatcher ≥ 0.72, aliases unités)
+BilanParser (extract test+value+unit+reference, SequenceMatcher ≥ 0.72, unit aliases)
        │
        ▼
-Résultat structuré avec flags NORMAL / ANORMAL / CRITIQUE
+Structured result with NORMAL / ABNORMAL / CRITICAL flags
 ```
 
-Moteurs alternatifs disponibles : `easyocr`, `paddleocr`, `grok`, `groq`.
+Alternative engines available: `easyocr`, `paddleocr`, `grok`, `groq`.
 
 ---
 
-## Notification Telegram (n8n)
+## Telegram Notification (n8n)
 
-Trois workflows n8n automatisent la communication avec le patient via Telegram.
+Three n8n workflows automate patient communication via Telegram.
 
-### Workflow 1 : `prescription-created` (notify-prescription)
+### Workflow 1: `prescription-created` (notify-prescription)
 
 ```
-Ordonnance créée (SOUMISE)
+Prescription created (SUBMITTED)
        │
        ▼
-Webhook POST → Code node → Récupère les pharmacies disponibles
+Webhook POST → Code node → Fetch available pharmacies
        │
        ▼
-Message Telegram au patient avec boutons inline (sélection pharmacie)
+Telegram message to patient with inline keyboard buttons (pharmacy selection)
 ```
 
-### Workflow 2 : `telegram-callback` (handle-callback)
+### Workflow 2: `telegram-callback` (handle-callback)
 
 ```
-Patient clique sur une pharmacie
+Patient taps a pharmacy button
        │
        ▼
 Telegram Trigger (callback_query) → Parse callback_data (pick:{prescriptionId}:{pharmacyId})
        │
        ▼
-Assignation pharmacie via backend → Confirmation au patient
+Assign pharmacy via backend → Confirm to patient
 ```
 
-### Workflow 3 : `prescription-prepared` (send-pickup-code)
+### Workflow 3: `prescription-prepared` (send-pickup-code)
 
 ```
-Pharmacien prépare l'ordonnance (PREPAREE)
+Pharmacist prepares prescription (PREPARED)
        │
        ▼
-Webhook POST → Code node → Génère code 6 chiffres → Stocke via backend
+Webhook POST → Code node → Generate 6-digit code → Store via backend
        │
        ▼
-Message Telegram au patient avec le code de retrait
+Telegram message to patient with pickup code
 ```
 
-### Proxy standalone
+### Standalone Proxy
 
-`telegram-callback-proxy.js` : serveur HTTP (port 3456) alternative au WF2 pour gérer les callbacks Telegram.
+`telegram-callback-proxy.js`: HTTP server (port 3456) alternative to WF2 for handling Telegram callbacks.
 
 ---
 
-## Déploiement & Monitoring
+## Deployment & Monitoring
 
 ### Docker Compose
 
@@ -241,66 +242,66 @@ Message Telegram au patient avec le code de retrait
 docker-compose -f deploy/docker-compose.yml up -d
 ```
 
-| Service | Port | Accès |
-|---------|------|-------|
+| Service | Port | Access |
+|---------|------|--------|
 | **Prometheus** | 9090 | `http://localhost:9090` |
 | **Grafana** | 3000 | `http://localhost:3000` (admin / medilink2025) |
 
-Le `prometheus.yml` scrape les 11 services via `host.docker.internal:8765`.
+`prometheus.yml` scrapes all 11 services via `host.docker.internal:8765`.
 
-### Métriques exposées
+### Exposed Metrics
 
-- **Monitoring Service** : `GET /api/monitoring/metrics/prometheus` (format texte Prometheus : cpu, ram, disk, response_time, requests, errors, info)
-- **API Gateway** : `/actuator/prometheus` (Micrometer)
-- **Historique persistant** : 30 jours de rétention dans PostgreSQL (nettoyage via cron toutes les 3h)
-
----
-
-## Jeux de données
-
-Des données Tunisiennes réelles sont fournies dans `/Datasets/` pour le seeding :
-
-| Fichier | Description |
-|---------|-------------|
-| `medecins.csv` | Profils médecins (spécialités, villes, honoraires) |
-| `pharmacies.csv` | Pharmacies (adresses, horaires, garde) |
-| `medicine_data_tn.csv` | Catalogue médicaments (DCI, dosage, prix TND, remboursement) |
-| `stock_medicaments_tn.csv` | Lots d'inventaire (3782 lignes) |
+- **Monitoring Service**: `GET /api/monitoring/metrics/prometheus` (Prometheus text format: cpu, ram, disk, response_time, requests, errors, info)
+- **API Gateway**: `/actuator/prometheus` (Micrometer)
+- **Persistent History**: 30-day retention in PostgreSQL (cleanup cron every 3h)
 
 ---
 
-## Prérequis
+## Datasets
 
-| Outil | Version requise |
-|-------|----------------|
+Real Tunisian data is provided in `/Datasets/` for seeding:
+
+| File | Description |
+|------|-------------|
+| `medecins.csv` | Doctor profiles (specialties, cities, fees) |
+| `pharmacies.csv` | Pharmacies (addresses, hours, on-call duty) |
+| `medicine_data_tn.csv` | Medication catalog (DCI, dosage, TND price, reimbursement) |
+| `stock_medicaments_tn.csv` | Inventory lots (3782 rows) |
+
+---
+
+## Prerequisites
+
+| Tool | Required Version |
+|------|------------------|
 | **Java** | 21 (Temurin) |
 | **Maven** | 3.8+ |
 | **Node.js** | 22+ |
 | **Python** | 3.10+ |
 | **PostgreSQL** | 15+ |
-| **Tesseract OCR** | 5.5+ (pack français) |
-| **Docker** | 24+ (pour Prometheus/Grafana) |
-| **n8n** | 2.8.4 (installé globalement) |
+| **Tesseract OCR** | 5.5+ (French language pack) |
+| **Docker** | 24+ (for Prometheus/Grafana) |
+| **n8n** | 2.8.4 (installed globally) |
 
 ---
 
-## Installation rapide
+## Quick Start
 
 ### 1. Backend (Spring Boot)
 
 ```bash
 cd Backend
 
-# Lancer Eureka (obligatoire en premier)
+# Start Eureka (required first)
 cd eureka-service && mvn spring-boot:run
 
-# Lancer Config Server
+# Start Config Server
 cd ../config-server && mvn spring-boot:run
 
-# Lancer API Gateway
+# Start API Gateway
 cd ../api-gateway && mvn spring-boot:run
 
-# Lancer les services métier (dans n'importe quel ordre)
+# Start business services (any order)
 cd ../auth-service && mvn spring-boot:run
 cd ../patient-service && mvn spring-boot:run
 cd ../doctor-service && mvn spring-boot:run
@@ -337,17 +338,17 @@ npx expo start
 ### 5. n8n & Telegram
 
 ```bash
-# Lancer n8n (le .bat configure N8N_WEBHOOK_URL avec cloudflared)
+# Start n8n (the .bat sets N8N_WEBHOOK_URL with cloudflared)
 ./n8n-start.bat
 
-# Importer les 3 workflows depuis /n8n-workflows/
+# Import the 3 workflows from /n8n-workflows/
 ```
 
 ---
 
-## Variables d'environnement
+## Environment Variables
 
-Fichier `.env` à la racine (IA uniquement) :
+Root `.env` file (AI only):
 
 ```env
 LLM_PROVIDER=gemini
@@ -355,7 +356,7 @@ GEMINI_API_KEY=...
 LLM_MODEL=gemini-2.0-flash
 ```
 
-Fichier `Backend/ai-service/.env` :
+`Backend/ai-service/.env`:
 
 ```env
 GEMINI_API_KEY=AQ....
@@ -366,18 +367,18 @@ GEMINI_VISION_MODEL=gemini-flash-lite-latest
 AI_SERVER_PORT=8093
 ```
 
-Configuration des bases : chaque service Spring Boot configure sa propre base PostgreSQL dans `application.yml`. Par défaut :
-- Hôte : `localhost:5432`
-- User : `postgres`
-- Password : `postgres`
-- Nom : `medilink_{service}`
+Database configuration: each Spring Boot service configures its own PostgreSQL database in `application.yml`. Defaults:
+- Host: `localhost:5432`
+- User: `postgres`
+- Password: `postgres`
+- DB name: `medilink_{service}`
 
 ---
 
-## Tests
+## Testing
 
-| Module | Framework | Commande |
-|--------|-----------|----------|
+| Module | Framework | Command |
+|--------|-----------|---------|
 | Backend (Java) | JUnit 5 | `mvn test` |
 | Frontend (Angular) | Jasmine / Karma | `ng test` |
 | Mobile App | Jest | `npx jest` |
@@ -385,52 +386,52 @@ Configuration des bases : chaque service Spring Boot configure sa propre base Po
 
 ---
 
-## Structure du projet
+## Project Structure
 
 ```
 MediLink Tunisia/
-├── Backend/                    # 10 microservices Spring Boot + 1 Python
-│   ├── pom.xml                 # POM agrégateur Maven (multi-module)
+├── Backend/                    # 10 Spring Boot microservices + 1 Python
+│   ├── pom.xml                 # Maven aggregator POM (multi-module)
 │   ├── ai-service/             # Python FastAPI (OCR + Chat + RAG)
 │   ├── api-gateway/            # Spring Cloud Gateway
-│   ├── auth-service/           # Authentification & rôles
-│   ├── bilan-service/          # Analyses biologiques
-│   ├── config-server/          # Configuration centralisée
-│   ├── doctor-service/         # Médecins & consultations
+│   ├── auth-service/           # Authentication & roles
+│   ├── bilan-service/          # Lab report management
+│   ├── config-server/          # Centralized configuration
+│   ├── doctor-service/         # Doctors & consultations
 │   ├── eureka-service/         # Service discovery
-│   ├── monitoring-service/     # Monitoring, logs, sécurité
-│   ├── patient-service/        # Patients & rendez-vous
-│   ├── pharmacy-service/       # Pharmacies & stock FIFO
-│   └── prescription-service/   # Ordonnances & webhooks n8n
+│   ├── monitoring-service/     # Monitoring, logs, security
+│   ├── patient-service/        # Patients & appointments
+│   ├── pharmacy-service/       # Pharmacies & FIFO stock
+│   └── prescription-service/   # Prescriptions & n8n webhooks
 ├── Frontend/
-│   └── medilink-angular/       # Application Angular 18
-├── Mobile App/                  # Application mobile Expo/React Native
+│   └── medilink-angular/       # Angular 18 web application
+├── Mobile App/                  # Expo / React Native mobile app
 ├── deploy/                      # Docker Compose (Prometheus + Grafana)
-├── n8n-workflows/               # Workflows n8n (JSON + guide)
-├── Datasets/                    # Données Tunisiennes de seed
-├── scripts/                     # Utilitaires (images, stock)
-├── chroma_db/                   # Base vectorielle ChromaDB (RAG)
-├── bilan/                       # Échantillons de bilans (tests OCR)
-├── PDF/                         # Documentation projet (CDC, charte)
+├── n8n-workflows/               # n8n workflow JSON definitions + guide
+├── Datasets/                    # Tunisian seed data
+├── scripts/                     # Utility scripts (images, stock)
+├── chroma_db/                   # ChromaDB vector store (RAG)
+├── bilan/                       # Sample lab report images (OCR testing)
+├── PDF/                         # Project documentation (specs, branding)
 ├── .github/workflows/           # CI/CD (3 pipelines)
-├── AGENTS.md                    # Session context (développement)
-└── n8n-start.bat               # Lanceur n8n avec cloudflared
+├── AGENTS.md                    # Session context (development)
+└── n8n-start.bat               # n8n launcher with cloudflared
 ```
 
 ---
 
 ## CI/CD
 
-Trois pipelines GitHub Actions :
+Three GitHub Actions pipelines:
 
-| Pipeline | Déclencheur | Actions |
-|----------|-------------|---------|
-| **Backend CI** | `push` sur `Backend/**` | Build Maven (JDK 21), tests, upload JARs |
-| **Frontend CI** | `push` sur `Frontend/**` | ESLint, build production, tests Karma |
-| **Mobile CI** | `push` sur `Mobile App/**` | ESLint, tests Jest, TypeScript check |
+| Pipeline | Trigger | Actions |
+|----------|---------|---------|
+| **Backend CI** | `push` on `Backend/**` | Maven build (JDK 21), tests, upload JARs |
+| **Frontend CI** | `push` on `Frontend/**` | ESLint, production build, Karma tests |
+| **Mobile CI** | `push` on `Mobile App/**` | ESLint, Jest tests, TypeScript check |
 
 ---
 
 ## License
 
-Projet interne — Smart Health Tunisia / MediLink Tunisia.
+Internal project — Smart Health Tunisia / MediLink Tunisia.
