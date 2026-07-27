@@ -11,8 +11,8 @@
     <div class="hero-card">
       <span class="hero-label">Etat de la plateforme</span>
       <strong>Operationnel</strong>
-      <p>4 comptes professionnels attendent votre validation.</p>
-      <a routerLink="/dashboard/admin/approvals" class="hero-link">Traiter les validations</a>
+      <p>Gerez les comptes de la plateforme et leur statut d acces.</p>
+      <a routerLink="/dashboard/admin/users" class="hero-link">Gerer les utilisateurs</a>
     </div>
   </div>
 
@@ -60,27 +60,7 @@
     </section>
   </div>
 
-  <div class="content-grid two-columns">
-    <section class="panel-card">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">A traiter</p>
-          <h2>Comptes professionnels en attente</h2>
-        </div>
-        <a routerLink="/dashboard/admin/approvals" class="text-link">Tout voir</a>
-      </div>
-      <div class="list-stack">
-        <article class="info-item" *ngFor="let approval of pendingApprovals">
-          <div>
-            <h3>{{ approval.name }}</h3>
-            <p>{{ approval.type }}</p>
-            <span>{{ approval.submitted }}</span>
-          </div>
-          <span class="status-pill">{{ approval.status }}</span>
-        </article>
-      </div>
-    </section>
-
+  <div class="content-grid">
     <section class="panel-card">
       <div class="section-heading">
         <div>

@@ -37,4 +37,8 @@ public class Patient extends User {
     /** Carte d'identité nationale (CIN) — unique lorsqu'elle est renseignée. */
     @Column(length = 20, unique = true)
     private String cin;
+
+    /** Identifiant Telegram du patient pour les notifications. */
+    @Column(name = "telegram_chat_id", length = 100)
+    private String telegramChatId;
 }

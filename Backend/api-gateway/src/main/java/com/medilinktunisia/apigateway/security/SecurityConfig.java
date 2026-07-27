@@ -47,18 +47,26 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
                         .pathMatchers("/api/auth/verify-email/**").permitAll()
 
-                        // Actuator et monitoring
+                        // Actuator et monitoring (gateway + services)
                         .pathMatchers("/actuator/**").permitAll()
+                        .pathMatchers("/api/*/actuator/**").permitAll()
+
+                        // SSE stream monitoring (appelé sans JWT par EventSource)
+                        .pathMatchers(HttpMethod.GET, "/api/monitoring/stream").permitAll()
 
                         // Fallback endpoints
                         .pathMatchers("/fallback/**").permitAll()
 
                         // Recherche publique de médecins et pharmacies
+                        .pathMatchers(HttpMethod.GET, "/api/auth/doctors").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/doctors/search").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/doctors/*/public").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/pharmacies/search").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/pharmacies/nearby").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/laboratories/search").permitAll()
+
+                        // Assignation pharmacie (appelé par n8n Telegram bot)
+                        .pathMatchers(HttpMethod.PUT, "/api/prescriptions/*/assign-pharmacy").permitAll()
 
                         // Géolocalisation publique
                         .pathMatchers(HttpMethod.GET, "/api/geolocation/nearby/**").permitAll()
