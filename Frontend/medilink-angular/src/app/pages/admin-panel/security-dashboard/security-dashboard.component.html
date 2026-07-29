@@ -1,0 +1,137 @@
+<section class="admin-panel">
+  <div class="panel-hero">
+    <div>
+      <p class="eyebrow">Securite</p>
+      <h1>Tableau de bord securite</h1>
+      <p class="hero-copy">
+        Surveillance des acces, tentatives de connexion, sessions actives et alertes de securite
+        de la plateforme Medilink.
+      </p>
+    </div>
+    <a routerLink="/dashboard/admin" class="back-link">Retour au tableau de bord</a>
+  </div>
+
+  <ng-container *ngIf="loading; else loaded">
+    <div class="state-msg">Chargement...</div>
+  </ng-container>
+
+  <ng-template #loaded>
+    <div *ngIf="error" class="state-msg error">{{ error }}</div>
+
+    <ng-container *ngIf="security">
+      <div class="stats-grid five-col">
+        <article class="stat-card" *ngFor="let stat of stats" [attr.data-accent]="stat.accent">
+          <p class="stat-title">{{ stat.label }}</p>
+          <div class="stat-value">{{ stat.value | number }}</div>
+        </article>
+      </div>
+
+      <div class="content-grid two-columns">
+        <section class="panel-card">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">IPs suspectes</p>
+              <h2>Top adresses</h2>
+            </div>
+          </div>
+          <div *ngIf="security.topSuspiciousIps.length === 0" class="state-msg">
+            Aucune adresse IP suspecte detectee.
+          </div>
+          <div class="table-wrap" *ngIf="security.topSuspiciousIps.length > 0">
+            <table class="ip-table">
+              <thead>
+                <tr>
+                  <th>Adresse IP</th>
+                  <th>Tentatives</th>
+                  <th>Derniere tentative</th>
+                  <th>Localisation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let ip of security.topSuspiciousIps"
+                    [class.row-critical]="getAttemptLevel(ip.attempts) === 'critical'"
+                    [class.row-high]="getAttemptLevel(ip.attempts) === 'high'"
+                    [class.row-medium]="getAttemptLevel(ip.attempts) === 'medium'">
+                  <td class="cell-ip">{{ ip.ip }}</td>
+                  <td>
+                    <span class="attempt-badge" [class.att-critical]="getAttemptLevel(ip.attempts) === 'critical'"
+                                                [class.att-high]="getAttemptLevel(ip.attempts) === 'high'"
+                                                [class.att-medium]="getAttemptLevel(ip.attempts) === 'medium'">
+                      {{ ip.attempts }}
+                    </span>
+                  </td>
+                  <td class="cell-date">{{ ip.lastAttempt }}</td>
+                  <td class="cell-loc">{{ ip.location }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Sessions</p>
+              <h2>Etat des sessions</h2>
+            </div>
+          </div>
+          <div class="kpi-list">
+            <div class="kpi-row">
+              <span>Sessions actives</span>
+              <strong>{{ security.activeSessions }}</strong>
+            </div>
+            <div class="kpi-row">
+              <span>Sessions expirees</span>
+              <strong>{{ security.expiredSessions }}</strong>
+            </div>
+            <div class="kpi-row">
+              <span>JWT expires</span>
+              <strong>{{ security.expiredJwt }}</strong>
+            </div>
+            <div class="kpi-row">
+              <span>Comptes verrouilles</span>
+              <strong>{{ security.lockedAccounts }}</strong>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel-card">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Alertes</p>
+            <h2>Alertes de securite</h2>
+          </div>
+          <div class="filter-group">
+            <button class="filter-btn" [class.active]="alertFilter === 'ALL'" (click)="setFilter('ALL')">Toutes</button>
+            <button class="filter-btn" [class.active]="alertFilter === 'OPEN'" (click)="setFilter('OPEN')">Ouvertes</button>
+            <button class="filter-btn" [class.active]="alertFilter === 'ACKNOWLEDGED'" (click)="setFilter('ACKNOWLEDGED')">Acquittees</button>
+          </div>
+        </div>
+        <div *ngIf="filteredAlerts.length === 0" class="state-msg">
+          Aucune alerte pour ce filtre.
+        </div>
+        <div class="alert-grid" *ngIf="filteredAlerts.length > 0">
+          <article class="alert-card" *ngFor="let alert of filteredAlerts">
+            <div class="alert-top">
+              <span class="priority-badge" [ngClass]="priorityClass(alert.priority)">{{ alert.priority }}</span>
+              <span class="alert-date">{{ alert.date }}</span>
+            </div>
+            <h3>{{ alert.title }}</h3>
+            <p>{{ alert.description }}</p>
+            <div class="alert-footer">
+              <span class="alert-service">{{ alert.service }}</span>
+              <span class="alert-status" *ngIf="alert.status === 'ACKNOWLEDGED'">Acquittee</span>
+              <button class="ack-btn" *ngIf="alert.status === 'OPEN'"
+                      [disabled]="ackLoading.has(alert.id)"
+                      (click)="acknowledge(alert.id)">
+                <span *ngIf="!ackLoading.has(alert.id)">Acquitter</span>
+                <span *ngIf="ackLoading.has(alert.id)">...</span>
+              </button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </ng-container>
+  </ng-template>
+</section>

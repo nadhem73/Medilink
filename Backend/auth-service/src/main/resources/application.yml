@@ -1,5 +1,5 @@
 ﻿server:
-  port: 8081
+  port: 8084
 
 spring:
   application:
@@ -42,6 +42,10 @@ spring:
       enabled: false
       import-check:
         enabled: false
+
+# Telegram Bot Configuration
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN:8644047281:AAHywXMMM9zpDThyBj_FOgme46RZi_GhzRk}
 
 # JWT Configuration
 jwt:

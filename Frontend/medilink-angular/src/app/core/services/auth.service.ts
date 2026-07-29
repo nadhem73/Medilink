@@ -66,6 +66,26 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
+export interface AdminUserDto {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  suspendUntil?: string;
+  specialty?: string;
+  licenseNumber?: string;
+  pharmacyName?: string;
+}
+
+export interface AdminUserActionRequest {
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  suspendUntil?: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -84,6 +104,7 @@ export interface AuthResponse {
     isEmailVerified: boolean;
     roles: string[];
     createdAt: string;
+    pharmacieId?: number;
   };
 }
 
@@ -150,10 +171,34 @@ export class AuthService {
     );
   }
 
+  updateProfile(data: Partial<AuthResponse['user']>): Observable<any> {
+    return this.http.put<any>(`${this.API_URL}/me`, data).pipe(
+      tap(user => {
+        this.storage.setItem('user', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+      })
+    );
+  }
+
   getAllPatients(): Observable<PatientListDto[]> {
     return this.http.get<PatientListDto[]>(`${this.API_URL}/patients`);
   }
 
+  getTelegramChatId(patientId: number): Observable<{ telegramChatId: string }> {
+    return this.http.get<{ telegramChatId: string }>(`${this.API_URL}/patients/${patientId}/telegram`);
+  }
+
+  linkTelegram(data: { email: string; telegramChatId: string }): Observable<MessageResponse> {
+    return this.http.put<MessageResponse>(`${this.API_URL}/patients/telegram`, data);
+  }
+
+  autoLinkTelegram(email: string): Observable<{ telegramChatId: string; success: boolean; message?: string; webhookDeleted?: boolean }> {
+    return this.http.post<{ telegramChatId: string; success: boolean; message?: string; webhookDeleted?: boolean }>(`${this.API_URL}/patients/telegram/auto-link`, { email });
+  }
+
+  completeLinking(email: string): Observable<{ telegramChatId: string; success: boolean; message?: string }> {
+    return this.http.post<{ telegramChatId: string; success: boolean; message?: string }>(`${this.API_URL}/patients/telegram/complete-linking`, { email });
+  }
 
   logout(): void {
     this.storage.removeToken();
@@ -182,6 +227,14 @@ export class AuthService {
   hasRole(role: string): boolean {
     const roles = this.getUserRole();
     return roles.includes(role);
+  }
+
+  getAllUsers(): Observable<AdminUserDto[]> {
+    return this.http.get<AdminUserDto[]>(`${this.API_URL}/admin/users`);
+  }
+
+  updateUserStatus(userId: number, data: AdminUserActionRequest): Observable<MessageResponse> {
+    return this.http.put<MessageResponse>(`${this.API_URL}/admin/users/${userId}/status`, data);
   }
 
   private handleAuthResponse(response: AuthResponse): void {

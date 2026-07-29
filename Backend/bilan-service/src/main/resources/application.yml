@@ -1,0 +1,79 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: bilan-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/medilink_bilan
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+  cloud:
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+
+jwt:
+  secret: ${JWT_SECRET:medilinktunisia2025SecretKeyForJWTTokenGenerationAndValidation}
+  expiration: 900000
+  refresh-expiration: 604800000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    enabled: true
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+app:
+  ai-service:
+    url: http://localhost:8093
+  image-storage:
+    path: ./uploads/bilans
+
+logging:
+  file:
+    name: logs/bilan-service.log
+    max-size: 10MB
+    max-history: 30
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    com.medilinktunisia: DEBUG
+    org.hibernate.SQL: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
