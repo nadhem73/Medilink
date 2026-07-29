@@ -18,6 +18,7 @@ import com.medilinktunisia.authservice.security.SecurityConfig;
 import com.medilinktunisia.authservice.service.AuthService;
 import com.medilinktunisia.authservice.service.EmailService;
 import com.medilinktunisia.authservice.service.PasswordResetService;
+import com.medilinktunisia.authservice.service.TelegramService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,6 +71,8 @@ class AuthControllerTest {
     @MockBean
     private CustomUserDetailsService customUserDetailsService;
 
+    @MockBean
+    private TelegramService telegramService;
 
     @Test
     void register_shouldReturn201() throws Exception {
