@@ -171,10 +171,34 @@ export class AuthService {
     );
   }
 
+  updateProfile(data: Partial<AuthResponse['user']>): Observable<any> {
+    return this.http.put<any>(`${this.API_URL}/me`, data).pipe(
+      tap(user => {
+        this.storage.setItem('user', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+      })
+    );
+  }
+
   getAllPatients(): Observable<PatientListDto[]> {
     return this.http.get<PatientListDto[]>(`${this.API_URL}/patients`);
   }
 
+  getTelegramChatId(patientId: number): Observable<{ telegramChatId: string }> {
+    return this.http.get<{ telegramChatId: string }>(`${this.API_URL}/patients/${patientId}/telegram`);
+  }
+
+  linkTelegram(data: { email: string; telegramChatId: string }): Observable<MessageResponse> {
+    return this.http.put<MessageResponse>(`${this.API_URL}/patients/telegram`, data);
+  }
+
+  autoLinkTelegram(email: string): Observable<{ telegramChatId: string; success: boolean; message?: string; webhookDeleted?: boolean }> {
+    return this.http.post<{ telegramChatId: string; success: boolean; message?: string; webhookDeleted?: boolean }>(`${this.API_URL}/patients/telegram/auto-link`, { email });
+  }
+
+  completeLinking(email: string): Observable<{ telegramChatId: string; success: boolean; message?: string }> {
+    return this.http.post<{ telegramChatId: string; success: boolean; message?: string }>(`${this.API_URL}/patients/telegram/complete-linking`, { email });
+  }
 
   logout(): void {
     this.storage.removeToken();

@@ -6,6 +6,7 @@ import com.medilinktunisia.authservice.dto.request.AdminUserActionRequest;
 import com.medilinktunisia.authservice.dto.request.LinkTelegramRequest;
 import com.medilinktunisia.authservice.dto.request.LoginRequest;
 import com.medilinktunisia.authservice.dto.request.RegisterRequest;
+import com.medilinktunisia.authservice.dto.request.UpdateProfileRequest;
 import com.medilinktunisia.authservice.dto.response.AdminUserDto;
 import com.medilinktunisia.authservice.dto.response.AuthResponse;
 import com.medilinktunisia.authservice.dto.response.DoctorListDto;
@@ -224,6 +225,41 @@ public class AuthService {
 
     public UserDto getCurrentUser(String email) {
         return toUserDto(userRepository.findByEmail(email).orElseThrow());
+    }
+
+    @Transactional
+    public UserDto updateCurrentUser(String email, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+
+        if (request.getFirstName() != null) {
+            user.setFirstName(request.getFirstName());
+        }
+        if (request.getLastName() != null) {
+            user.setLastName(request.getLastName());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+
+        if (user instanceof Patient patient) {
+            if (request.getAddress() != null) {
+                patient.setAddress(request.getAddress());
+            }
+            if (request.getBirthDate() != null) {
+                patient.setBirthDate(request.getBirthDate());
+            }
+            if (request.getGender() != null) {
+                patient.setGender(request.getGender());
+            }
+        } else if (user instanceof Pharmacy pharmacy) {
+            if (request.getAddress() != null) {
+                pharmacy.setAddress(request.getAddress());
+            }
+        }
+
+        userRepository.save(user);
+        return toUserDto(user);
     }
 
     public void requestEmailVerification(String email) {

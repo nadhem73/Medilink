@@ -5,11 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class LinkTelegramRequest {
+public class AutoLinkTelegramRequest {
 
     @NotBlank
     @Email
     private String email;
-
-    private String telegramChatId;
 }

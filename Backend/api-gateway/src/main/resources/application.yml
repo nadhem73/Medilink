@@ -132,6 +132,9 @@ resilience4j:
       default:
         timeout-duration: 5s
     instances:
+      authServiceCircuitBreaker:
+        base-config: default
+        timeout-duration: 120s
       bilanServiceCircuitBreaker:
         base-config: default
         timeout-duration: 120s

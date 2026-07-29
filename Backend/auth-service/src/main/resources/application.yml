@@ -43,6 +43,10 @@ spring:
       import-check:
         enabled: false
 
+# Telegram Bot Configuration
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN:8644047281:AAHywXMMM9zpDThyBj_FOgme46RZi_GhzRk}
+
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:medilinktunisia2025SecretKeyForJWTTokenGenerationAndValidation}

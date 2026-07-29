@@ -9,6 +9,7 @@ import com.medilinktunisia.authservice.dto.request.RefreshTokenRequest;
 import com.medilinktunisia.authservice.dto.request.RegisterRequest;
 import com.medilinktunisia.authservice.dto.request.OtpVerificationRequest;
 import com.medilinktunisia.authservice.dto.request.ResetPasswordRequest;
+import com.medilinktunisia.authservice.dto.request.UpdateProfileRequest;
 import com.medilinktunisia.authservice.dto.response.AdminUserDto;
 import com.medilinktunisia.authservice.dto.response.AuthResponse;
 import com.medilinktunisia.authservice.dto.response.DoctorListDto;
@@ -18,6 +19,8 @@ import com.medilinktunisia.authservice.dto.response.UserDto;
 import com.medilinktunisia.authservice.service.AuthService;
 import com.medilinktunisia.authservice.service.EmailService;
 import com.medilinktunisia.authservice.service.PasswordResetService;
+import com.medilinktunisia.authservice.service.TelegramService;
+import com.medilinktunisia.authservice.dto.request.AutoLinkTelegramRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +41,7 @@ public class AuthController {
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
     private final EmailService emailService;
+    private final TelegramService telegramService;
 
     /** Auto-inscription d'un patient. */
     @PostMapping("/register")
@@ -72,6 +76,15 @@ public class AuthController {
     public ResponseEntity<UserDto> me(Authentication authentication) {
         log.info("Profile request received for user: {}", authentication.getName());
         return ResponseEntity.ok(authService.getCurrentUser(authentication.getName()));
+    }
+
+    /** Mise à jour du profil de l'utilisateur authentifié. */
+    @PutMapping("/me")
+    public ResponseEntity<UserDto> updateMe(
+            Authentication authentication,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        log.info("Profile update request for user: {}", authentication.getName());
+        return ResponseEntity.ok(authService.updateCurrentUser(authentication.getName(), request));
     }
 
     /**
@@ -163,6 +176,20 @@ public class AuthController {
         authService.linkTelegram(request);
         log.info("Telegram linked successfully for email: {}", request.getEmail());
         return ResponseEntity.ok(new MessageResponse("Compte Telegram lié avec succès.", true));
+    }
+
+    @PostMapping("/patients/telegram/auto-link")
+    public ResponseEntity<Map<String, Object>> autoLinkTelegram(@Valid @RequestBody AutoLinkTelegramRequest request) {
+        log.info("Telegram auto-link request for email: {}", request.getEmail());
+        Map<String, Object> result = telegramService.autoLink(request.getEmail());
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/patients/telegram/complete-linking")
+    public ResponseEntity<Map<String, Object>> completeLinking(@Valid @RequestBody AutoLinkTelegramRequest request) {
+        log.info("Telegram complete-linking request for email: {}", request.getEmail());
+        Map<String, Object> result = telegramService.completeLinking(request.getEmail());
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/admin/users")
