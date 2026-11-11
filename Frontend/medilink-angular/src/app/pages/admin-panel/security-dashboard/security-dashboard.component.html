@@ -106,6 +106,7 @@
             <button class="filter-btn" [class.active]="alertFilter === 'ALL'" (click)="setFilter('ALL')">Toutes</button>
             <button class="filter-btn" [class.active]="alertFilter === 'OPEN'" (click)="setFilter('OPEN')">Ouvertes</button>
             <button class="filter-btn" [class.active]="alertFilter === 'ACKNOWLEDGED'" (click)="setFilter('ACKNOWLEDGED')">Acquittees</button>
+            <button class="filter-btn" [class.active]="alertFilter === 'RESOLVED'" (click)="setFilter('RESOLVED')">Resolues</button>
           </div>
         </div>
         <div *ngIf="filteredAlerts.length === 0" class="state-msg">
@@ -122,6 +123,7 @@
             <div class="alert-footer">
               <span class="alert-service">{{ alert.service }}</span>
               <span class="alert-status" *ngIf="alert.status === 'ACKNOWLEDGED'">Acquittee</span>
+              <span class="alert-status" *ngIf="alert.status === 'RESOLVED'">Resolue</span>
               <button class="ack-btn" *ngIf="alert.status === 'OPEN'"
                       [disabled]="ackLoading.has(alert.id)"
                       (click)="acknowledge(alert.id)">

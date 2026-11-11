@@ -25,7 +25,8 @@ public class MetricsQueryController {
     private static LocalDateTime parseDateTime(String value) {
         if (value == null) return null;
         try {
-            return LocalDateTime.ofInstant(Instant.parse(value), ZoneOffset.UTC);
+            // Les mesures sont stockées en heure locale du serveur
+            return LocalDateTime.ofInstant(Instant.parse(value), java.time.ZoneId.systemDefault());
         } catch (DateTimeParseException e) {
             String cleaned = value.replace("Z", "").replace("z", "");
             return LocalDateTime.parse(cleaned);

@@ -20,6 +20,9 @@ import com.medilinktunisia.authservice.service.AuthService;
 import com.medilinktunisia.authservice.service.EmailService;
 import com.medilinktunisia.authservice.service.PasswordResetService;
 import com.medilinktunisia.authservice.service.TelegramService;
+import com.medilinktunisia.authservice.service.SecurityEventService;
+import com.medilinktunisia.authservice.model.entity.SecurityEvent;
+import jakarta.servlet.http.HttpServletRequest;
 import com.medilinktunisia.authservice.dto.request.AutoLinkTelegramRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +45,7 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final EmailService emailService;
     private final TelegramService telegramService;
+    private final SecurityEventService securityEventService;
 
     /** Auto-inscription d'un patient. */
     @PostMapping("/register")
@@ -55,20 +59,43 @@ public class AuthController {
 
     /** Connexion : renvoie les tokens JWT et l'utilisateur. */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("Login request received for email: {}", request.getEmail());
-        AuthResponse response = authService.login(request);
-        log.info("Login successful for email: {}", request.getEmail());
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
+                                              HttpServletRequest httpRequest) {
+        String identifier = loginIdentifier(request);
+        log.info("Login request received for: {}", identifier);
+        AuthResponse response;
+        try {
+            response = authService.login(request);
+        } catch (RuntimeException e) {
+            securityEventService.record(SecurityEvent.LOGIN_FAILURE, identifier, httpRequest, e.getMessage());
+            throw e;
+        }
+        String email = response.getUser() != null ? response.getUser().getEmail() : identifier;
+        securityEventService.record(SecurityEvent.LOGIN_SUCCESS, email, httpRequest, null);
+        log.info("Login successful for: {}", email);
         return ResponseEntity.ok(response);
     }
 
     /** Rafraîchit l'access token à partir du refresh token. */
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request,
+                                                HttpServletRequest httpRequest) {
         log.info("Token refresh request received");
         AuthResponse response = authService.refreshToken(request.getRefreshToken());
+        if (response.getUser() != null) {
+            securityEventService.record(SecurityEvent.TOKEN_REFRESH, response.getUser().getEmail(), httpRequest, null);
+        }
         log.info("Token refreshed successfully");
         return ResponseEntity.ok(response);
+    }
+
+    private static String loginIdentifier(LoginRequest request) {
+        if (request.getEmail() != null && !request.getEmail().isBlank()) return request.getEmail().trim();
+        if (request.getCin() != null && !request.getCin().isBlank()) return "CIN " + request.getCin().trim();
+        if (request.getLicenseNumber() != null && !request.getLicenseNumber().isBlank()) {
+            return "Licence " + request.getLicenseNumber().trim();
+        }
+        return null;
     }
 
     /** Profil de l'utilisateur authentifié (via le JWT). */

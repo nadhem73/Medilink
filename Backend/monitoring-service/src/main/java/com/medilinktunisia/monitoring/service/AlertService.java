@@ -1,16 +1,13 @@
 package com.medilinktunisia.monitoring.service;
 
 import com.medilinktunisia.monitoring.dto.AlertDto;
-import com.medilinktunisia.monitoring.dto.ServiceHealthDto;
-import jakarta.annotation.PostConstruct;
+import com.medilinktunisia.monitoring.dto.SuspiciousIpDto;
+import com.medilinktunisia.monitoring.entity.ServiceHealthHistory;
+import com.medilinktunisia.monitoring.repository.ServiceHealthHistoryRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
-import java.lang.management.OperatingSystemMXBean;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -18,94 +15,101 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+/**
+ * Alertes calculées à partir des dernières mesures réelles de chaque service
+ * et des événements de sécurité. Une alerte ouverte passe automatiquement à
+ * RESOLVED quand la condition qui l'a déclenchée disparaît.
+ */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class AlertService {
 
+    private static final Set<String> KNOWN_SERVICES = Set.of(
+        "auth-service", "patient-service", "doctor-service", "pharmacy-service",
+        "prescription-service", "bilan-service", "ai-service", "api-gateway"
+    );
+
+    private final ServiceHealthHistoryRepository repository;
+    private final PlatformStatsService platformStats;
+
     private final List<AlertDto> alerts = new CopyOnWriteArrayList<>();
+    /** clé de condition -> id de l'alerte active (OPEN ou ACKNOWLEDGED). */
+    private final Map<String, String> activeByKey = new LinkedHashMap<>();
     private final AtomicInteger alertCounter = new AtomicInteger(0);
-    private final MetricsPersistenceService persistenceService;
 
-    private double lastCpuThreshold = 0;
-    private double lastRamThreshold = 0;
+    private record Condition(String key, String title, String description, String priority, String service) {}
 
-    public AlertService(MetricsPersistenceService persistenceService) {
-        this.persistenceService = persistenceService;
-    }
+    public synchronized void evaluateThresholds() {
+        List<Condition> current = new ArrayList<>();
 
-    @PostConstruct
-    public void init() {
-        evaluateThresholds();
-        log.info("Alert service initialized with real threshold-based evaluation");
-    }
+        List<ServiceHealthHistory> latest = repository.findLatestPerService().stream()
+                .filter(s -> KNOWN_SERVICES.contains(s.getServiceName()))
+                .collect(Collectors.toList());
 
-    public void evaluateThresholds() {
+        for (ServiceHealthHistory s : latest) {
+            String name = MetricsPersistenceService.formatDisplayName(s.getServiceName());
+            if ("Offline".equals(s.getStatus())) {
+                current.add(new Condition("offline:" + s.getServiceName(), name + " hors ligne",
+                        name + " ne répond plus au health check.", "CRITICAL", name));
+                continue;
+            }
+            if ("Degraded".equals(s.getStatus())) {
+                current.add(new Condition("degraded:" + s.getServiceName(), name + " dégradé",
+                        name + " répond mais signale un état non sain.", "HIGH", name));
+            }
+            threshold(current, "cpu", s.getServiceName(), name, "CPU", s.getCpuPercent(), 80, 90);
+            threshold(current, "heap", s.getServiceName(), name, "Mémoire JVM", s.getRamPercent(), 85, 95);
+            threshold(current, "disk", "host", "Serveur", "Disque", s.getDiskPercent(), 85, 90);
+        }
+
+        for (SuspiciousIpDto ip : platformStats.securityStats().getSuspiciousIps()) {
+            current.add(new Condition("ip:" + ip.getIp(), "IP suspecte : " + ip.getIp(),
+                    ip.getAttempts() + " échecs de connexion en 24 h (dernier : " + ip.getLastAttempt() + ").",
+                    ip.getAttempts() >= 20 ? "CRITICAL" : "HIGH", "Auth Service"));
+        }
+
         String now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-
-        double cpuLoad = getSystemCpuLoad();
-        double ramUsed = getSystemMemoryUsage();
-        double diskUsed = getDiskUsage();
-        long offlineCount = persistenceService.getLatestServices().stream()
-                .filter(s -> "Offline".equals(s.getStatus()) || "Degraded".equals(s.getStatus()))
-                .count();
-
-        if (cpuLoad > 90 && lastCpuThreshold < 90) {
-            addAlert("CPU > 90%", String.format("System CPU usage reached %.1f%%", cpuLoad), "CRITICAL", "Monitoring Service", now);
-        } else if (cpuLoad > 80 && lastCpuThreshold < 80) {
-            addAlert("CPU > 80%", String.format("System CPU usage at %.1f%%", cpuLoad), "HIGH", "Monitoring Service", now);
-        }
-
-        if (ramUsed > 90 && lastRamThreshold < 90) {
-            addAlert("RAM > 90%", String.format("System RAM usage at %.1f%%", ramUsed), "CRITICAL", "Monitoring Service", now);
-        } else if (ramUsed > 85 && lastRamThreshold < 85) {
-            addAlert("RAM > 85%", String.format("System RAM usage at %.1f%%", ramUsed), "HIGH", "Monitoring Service", now);
-        }
-
-        if (diskUsed > 90) {
-            addAlert("Disk > 90%", String.format("Disk space usage at %.1f%%", diskUsed), "CRITICAL", "Monitoring Service", now);
-        } else if (diskUsed > 85) {
-            addAlert("Disk > 85%", String.format("Disk space usage at %.1f%%", diskUsed), "HIGH", "Monitoring Service", now);
-        }
-
-        if (offlineCount > 3) {
-            addAlert("Multiple services offline", offlineCount + " services are currently unreachable", "CRITICAL", "API Gateway", now);
-        } else if (offlineCount > 0) {
-            addAlert("Service degradation detected", offlineCount + " service(s) are offline or degraded", "HIGH", "API Gateway", now);
-        }
-
-        lastCpuThreshold = cpuLoad;
-        lastRamThreshold = ramUsed;
-    }
-
-    private void addAlert(String title, String description, String priority, String service, String date) {
-        String id = "ALT-" + String.format("%04d", alertCounter.incrementAndGet());
-        Optional<AlertDto> existing = alerts.stream()
-                .filter(a -> a.getTitle().equals(title) && "OPEN".equals(a.getStatus()))
-                .findFirst();
-        if (existing.isPresent()) return;
-
-        alerts.add(AlertDto.builder()
-                .id(id)
-                .title(title)
-                .description(description)
-                .priority(priority)
-                .date(date)
-                .status("OPEN")
-                .service(service)
-                .build());
-
-        if (alerts.size() > 100) {
-            Object[] snapshot = alerts.toArray();
-            alerts.clear();
-            for (int i = 0; i < Math.min(80, snapshot.length); i++) {
-                alerts.add((AlertDto) snapshot[i]);
+        Set<String> currentKeys = new HashSet<>();
+        for (Condition c : current) {
+            if (!currentKeys.add(c.key())) continue; // ex. disque partagé : une seule alerte
+            if (!activeByKey.containsKey(c.key())) {
+                String id = "ALT-" + String.format("%04d", alertCounter.incrementAndGet());
+                alerts.add(0, AlertDto.builder()
+                        .id(id).title(c.title()).description(c.description())
+                        .priority(c.priority()).date(now).status("OPEN").service(c.service())
+                        .build());
+                activeByKey.put(c.key(), id);
+                log.warn("ALERT [{}] {}: {}", c.priority(), c.title(), c.description());
             }
         }
-        log.warn("ALERT [{}] {}: {}", priority, title, description);
+
+        // Conditions disparues : alerte résolue automatiquement
+        for (Iterator<Map.Entry<String, String>> it = activeByKey.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<String, String> e = it.next();
+            if (!currentKeys.contains(e.getKey())) {
+                alerts.stream().filter(a -> a.getId().equals(e.getValue())).findFirst()
+                        .ifPresent(a -> a.setStatus("RESOLVED"));
+                it.remove();
+            }
+        }
+
+        // Historique borné : on retire les plus anciennes alertes résolues
+        for (int i = alerts.size() - 1; i >= 0 && alerts.size() > 200; i--) {
+            if ("RESOLVED".equals(alerts.get(i).getStatus())) alerts.remove(i);
+        }
+    }
+
+    private static void threshold(List<Condition> out, String kind, String key, String name, String label,
+                                  Double value, double high, double critical) {
+        if (value == null || value < high) return;
+        String priority = value >= critical ? "CRITICAL" : "HIGH";
+        out.add(new Condition(kind + ":" + key, label + " élevé — " + name,
+                String.format(Locale.ROOT, "%s à %.1f%% (seuil %.0f%%).", label, value, value >= critical ? critical : high),
+                priority, name));
     }
 
     public List<AlertDto> getAlerts(String priority, String status) {
-        evaluateThresholds();
         return alerts.stream()
                 .filter(a -> priority == null || priority.isEmpty() || a.getPriority().equalsIgnoreCase(priority))
                 .filter(a -> status == null || status.isEmpty() || a.getStatus().equalsIgnoreCase(status))
@@ -114,46 +118,12 @@ public class AlertService {
 
     public AlertDto acknowledgeAlert(String id) {
         for (AlertDto alert : alerts) {
-            if (alert.getId().equals(id)) {
+            if (alert.getId().equals(id) && "OPEN".equals(alert.getStatus())) {
                 alert.setStatus("ACKNOWLEDGED");
                 log.info("Alert {} acknowledged", id);
                 return alert;
             }
         }
         return null;
-    }
-
-    private double getSystemCpuLoad() {
-        try {
-            OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-            if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean) {
-                double load = sunOsBean.getCpuLoad();
-                return load >= 0 ? load * 100.0 : 0;
-            }
-        } catch (Exception e) { /* fallthrough */ }
-        return 0;
-    }
-
-    private double getSystemMemoryUsage() {
-        try {
-            OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-            if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean) {
-                long total = sunOsBean.getTotalMemorySize();
-                long free = sunOsBean.getFreeMemorySize();
-                return total > 0 ? (double) (total - free) / total * 100.0 : 0;
-            }
-        } catch (Exception e) { /* fallthrough */ }
-        MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
-        MemoryUsage heap = memoryBean.getHeapMemoryUsage();
-        return heap.getMax() > 0 ? (double) heap.getUsed() / heap.getMax() * 100.0 : 0;
-    }
-
-    private double getDiskUsage() {
-        try {
-            File root = new File(".");
-            long total = root.getTotalSpace();
-            long free = root.getFreeSpace();
-            return total > 0 ? (double) (total - free) / total * 100.0 : 0;
-        } catch (Exception e) { return 0; }
     }
 }

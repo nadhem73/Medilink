@@ -20,6 +20,10 @@ public interface ServiceHealthHistoryRepository extends JpaRepository<ServiceHea
     List<ServiceHealthHistory> findByTimestampBetweenOrderByTimestampAsc(
             LocalDateTime from, LocalDateTime to);
 
+    /** Dernière mesure d'un service avant une date (base de calcul des compteurs cumulés). */
+    java.util.Optional<ServiceHealthHistory> findTopByServiceNameAndTimestampBeforeOrderByTimestampDesc(
+            String serviceName, LocalDateTime before);
+
     @Query("SELECT DISTINCT s.serviceName FROM ServiceHealthHistory s")
     List<String> findDistinctServiceNames();
 

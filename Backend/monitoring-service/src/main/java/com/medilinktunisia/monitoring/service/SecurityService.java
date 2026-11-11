@@ -1,55 +1,30 @@
 package com.medilinktunisia.monitoring.service;
 
 import com.medilinktunisia.monitoring.dto.SecurityOverviewDto;
-import com.medilinktunisia.monitoring.dto.ServiceHealthDto;
-import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.util.List;
-
+/**
+ * Indicateurs de sécurité réels, issus du journal security_events d'auth-service
+ * (connexions, échecs, JWT expirés, sessions) et de la table users (comptes suspendus).
+ */
 @Service
-@Slf4j
+@RequiredArgsConstructor
 public class SecurityService {
 
-    private final MetricsPersistenceService persistenceService;
-
-    public SecurityService(MetricsPersistenceService persistenceService) {
-        this.persistenceService = persistenceService;
-    }
-
-    @PostConstruct
-    public void init() {
-        log.info("Security service initialized — all data sourced from system metrics");
-    }
+    private final PlatformStatsService platformStats;
 
     public SecurityOverviewDto getSecurityOverview() {
-        List<ServiceHealthDto> services = persistenceService.getLatestServices();
-        long offlineCount = services.stream()
-                .filter(s -> "Offline".equals(s.getStatus()))
-                .count();
-        long totalRequests = services.stream()
-                .mapToLong(ServiceHealthDto::getRequestsCount)
-                .sum();
-        long totalErrors = services.stream()
-                .mapToLong(ServiceHealthDto::getErrorsCount)
-                .sum();
-
-        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        long activeSessions = Math.max(0, threadBean.getThreadCount() - 10);
-        long lockedAccounts = Math.max(0, offlineCount);
-
+        PlatformStatsService.SecurityStats s = platformStats.securityStats();
         return SecurityOverviewDto.builder()
-                .loginAttempts(totalRequests)
-                .failedLogins(totalErrors)
-                .lockedAccounts(lockedAccounts)
-                .expiredJwt(0)
-                .activeSessions(activeSessions)
-                .expiredSessions(0)
-                .suspiciousActivities(0)
-                .topSuspiciousIps(List.of())
+                .loginAttempts(s.getLoginAttemptsToday())
+                .failedLogins(s.getFailedLoginsToday())
+                .lockedAccounts(s.getSuspendedAccounts())
+                .expiredJwt(s.getExpiredJwtToday())
+                .activeSessions(s.getActiveSessions())
+                .expiredSessions(s.getExpiredSessionsToday())
+                .suspiciousActivities(s.getSuspiciousIps().size())
+                .topSuspiciousIps(s.getSuspiciousIps())
                 .build();
     }
 }

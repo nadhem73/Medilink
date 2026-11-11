@@ -52,4 +52,10 @@ public class ServiceHealthHistory {
 
     @Column(length = 20)
     private String version;
+
+    /** Compteur cumulé de notifications Telegram envoyées (prescription-service uniquement). */
+    private Long notificationsCount;
+
+    /** Date de démarrage réelle du service (process.start.time). */
+    private LocalDateTime startedAt;
 }

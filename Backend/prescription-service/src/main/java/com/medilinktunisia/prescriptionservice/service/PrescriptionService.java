@@ -39,9 +39,14 @@ public class PrescriptionService {
     @Value("${n8n.webhook.base-url:http://localhost:5678/webhook}")
     private String n8nWebhookBaseUrl;
 
+    @Value("${auth.service.url:http://localhost:8084}")
+    private String authServiceUrl;
+
     private static final java.util.Map<String, String> N8N_WEBHOOK_PATHS = java.util.Map.of(
             "prescription-created", "iYlm5Sv4hR97rixn/webhook/prescription-created",
-            "prescription-prepared", "ScrkfsBPpbxh1227/webhook/prescription-prepared"
+            "prescription-prepared", "ScrkfsBPpbxh1227/webhook/prescription-prepared",
+            // WF3 also handles the other status notifications (EN_PREPARATION, RETIREE, ANNULEE)
+            "prescription-status", "ScrkfsBPpbxh1227/webhook/prescription-prepared"
     );
 
     @Transactional(noRollbackFor = Exception.class)
@@ -227,6 +232,9 @@ public class PrescriptionService {
             String code = generatePickupCode(id);
             response.setPickupCode(code);
             notifyN8n("prescription-prepared", response);
+        } else if (newStatus == PrescriptionStatus.EN_PREPARATION
+                || newStatus == PrescriptionStatus.RETIREE) {
+            notifyN8n("prescription-status", response);
         } else if (newStatus == PrescriptionStatus.DISPENSEE) {
             deduireStock(id);
         }
@@ -311,7 +319,9 @@ public class PrescriptionService {
         Prescription prescription = prescriptionRepository.findById(prescriptionId)
                 .orElseThrow(() -> new RuntimeException("Prescription not found: " + prescriptionId));
         prescription.setStatus(PrescriptionStatus.RETIREE);
-        return toDto(prescriptionRepository.save(prescription));
+        PrescriptionResponse response = toDto(prescriptionRepository.save(prescription));
+        notifyN8n("prescription-status", response);
+        return response;
     }
 
     private void notifyN8n(String event, PrescriptionResponse data) {
@@ -320,7 +330,7 @@ public class PrescriptionService {
             try {
                 @SuppressWarnings("unchecked")
                 Map<String, String> resp = restTemplate.getForObject(
-                        "http://localhost:8081/api/auth/patients/" + data.getPatientId() + "/telegram",
+                        authServiceUrl + "/api/auth/patients/" + data.getPatientId() + "/telegram",
                         Map.class);
                 if (resp != null) {
                     chatId = resp.get("telegramChatId");
@@ -336,6 +346,7 @@ public class PrescriptionService {
             payload.put("status", data.getStatus());
             payload.put("patientTelegramChatId", chatId != null && !chatId.isEmpty() ? chatId : null);
             payload.put("pickupCode", data.getPickupCode());
+            payload.put("pharmacyId", data.getPharmacieId());
             payload.put("baseUrl", "http://localhost:8765");
 
             String webhookPath = N8N_WEBHOOK_PATHS.getOrDefault(event, event);
@@ -344,6 +355,10 @@ public class PrescriptionService {
                     payload,
                     Void.class);
             log.info("n8n notified: {} -> {} for prescription {} (chatId={})", event, webhookPath, data.getId(), chatId);
+            if (chatId != null && !chatId.isEmpty()) {
+                // Compteur réel lu par le monitoring-service (Notifications envoyées)
+                io.micrometer.core.instrument.Metrics.counter("medilink.notifications.sent", "event", event).increment();
+            }
         } catch (Exception e) {
             log.warn("Failed to notify n8n ({}): {}", event, e.getMessage());
         }
@@ -363,7 +378,7 @@ public class PrescriptionService {
         }
 
         prescription.setStatus(PrescriptionStatus.ANNULEE);
-        prescriptionRepository.save(prescription);
+        notifyN8n("prescription-status", toDto(prescriptionRepository.save(prescription)));
     }
 
     private void deduireStock(Long prescriptionId) {

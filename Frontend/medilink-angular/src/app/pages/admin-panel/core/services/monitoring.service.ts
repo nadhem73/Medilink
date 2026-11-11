@@ -77,6 +77,18 @@ export interface AlertDto {
   service: string;
 }
 
+export interface PlatformStatsDto {
+  activeUsers: number;
+  newUsersThisWeek: number;
+  pendingProAccounts: number;
+  patients: number;
+  doctors: number;
+  pharmacies: number;
+  ocrDocuments: number;
+  failedLogins24h: number;
+  suspiciousIps24h: number;
+}
+
 export interface HistoryPointDto {
   date: string;
   value: number;
@@ -179,6 +191,10 @@ export class MonitoringService {
       params,
       responseType: 'blob'
     });
+  }
+
+  getPlatformStats(): Observable<PlatformStatsDto> {
+    return this.http.get<PlatformStatsDto>(`${this.baseUrl}/platform`);
   }
 
   getMetricsLatest(): Observable<OverviewDto> {

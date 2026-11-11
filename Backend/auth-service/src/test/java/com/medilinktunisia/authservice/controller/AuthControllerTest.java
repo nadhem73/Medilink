@@ -74,6 +74,9 @@ class AuthControllerTest {
     @MockBean
     private TelegramService telegramService;
 
+    @MockBean
+    private com.medilinktunisia.authservice.service.SecurityEventService securityEventService;
+
     @Test
     void register_shouldReturn201() throws Exception {
         RegisterRequest request = new RegisterRequest();

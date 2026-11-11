@@ -2,69 +2,33 @@ package com.medilinktunisia.monitoring.service;
 
 import com.medilinktunisia.monitoring.dto.LogEntryDto;
 import com.medilinktunisia.monitoring.dto.LogPageDto;
-import com.medilinktunisia.monitoring.entity.ServiceHealthHistory;
-import com.medilinktunisia.monitoring.repository.ServiceHealthHistoryRepository;
-import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
+import com.medilinktunisia.monitoring.repository.MetricsAggregateDao;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
+/**
+ * Journal réel de la plateforme :
+ *  - changements d'état des services (hors ligne, dégradé, retour en ligne) ;
+ *  - événements de sécurité d'auth-service (connexions, échecs, JWT expirés).
+ */
 @Service
-@Slf4j
+@RequiredArgsConstructor
 public class LogService {
 
-    private final ServiceHealthHistoryRepository repository;
-    private final List<LogEntryDto> recentLogs = new CopyOnWriteArrayList<>();
-    private final AtomicInteger logCounter = new AtomicInteger(0);
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    public LogService(ServiceHealthHistoryRepository repository) {
-        this.repository = repository;
-    }
-
-    @PostConstruct
-    public void init() {
-        log.info("Log service initialized — reads historical data from PostgreSQL");
-    }
-
-    public void addLog(String service, String level, String message) {
-        addLog(service, level, message, "system");
-    }
-
-    public void addLog(String service, String level, String message, String user) {
-        String id = "LOG-" + String.format("%04d", logCounter.incrementAndGet());
-        LocalDate date = LocalDate.now();
-        LocalTime time = LocalTime.now();
-
-        LogEntryDto entry = LogEntryDto.builder()
-                .id(id)
-                .date(date.format(DateTimeFormatter.ISO_LOCAL_DATE))
-                .time(time.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
-                .service(service)
-                .level(level)
-                .message(message)
-                .user(user)
-                .ipAddress("system")
-                .traceId("")
-                .build();
-
-        recentLogs.addFirst(entry);
-
-        if (recentLogs.size() > 2000) {
-            Object[] snapshot = recentLogs.toArray();
-            recentLogs.clear();
-            for (int i = 0; i < Math.min(1000, snapshot.length); i++) {
-                recentLogs.add((LogEntryDto) snapshot[i]);
-            }
-        }
-    }
+    private final MetricsAggregateDao aggregates;
+    private final PlatformStatsService platformStats;
 
     public LogPageDto getLogs(String service, String level, String search,
                               String dateFrom, String dateTo, int page, int pageSize) {
@@ -75,101 +39,127 @@ public class LogService {
                 ? LocalDate.parse(dateTo).plusDays(1).atStartOfDay()
                 : LocalDateTime.now();
 
-        List<ServiceHealthHistory> dbRecords = repository.findByTimestampBetweenOrderByTimestampAsc(from, to);
+        List<Entry> all = collect(from, to);
 
-        List<LogEntryDto> dbLogs = dbRecords.stream().map(this::toLogEntry).collect(Collectors.toList());
-
-        List<LogEntryDto> combined = new ArrayList<>(dbLogs);
-        for (LogEntryDto rl : recentLogs) {
-            if (rl.getDate().compareTo(from.format(DateTimeFormatter.ISO_LOCAL_DATE)) >= 0 &&
-                rl.getDate().compareTo(to.format(DateTimeFormatter.ISO_LOCAL_DATE)) <= 0) {
-                combined.add(rl);
-            }
-        }
-
-        combined.sort((a, b) -> (b.getDate() + b.getTime()).compareTo(a.getDate() + a.getTime()));
-
-        List<LogEntryDto> filtered = combined.stream()
-                .filter(l -> service == null || service.isEmpty() || l.getService().equalsIgnoreCase(service))
-                .filter(l -> level == null || level.isEmpty() || l.getLevel().equalsIgnoreCase(level))
-                .filter(l -> search == null || search.isEmpty() ||
-                        l.getMessage().toLowerCase().contains(search.toLowerCase()) ||
-                        l.getUser().toLowerCase().contains(search.toLowerCase()))
+        String q = search != null ? search.toLowerCase(Locale.ROOT) : "";
+        List<LogEntryDto> filtered = all.stream()
+                .filter(e -> service == null || service.isEmpty()
+                        || e.serviceId.equalsIgnoreCase(service) || e.dto.getService().equalsIgnoreCase(service))
+                .filter(e -> level == null || level.isEmpty() || e.dto.getLevel().equalsIgnoreCase(level))
+                .filter(e -> q.isEmpty()
+                        || e.dto.getMessage().toLowerCase(Locale.ROOT).contains(q)
+                        || e.dto.getUser().toLowerCase(Locale.ROOT).contains(q)
+                        || e.dto.getIpAddress().toLowerCase(Locale.ROOT).contains(q))
+                .map(e -> e.dto)
                 .collect(Collectors.toList());
 
+        int size = Math.max(1, pageSize);
         int total = filtered.size();
-        int totalPages = (int) Math.ceil((double) total / pageSize);
-        int start = page * pageSize;
-        int end = Math.min(start + pageSize, total);
-
-        List<LogEntryDto> pageContent = start < total ? filtered.subList(start, end) : List.of();
-
+        int start = Math.max(0, page) * size;
+        int end = Math.min(start + size, total);
         return LogPageDto.builder()
-                .logs(pageContent)
+                .logs(start < total ? filtered.subList(start, end) : List.of())
                 .totalCount(total)
                 .page(page)
-                .pageSize(pageSize)
-                .totalPages(totalPages)
+                .pageSize(size)
+                .totalPages((int) Math.ceil((double) total / size))
                 .build();
     }
 
     public LogEntryDto getLogById(String id) {
-        for (LogEntryDto l : recentLogs) {
-            if (l.getId().equals(id)) return l;
-        }
-        return null;
+        // Les identifiants encodent la source : on relit les 30 derniers jours
+        LocalDateTime now = LocalDateTime.now();
+        return collect(now.minusDays(30), now).stream()
+                .map(e -> e.dto)
+                .filter(d -> d.getId().equals(id))
+                .findFirst().orElse(null);
     }
 
-    private LogEntryDto toLogEntry(ServiceHealthHistory h) {
-        String level;
-        String message;
-        if ("Offline".equals(h.getStatus())) {
-            level = "ERROR";
-            message = String.format("Health check failed — service %s is unreachable", formatSnakeName(h.getServiceName()));
-        } else if ("Degraded".equals(h.getStatus())) {
-            level = "WARNING";
-            message = String.format("Health check degraded — %s (CPU: %.1f%%, RAM: %.1f%%)",
-                    formatSnakeName(h.getServiceName()),
-                    h.getCpuPercent() != null ? h.getCpuPercent() : 0,
-                    h.getRamPercent() != null ? h.getRamPercent() : 0);
-        } else {
-            level = "INFO";
-            message = String.format("Health check OK — %s (CPU: %.1f%%, RAM: %.1f%%, Disk: %.1f%%, %dms)",
-                    formatSnakeName(h.getServiceName()),
-                    h.getCpuPercent() != null ? h.getCpuPercent() : 0,
-                    h.getRamPercent() != null ? h.getRamPercent() : 0,
-                    h.getDiskPercent() != null ? h.getDiskPercent() : 0,
-                    h.getResponseTimeMs() != null ? h.getResponseTimeMs().longValue() : 0);
+    private record Entry(LocalDateTime at, String serviceId, LogEntryDto dto) {}
+
+    private List<Entry> collect(LocalDateTime from, LocalDateTime to) {
+        List<Entry> entries = new ArrayList<>();
+
+        for (MetricsAggregateDao.StatusChange c : aggregates.statusChanges(from, to)) {
+            String name = MetricsPersistenceService.formatDisplayName(c.serviceName());
+            String level;
+            String message;
+            switch (c.status()) {
+                case "Offline" -> {
+                    level = "ERROR";
+                    message = name + " est hors ligne (health check sans réponse).";
+                }
+                case "Degraded" -> {
+                    level = "WARNING";
+                    message = name + " est dégradé (health check en erreur).";
+                }
+                default -> {
+                    level = "INFO";
+                    message = c.previous() == null
+                            ? name + " en ligne" + metricsSuffix(c)
+                            : name + " de nouveau en ligne" + metricsSuffix(c);
+                }
+            }
+            entries.add(new Entry(c.at(), c.serviceName(), dto("H-" + c.id(), c.at(), name, level, message, "system", "")));
         }
 
-        String id = "LOG-" + String.format("%04d", logCounter.incrementAndGet());
-        LocalDateTime ts = h.getTimestamp() != null ? h.getTimestamp() : LocalDateTime.now();
+        for (PlatformStatsService.SecurityEventRow e : platformStats.securityEvents(from, to)) {
+            String who = e.getIdentifier() != null ? e.getIdentifier() : "inconnu";
+            String level;
+            String message;
+            switch (e.getType()) {
+                case "LOGIN_FAILURE" -> {
+                    level = "WARNING";
+                    message = "Échec de connexion pour " + who
+                            + (e.getDetail() != null ? " : " + e.getDetail() : "");
+                }
+                case "LOGIN_SUCCESS" -> {
+                    level = "INFO";
+                    message = "Connexion réussie : " + who;
+                }
+                case "JWT_EXPIRED" -> {
+                    level = "INFO";
+                    message = "Token JWT expiré pour " + who
+                            + (e.getDetail() != null ? " (" + e.getDetail() + ")" : "");
+                }
+                case "TOKEN_REFRESH" -> {
+                    level = "INFO";
+                    message = "Session prolongée (refresh token) : " + who;
+                }
+                default -> {
+                    level = "INFO";
+                    message = e.getType() + " : " + who;
+                }
+            }
+            entries.add(new Entry(e.getCreatedAt(), "auth-service",
+                    dto("S-" + e.getId(), e.getCreatedAt(), "Auth Service", level, message, who,
+                            e.getIpAddress() != null ? e.getIpAddress() : "")));
+        }
 
+        entries.sort(Comparator.comparing(Entry::at).reversed());
+        return entries;
+    }
+
+    private static String metricsSuffix(MetricsAggregateDao.StatusChange c) {
+        List<String> parts = new ArrayList<>();
+        if (c.responseTimeMs() != null) parts.add(String.format(Locale.ROOT, "%.0f ms", c.responseTimeMs()));
+        if (c.cpuPercent() != null) parts.add(String.format(Locale.ROOT, "CPU %.1f%%", c.cpuPercent()));
+        if (c.ramPercent() != null) parts.add(String.format(Locale.ROOT, "heap %.1f%%", c.ramPercent()));
+        return parts.isEmpty() ? "." : " (" + String.join(", ", parts) + ").";
+    }
+
+    private static LogEntryDto dto(String id, LocalDateTime at, String service, String level,
+                                   String message, String user, String ip) {
         return LogEntryDto.builder()
                 .id(id)
-                .date(ts.format(DateTimeFormatter.ISO_LOCAL_DATE))
-                .time(ts.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
-                .service(formatSnakeName(h.getServiceName()))
+                .date(at.format(DATE))
+                .time(at.format(TIME))
+                .service(service)
                 .level(level)
                 .message(message)
-                .user("system")
-                .ipAddress("system")
+                .user(user)
+                .ipAddress(ip)
                 .traceId("")
                 .build();
-    }
-
-    private String formatSnakeName(String name) {
-        if (name == null) return "Unknown";
-        return switch (name) {
-            case "auth-service" -> "Authentication Service";
-            case "patient-service" -> "Patient Service";
-            case "doctor-service" -> "Doctor Service";
-            case "pharmacy-service" -> "Pharmacy Service";
-            case "prescription-service" -> "Prescription Service";
-            case "bilan-service" -> "Bilan Service";
-            case "ai-service" -> "AI Service";
-            case "api-gateway" -> "API Gateway";
-            default -> name;
-        };
     }
 }

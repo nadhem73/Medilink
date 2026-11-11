@@ -1,5 +1,8 @@
 package com.medilinktunisia.authservice.security;
 
+import com.medilinktunisia.authservice.model.entity.SecurityEvent;
+import com.medilinktunisia.authservice.service.SecurityEventService;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final SecurityEventService securityEventService;
 
     @Override
     protected void doFilterInternal(
@@ -61,6 +65,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     log.warn("Invalid JWT token for user: {}", email);
                 }
             }
+        } catch (ExpiredJwtException e) {
+            log.warn("Expired JWT for request {}: {}", path, e.getMessage());
+            String subject = e.getClaims() != null ? e.getClaims().getSubject() : null;
+            securityEventService.record(SecurityEvent.JWT_EXPIRED, subject, request, path);
         } catch (Exception e) {
             log.warn("JWT authentication failed for request {}: {}", path, e.getMessage());
         }

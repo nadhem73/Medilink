@@ -28,7 +28,7 @@ export class LogExplorerComponent implements OnInit, OnDestroy {
 
   expandedId: string | null = null;
 
-  services: string[] = ['auth-service', 'prescription-service', 'pharmacy-service', 'bilan-service', 'ai-service', 'api-gateway'];
+  services: string[] = ['api-gateway', 'auth-service', 'patient-service', 'doctor-service', 'pharmacy-service', 'prescription-service', 'bilan-service', 'ai-service'];
   levels: string[] = ['INFO', 'WARNING', 'ERROR', 'CRITICAL'];
 
   private searchSubject = new Subject<string>();
