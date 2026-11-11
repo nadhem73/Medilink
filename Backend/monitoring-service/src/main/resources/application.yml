@@ -1,0 +1,57 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: MONITORING-SERVICE
+  datasource:
+    url: jdbc:postgresql://localhost:5432/medilink_monitoring
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+monitoring:
+  polling:
+    interval-ms: 10000
+  services:
+    - auth-service
+    - patient-service
+    - doctor-service
+    - pharmacy-service
+    - prescription-service
+    - bilan-service
+    - ai-service
+    - api-gateway
+
+# Sources de données réelles (même serveur PostgreSQL que les autres services)
+monitoring-sources:
+  auth-db-url: ${AUTH_DB_URL:jdbc:postgresql://localhost:5432/medilink_auth}
+  bilan-db-url: ${BILAN_DB_URL:jdbc:postgresql://localhost:5432/medilink_bilan}
+  db-username: ${SOURCES_DB_USER:postgres}
+  db-password: ${SOURCES_DB_PASSWORD:postgres}
+  # Durée de vie de l'access token (auth-service jwt.expiration) : sert à compter les sessions actives
+  session-minutes: 15
+  # Nombre d'échecs de connexion depuis une même IP (24 h) au-delà duquel elle est suspecte
+  suspicious-failures-threshold: 5

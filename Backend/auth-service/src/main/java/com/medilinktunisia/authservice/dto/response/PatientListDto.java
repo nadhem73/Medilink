@@ -15,4 +15,5 @@ public class PatientListDto {
     private String address;
     private String birthDate;
     private String cin;
+    private String telegramChatId;
 }

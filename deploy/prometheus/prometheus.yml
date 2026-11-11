@@ -1,0 +1,89 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  - job_name: 'api-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'api-gateway'
+
+  - job_name: 'monitoring-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8090']
+        labels:
+          service: 'monitoring-service'
+
+  - job_name: 'monitoring-aggregated'
+    metrics_path: '/api/monitoring/metrics/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'monitoring-aggregated'
+
+  - job_name: 'auth-service'
+    metrics_path: '/api/auth/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'auth-service'
+
+  - job_name: 'patient-service'
+    metrics_path: '/api/patients/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'patient-service'
+
+  - job_name: 'doctor-service'
+    metrics_path: '/api/doctors/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'doctor-service'
+
+  - job_name: 'pharmacy-service'
+    metrics_path: '/api/pharmacy/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'pharmacy-service'
+
+  - job_name: 'appointment-service'
+    metrics_path: '/api/appointments/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'appointment-service'
+
+  - job_name: 'prescription-service'
+    metrics_path: '/api/prescriptions/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'prescription-service'
+
+  - job_name: 'bilan-service'
+    metrics_path: '/api/bilans/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'bilan-service'
+
+  - job_name: 'notification-service'
+    metrics_path: '/api/notifications/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'notification-service'
+
+  - job_name: 'ai-service'
+    metrics_path: '/api/ai/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8765']
+        labels:
+          service: 'ai-service'

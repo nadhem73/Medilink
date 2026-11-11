@@ -1,0 +1,175 @@
+<div class="log-explorer">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <p class="page-kicker">Administration</p>
+      <h1>Explorateur de logs</h1>
+      <p class="page-copy">
+        Consultez, filtrez et exportez les journaux d'événements de tous les services.
+      </p>
+    </div>
+    <button class="export-btn" (click)="exportCsv()" [disabled]="logs.length === 0">
+      Exporter CSV
+    </button>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="card filter-bar">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Service</label>
+        <select [(ngModel)]="filterService" (ngModelChange)="loadLogs()">
+          <option value="">Tous</option>
+          <option *ngFor="let s of services" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Niveau</label>
+        <select [(ngModel)]="filterLevel" (ngModelChange)="loadLogs()">
+          <option value="">Tous</option>
+          <option *ngFor="let lv of levels" [value]="lv">{{ lv }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group search-group">
+        <label>Recherche</label>
+        <input
+          type="text"
+          placeholder="Message, utilisateur, IP…"
+          [ngModel]="filterSearch"
+          (ngModelChange)="onSearchChange($event)"
+        />
+        <button
+          *ngIf="filterSearch"
+          class="clear-btn"
+          (click)="filterSearch = ''; loadLogs()"
+        >&times;</button>
+      </div>
+
+      <div class="filter-group">
+        <label>Du</label>
+        <input type="date" [(ngModel)]="filterDateFrom" (ngModelChange)="loadLogs()" />
+      </div>
+
+      <div class="filter-group">
+        <label>Au</label>
+        <input type="date" [(ngModel)]="filterDateTo" (ngModelChange)="loadLogs()" />
+      </div>
+    </div>
+
+    <button
+      *ngIf="filterService || filterLevel || filterSearch || filterDateFrom || filterDateTo"
+      class="reset-btn"
+      (click)="resetFilters()"
+    >
+      Effacer les filtres
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="state-msg">
+    Chargement des logs…
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="state-msg error">
+    {{ error }}
+  </div>
+
+  <!-- Results -->
+  <div *ngIf="!loading && !error" class="card log-table-wrap">
+    <div class="log-count">
+      <strong>{{ totalCount }}</strong> entrée<span *ngIf="totalCount !== 1">s</span>
+    </div>
+
+    <table class="log-table" *ngIf="logs.length > 0">
+      <thead>
+        <tr>
+          <th>Date / Heure</th>
+          <th>Service</th>
+          <th>Niveau</th>
+          <th>Message</th>
+          <th>Utilisateur</th>
+          <th>IP</th>
+          <th>Trace ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let log of logs">
+          <tr class="log-row" (click)="toggleExpand(log.id)" [class.expanded]="expandedId === log.id">
+            <td class="cell-date">{{ log.date }}<span class="cell-time">{{ log.time }}</span></td>
+            <td>{{ log.service }}</td>
+            <td>
+              <span class="level-badge" [ngClass]="getLevelClass(log.level)">{{ log.level }}</span>
+            </td>
+            <td class="cell-message">{{ log.message | slice:0:80 }}{{ log.message.length > 80 ? '…' : '' }}</td>
+            <td>{{ log.user }}</td>
+            <td class="cell-ip">{{ log.ipAddress }}</td>
+            <td class="cell-trace">{{ log.traceId | slice:0:12 }}{{ log.traceId.length > 12 ? '…' : '' }}</td>
+          </tr>
+          <tr *ngIf="expandedId === log.id" class="detail-row">
+            <td colspan="7">
+              <div class="detail-box">
+                <div class="detail-field">
+                  <span class="detail-label">Message complet</span>
+                  <p>{{ log.message }}</p>
+                </div>
+                <div class="detail-grid">
+                  <div><span class="detail-label">Service</span>{{ log.service }}</div>
+                  <div><span class="detail-label">Date</span>{{ log.date }} {{ log.time }}</div>
+                  <div><span class="detail-label">Niveau</span><span class="level-badge" [ngClass]="getLevelClass(log.level)">{{ log.level }}</span></div>
+                  <div><span class="detail-label">Utilisateur</span>{{ log.user || '—' }}</div>
+                  <div><span class="detail-label">IP</span>{{ log.ipAddress || '—' }}</div>
+                  <div><span class="detail-label">Trace ID</span><code>{{ log.traceId }}</code></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+
+    <!-- Empty -->
+    <div *ngIf="logs.length === 0" class="state-msg">
+      Aucun log trouvé pour ces critères.
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 0">
+      <button
+        class="page-btn"
+        [disabled]="page <= 0"
+        (click)="goToPage(page - 1)"
+      >&laquo; Précédent</button>
+
+      <button
+        *ngIf="pages[0] > 0"
+        class="page-btn"
+        (click)="goToPage(0)"
+      >1</button>
+      <span *ngIf="pages[0] > 1" class="page-ellipsis">…</span>
+
+      <button
+        *ngFor="let p of pages"
+        class="page-btn"
+        [class.active]="p === page"
+        (click)="goToPage(p)"
+      >{{ p + 1 }}</button>
+
+      <span *ngIf="pages[pages.length - 1] < totalPages - 2" class="page-ellipsis">…</span>
+      <button
+        *ngIf="pages[pages.length - 1] < totalPages - 1"
+        class="page-btn"
+        (click)="goToPage(totalPages - 1)"
+      >{{ totalPages }}</button>
+
+      <button
+        class="page-btn"
+        [disabled]="page >= totalPages - 1"
+        (click)="goToPage(page + 1)"
+      >Suivant &raquo;</button>
+    </div>
+  </div>
+</div>

@@ -8,6 +8,7 @@ import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
+import { AccountStatusComponent } from './account-status/account-status.component';
 import { MedicalHologramComponent } from './register/medical-hologram/medical-hologram.component';
 
 @NgModule({
@@ -15,7 +16,8 @@ import { MedicalHologramComponent } from './register/medical-hologram/medical-ho
     LoginComponent,
     RegisterComponent,
     ForgotPasswordComponent,
-    ResetPasswordComponent
+    ResetPasswordComponent,
+    AccountStatusComponent
   ],
   imports: [
     CommonModule,

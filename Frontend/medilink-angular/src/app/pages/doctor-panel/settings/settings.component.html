@@ -1,36 +1,139 @@
-<section class="dp-page">
-  <header class="dp-header">
-    <div>
-      <p class="dp-kicker">Panel medecin</p>
-      <h1>Parametres</h1>
-      <p class="dp-copy">Gerez vos informations professionnelles, vos preferences de notification et la securite de votre compte.</p>
+<div class="settings-page">
+  <div class="settings-profile">
+    <div class="settings-avatar">
+      <span class="avatar-initials">{{ initials }}</span>
+      <button class="avatar-edit" title="Changer la photo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+      </button>
     </div>
-    <a routerLink="/dashboard/doctor" class="dp-back">Retour au tableau de bord</a>
-  </header>
-
-  <div class="dp-grid">
-    <article class="dp-card">
-      <div class="dp-card-header">
-        <h2>Informations professionnelles</h2>
-        <span class="dp-badge purple">Profil</span>
-      </div>
-      <div class="dp-info-grid">
-        <div class="dp-info" *ngFor="let item of profileCards">
-          <span>{{ item.label }}</span>
-          <strong>{{ item.value }}</strong>
-        </div>
-      </div>
-      <div style="margin-top:18px;">
-        <button type="button" class="dp-btn">Modifier le profil</button>
-      </div>
-    </article>
-
-    <article class="dp-card">
-      <h2>Preferences</h2>
-      <div class="dp-toggle" *ngFor="let p of preferences">
-        <span>{{ p.label }}</span>
-        <span class="switch" [class.on]="p.enabled" (click)="toggle(p)"></span>
-      </div>
-    </article>
+    <div class="settings-profile-info">
+      <h1>{{ fullName }}</h1>
+      <p class="profile-email">{{ currentUser?.email || 'email@exemple.com' }}</p>
+      <span class="profile-badge">Medecin</span>
+    </div>
+    <button *ngIf="!editing" class="settings-btn settings-btn-primary" (click)="startEditing()">Modifier le profil</button>
+    <div *ngIf="editing" class="profile-actions">
+      <button class="settings-btn settings-btn-primary" (click)="saveProfile()" [disabled]="saving">
+        <span *ngIf="saving" class="btn-spinner"></span>
+        {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+      <button class="settings-btn settings-btn-ghost" (click)="cancelEditing()">Annuler</button>
+    </div>
   </div>
-</section>
+
+  <div class="settings-body">
+    <div class="settings-main">
+      <section class="settings-section">
+        <div class="section-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <h2>Informations professionnelles</h2>
+        </div>
+
+        <ng-template [ngIf]="!editing" [ngIfElse]="editFields">
+          <div class="settings-fields">
+            <div class="field" *ngFor="let item of profileCards">
+              <label>{{ item.label }}</label>
+              <span class="field-value">{{ item.value }}</span>
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template #editFields>
+          <div class="settings-fields">
+            <div class="field field-editable" *ngFor="let item of profileCards">
+              <label [for]="'f_' + item.key">{{ item.label }}</label>
+              <input
+                [id]="'f_' + item.key"
+                class="field-input"
+                [type]="item.key === 'email' ? 'email' : 'text'"
+                [(ngModel)]="editForm[item.key]"
+                [placeholder]="item.label"
+              />
+            </div>
+          </div>
+        </ng-template>
+      </section>
+
+      <section class="settings-section">
+        <div class="section-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <h2>Securite</h2>
+        </div>
+        <div class="settings-fields">
+          <div class="field">
+            <label>Mot de passe</label>
+            <span class="field-value field-password">••••••••</span>
+          </div>
+          <div class="field">
+            <label>Authentification a deux facteurs</label>
+            <span class="switch" [class.on]="twoFactorEnabled" (click)="twoFactorEnabled = !twoFactorEnabled"></span>
+          </div>
+        </div>
+        <button class="settings-btn settings-btn-ghost" style="margin-top:16px;" (click)="togglePasswordForm()">
+          {{ showPasswordForm ? 'Annuler' : 'Changer le mot de passe' }}
+        </button>
+
+        <div class="password-form" *ngIf="showPasswordForm">
+          <div class="password-field">
+            <label for="currentPwdDoc">Mot de passe actuel</label>
+            <input id="currentPwdDoc" type="password" class="password-input" [(ngModel)]="passwordForm.currentPassword" placeholder="Entrez votre mot de passe actuel" />
+          </div>
+          <div class="password-field">
+            <label for="newPwdDoc">Nouveau mot de passe</label>
+            <input id="newPwdDoc" type="password" class="password-input" [(ngModel)]="passwordForm.newPassword" placeholder="Au moins 6 caracteres" />
+          </div>
+          <div class="password-field">
+            <label for="confirmPwdDoc">Confirmer le mot de passe</label>
+            <input id="confirmPwdDoc" type="password" class="password-input" [(ngModel)]="passwordForm.confirmPassword" placeholder="Confirmez le nouveau mot de passe" />
+          </div>
+          <div class="password-error" *ngIf="passwordError">{{ passwordError }}</div>
+          <button class="settings-btn settings-btn-primary" (click)="savePassword()" [disabled]="savingPassword">
+            <span *ngIf="savingPassword" class="btn-spinner"></span>
+            {{ savingPassword ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <div class="settings-side">
+      <section class="settings-section">
+        <div class="section-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <h2>Notifications</h2>
+        </div>
+        <div class="settings-toggles">
+          <div class="toggle-row" *ngFor="let p of preferences">
+            <span>{{ p.label }}</span>
+            <span class="switch" [class.on]="p.enabled" (click)="toggle(p)"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <div class="section-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <h2>Preferences</h2>
+        </div>
+        <div class="settings-toggles">
+          <div class="toggle-row">
+            <span>Langue</span>
+            <span class="field-value">Francais</span>
+          </div>
+          <div class="toggle-row">
+            <span>Fuseau horaire</span>
+            <span class="field-value">UTC+1</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-section settings-section-danger">
+        <div class="section-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <h2>Zone dangereuse</h2>
+        </div>
+        <p class="danger-desc">La suppression du compte est irreversible. Toutes vos donnees seront effacees.</p>
+        <button class="settings-btn settings-btn-danger">Supprimer mon compte</button>
+      </section>
+    </div>
+  </div>
+</div>

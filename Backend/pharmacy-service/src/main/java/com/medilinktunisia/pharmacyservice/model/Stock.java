@@ -35,6 +35,10 @@ public class Stock {
             foreignKey = @ForeignKey(name = "fk_stock_medicament"))
     private Medicament medicament;
 
+    /** Numéro de lot du fabricant (ex. «2404-A123»). Unique par lot physique. */
+    @Column(name = "numero_lot", length = 30)
+    private String numeroLot;
+
     /** Quantité actuellement en stock pour ce lot. */
     @Column(name = "quantite_en_stock", nullable = false)
     private Integer quantiteEnStock = 0;

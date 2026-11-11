@@ -30,6 +30,9 @@ jwt:
   expiration: 3600000
   refresh-expiration: 86400000
 
+telegram:
+  bot-token: test-dummy-token
+
 app:
   mail:
     from: test@medilink.tn

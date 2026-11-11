@@ -154,6 +154,203 @@ $admin-soft: #f7f8fb;
     background: rgba(202, 138, 4, 0.14);
     color: #a16207;
   }
+
+  // Statuts des comptes (gestion utilisateurs)
+  &.st-active {
+    background: rgba(21, 128, 61, 0.12);
+    color: #15803d;
+  }
+  &.st-inactive {
+    background: $admin-soft;
+    color: $admin-muted;
+  }
+  &.st-suspended {
+    background: rgba(185, 28, 28, 0.12);
+    color: #b91c1c;
+  }
+  &.st-pending {
+    background: rgba(202, 138, 4, 0.14);
+    color: #a16207;
+  }
+}
+
+// Recherche + tri
+.search-sort-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+
+  input {
+    width: 100%;
+    padding: 10px 34px 10px 14px;
+    border-radius: 12px;
+    border: 1px solid $admin-line;
+    background: $admin-soft;
+    color: $admin-ink;
+    font-size: 14px;
+
+    &:focus {
+      outline: none;
+      border-color: rgba(201, 150, 47, 0.5);
+    }
+    &::placeholder { color: $admin-muted; }
+  }
+}
+
+.clear-search {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: $admin-muted;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover { color: $admin-ink; }
+}
+
+.sort-box {
+  display: flex;
+  gap: 8px;
+}
+
+.sort-select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid $admin-line;
+  background: $admin-soft;
+  color: $admin-ink;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:focus { outline: none; border-color: rgba(201, 150, 47, 0.5); }
+}
+
+.sort-dir {
+  width: 42px;
+  border-radius: 12px;
+  border: 1px solid $admin-line;
+  background: $admin-soft;
+  color: $admin-ink;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: rgba(201, 150, 47, 0.4);
+    color: $admin-gold;
+  }
+}
+
+// Etats (chargement / erreur / vide)
+.state-msg {
+  padding: 24px;
+  text-align: center;
+  color: $admin-muted;
+  background: $admin-soft;
+  border: 1px dashed $admin-line;
+  border-radius: 16px;
+  font-size: 14px;
+
+  &.error {
+    color: #b91c1c;
+    background: rgba(185, 28, 28, 0.06);
+    border-color: rgba(185, 28, 28, 0.25);
+  }
+}
+
+// Liste des comptes
+.user-list {
+  display: grid;
+  gap: 12px;
+}
+
+.user-card {
+  padding: 16px;
+  border-radius: 16px;
+  background: $admin-soft;
+  border: 1px solid $admin-line;
+}
+
+.user-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.user-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  h3 {
+    margin: 0;
+    color: $admin-ink;
+    font-size: 16px;
+  }
+}
+
+.role-tag {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: $admin-surface;
+  color: $admin-muted;
+  border: 1px solid $admin-line;
+
+  &.role-doctor {
+    background: rgba(29, 78, 216, 0.1);
+    color: #1d4ed8;
+    border-color: rgba(29, 78, 216, 0.2);
+  }
+  &.role-pharmacy {
+    background: rgba(21, 128, 61, 0.1);
+    color: #15803d;
+    border-color: rgba(21, 128, 61, 0.2);
+  }
+  &.role-patient {
+    background: rgba(2, 132, 199, 0.1);
+    color: #0284c7;
+    border-color: rgba(2, 132, 199, 0.2);
+  }
+}
+
+.user-meta {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: $admin-muted;
+  font-size: 13px;
+}
+
+.side-note {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(245, 196, 81, 0.1);
+  border: 1px solid rgba(201, 150, 47, 0.2);
+  color: $admin-muted;
+  font-size: 13px;
 }
 
 .kpi-list {
@@ -233,7 +430,12 @@ $admin-soft: #f7f8fb;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.15s ease;
 
-  &:hover { transform: translateY(-1px); }
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 
   &.approve {
     background: linear-gradient(135deg, $admin-gold-bright, $admin-gold);
@@ -244,6 +446,86 @@ $admin-soft: #f7f8fb;
     color: #b91c1c;
     border: 1px solid rgba(185, 28, 28, 0.3);
   }
+  &.warn-btn {
+    background: #fff;
+    color: #a16207;
+    border: 1px solid rgba(202, 138, 4, 0.35);
+  }
+}
+
+// Modal de suspension
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 46, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal-box {
+  width: 100%;
+  max-width: 420px;
+  background: $admin-surface;
+  border: 1px solid $admin-line;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(20, 20, 46, 0.25);
+  padding: 24px;
+
+  h2 {
+    margin: 0 0 6px;
+    color: $admin-ink;
+    font-size: 20px;
+  }
+}
+
+.modal-target {
+  margin: 0 0 18px;
+  color: $admin-gold;
+  font-weight: 700;
+}
+
+.modal-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 22px;
+
+  label {
+    font-size: 13px;
+    font-weight: 700;
+    color: $admin-muted;
+  }
+}
+
+.duration-row {
+  display: flex;
+  gap: 10px;
+}
+
+.duration-input,
+.duration-select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid $admin-line;
+  background: $admin-soft;
+  color: $admin-ink;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.duration-input {
+  width: 110px;
+}
+
+.duration-select {
+  flex: 1;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .profile-grid {

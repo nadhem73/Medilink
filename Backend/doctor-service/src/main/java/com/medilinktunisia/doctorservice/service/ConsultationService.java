@@ -108,6 +108,7 @@ public class ConsultationService {
             }
         }
         if (request.getRequestedExams() != null) consultation.setRequestedExams(request.getRequestedExams());
+        if (request.getPrescribedTreatments() != null) consultation.setPrescribedTreatments(request.getPrescribedTreatments());
         if (request.getFollowUpDate() != null) consultation.setFollowUpDate(request.getFollowUpDate());
 
         return toDto(repository.save(consultation));
@@ -136,6 +137,7 @@ public class ConsultationService {
             }
         }
         if (request.getRequestedExams() != null) consultation.setRequestedExams(request.getRequestedExams());
+        if (request.getPrescribedTreatments() != null) consultation.setPrescribedTreatments(request.getPrescribedTreatments());
         if (request.getFollowUpDate() != null) consultation.setFollowUpDate(request.getFollowUpDate());
 
         consultation.setStatus(ConsultationStatus.COMPLETED);
@@ -145,7 +147,14 @@ public class ConsultationService {
     }
 
     public List<ConsultationResponse> getConsultationsByPatient(Long doctorId, Long patientId) {
-        return repository.findByDoctorIdAndPatientIdOrderByStartTimeDesc(doctorId, patientId)
+        return repository.findByPatientIdOrderByStartTimeDesc(patientId)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    public List<ConsultationResponse> getConsultationsByDoctorId(Long doctorId) {
+        return repository.findByDoctorIdOrderByStartTimeDesc(doctorId)
                 .stream()
                 .map(this::toDto)
                 .toList();
@@ -160,6 +169,13 @@ public class ConsultationService {
         }
 
         consultation.setStatus(ConsultationStatus.CANCELLED);
+        repository.save(consultation);
+    }
+
+    public void linkPrescription(Long consultationId, Long prescriptionId) {
+        Consultation consultation = repository.findById(consultationId)
+                .orElseThrow(() -> new RuntimeException("Consultation not found: " + consultationId));
+        consultation.setPrescriptionId(prescriptionId);
         repository.save(consultation);
     }
 
@@ -183,6 +199,7 @@ public class ConsultationService {
                 .height(c.getHeight())
                 .bmi(c.getBmi())
                 .requestedExams(c.getRequestedExams())
+                .prescribedTreatments(c.getPrescribedTreatments())
                 .followUpDate(c.getFollowUpDate())
                 .prescriptionId(c.getPrescriptionId())
                 .createdAt(c.getCreatedAt())

@@ -10,9 +10,9 @@
     </div>
     <div class="hero-card">
       <span class="hero-label">Etat de la plateforme</span>
-      <strong>Operationnel</strong>
-      <p>4 comptes professionnels attendent votre validation.</p>
-      <a routerLink="/dashboard/admin/approvals" class="hero-link">Traiter les validations</a>
+      <strong>{{ platformState }}</strong>
+      <p>{{ platformStateDetail || 'Gerez les comptes de la plateforme et leur statut d acces.' }}</p>
+      <a routerLink="/dashboard/admin/users" class="hero-link">Gerer les utilisateurs</a>
     </div>
   </div>
 
@@ -60,27 +60,7 @@
     </section>
   </div>
 
-  <div class="content-grid two-columns">
-    <section class="panel-card">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">A traiter</p>
-          <h2>Comptes professionnels en attente</h2>
-        </div>
-        <a routerLink="/dashboard/admin/approvals" class="text-link">Tout voir</a>
-      </div>
-      <div class="list-stack">
-        <article class="info-item" *ngFor="let approval of pendingApprovals">
-          <div>
-            <h3>{{ approval.name }}</h3>
-            <p>{{ approval.type }}</p>
-            <span>{{ approval.submitted }}</span>
-          </div>
-          <span class="status-pill">{{ approval.status }}</span>
-        </article>
-      </div>
-    </section>
-
+  <div class="content-grid">
     <section class="panel-card">
       <div class="section-heading">
         <div>
@@ -97,6 +77,9 @@
           </div>
           <span>{{ service.nextDose }}</span>
         </article>
+        <p class="timeline-meta" *ngIf="!loading && systemHealth.length === 0">
+          Aucune mesure disponible : verifiez que le monitoring-service (port 8090) est demarre.
+        </p>
       </div>
     </section>
   </div>
@@ -105,11 +88,14 @@
     <div class="section-heading">
       <div>
         <p class="section-kicker">Activite recente</p>
-        <h2>Journal d administration</h2>
+        <h2>Dernieres alertes</h2>
       </div>
-      <a routerLink="/dashboard/admin/logs" class="text-link">Audit complet</a>
+      <a routerLink="/dashboard/admin/security" class="text-link">Toutes les alertes</a>
     </div>
     <div class="timeline">
+      <p class="timeline-meta" *ngIf="!loading && activityTimeline.length === 0">
+        Aucune alerte : tous les indicateurs sont dans les seuils normaux.
+      </p>
       <article class="timeline-item" *ngFor="let item of activityTimeline">
         <span class="timeline-dot"></span>
         <div>

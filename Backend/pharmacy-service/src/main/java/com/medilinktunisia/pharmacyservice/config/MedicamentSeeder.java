@@ -77,6 +77,9 @@ public class MedicamentSeeder implements CommandLineRunner {
                 m.setDci(trimToNull(cols[6]));
                 m.setType(trimToNull(cols[7]));
                 m.setPrescriptionRequired("true".equalsIgnoreCase(cols[8].trim()));
+                if (cols.length >= 10) {
+                    m.setImageUrl(trimToNull(cols[9]));
+                }
                 buffer.add(m);
 
                 if (buffer.size() >= BATCH_SIZE) {

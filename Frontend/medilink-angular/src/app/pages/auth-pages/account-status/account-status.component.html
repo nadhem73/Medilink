@@ -1,0 +1,76 @@
+<section class="status-page"
+         [style.--primary]="theme.primary"
+         [style.--accent]="theme.accent"
+         [style.--dark]="theme.dark">
+
+  <article class="status-card">
+    <span class="role-chip">Espace {{ theme.label }}</span>
+
+    <!-- Icône -->
+    <div class="status-icon" [class.inactive]="status === 'INACTIVE'">
+      <span *ngIf="status === 'SUSPENDED' && !expired">⏳</span>
+      <span *ngIf="status === 'SUSPENDED' && expired">✓</span>
+      <span *ngIf="status === 'INACTIVE'">🔒</span>
+    </div>
+
+    <!-- SUSPENDU : en cours -->
+    <ng-container *ngIf="status === 'SUSPENDED' && !expired">
+      <h1>Compte temporairement suspendu</h1>
+      <p class="lead">
+        L'accès à votre compte a été suspendu par un administrateur.
+        Vous pourrez vous reconnecter automatiquement à la fin de la période ci-dessous.
+      </p>
+
+      <div class="countdown">
+        <div class="unit">
+          <span class="num">{{ pad(days) }}</span>
+          <span class="lbl">Jours</span>
+        </div>
+        <span class="sep">:</span>
+        <div class="unit">
+          <span class="num">{{ pad(hours) }}</span>
+          <span class="lbl">Heures</span>
+        </div>
+        <span class="sep">:</span>
+        <div class="unit">
+          <span class="num">{{ pad(minutes) }}</span>
+          <span class="lbl">Minutes</span>
+        </div>
+        <span class="sep">:</span>
+        <div class="unit">
+          <span class="num">{{ pad(seconds) }}</span>
+          <span class="lbl">Secondes</span>
+        </div>
+      </div>
+
+      <p class="until" *ngIf="suspendUntil">
+        Réactivation prévue le {{ suspendUntil | date:"dd/MM/yyyy 'à' HH:mm" }}
+      </p>
+    </ng-container>
+
+    <!-- SUSPENDU : terminé -->
+    <ng-container *ngIf="status === 'SUSPENDED' && expired">
+      <h1>Suspension terminée</h1>
+      <p class="lead">
+        La période de suspension de votre compte est arrivée à son terme.
+        Vous pouvez de nouveau vous connecter.
+      </p>
+      <button type="button" class="action-btn" (click)="goToLogin()">Se reconnecter</button>
+    </ng-container>
+
+    <!-- DÉSACTIVÉ -->
+    <ng-container *ngIf="status === 'INACTIVE'">
+      <h1>Compte désactivé</h1>
+      <p class="lead">
+        Votre compte a été désactivé par l'administration de MediLink.
+        Pour toute question ou demande de réactivation, veuillez contacter l'administration.
+      </p>
+      <p class="contact">📧 support&#64;medilink.tn</p>
+      <button type="button" class="action-btn" (click)="goToLogin()">Retour à la connexion</button>
+    </ng-container>
+
+    <a class="back-link" (click)="goToLogin()" *ngIf="status === 'SUSPENDED' && !expired">
+      Retour à la connexion
+    </a>
+  </article>
+</section>

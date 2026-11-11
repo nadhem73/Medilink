@@ -126,7 +126,7 @@ $white:   var(--blanc-sante, #fff);
   input[readonly], textarea[readonly] {
     background: color-mix(in srgb, $light 50%, $white);
   }
-  .analysis-chip, .slot-btn, .toggle-label input {
+  .slot-btn, .toggle-label input {
     cursor: default;
     opacity: .7;
   }
@@ -528,12 +528,6 @@ $white:   var(--blanc-sante, #fff);
   }
 }
 
-.analysis-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .slots-group {
   .slots-loading {
     font-size: 13px;
@@ -576,44 +570,6 @@ $white:   var(--blanc-sante, #fff);
       color: #fff;
       border-color: $green;
     }
-  }
-}
-
-.analysis-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1.5px solid $light;
-  background: $white;
-  color: $grey;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  user-select: none;
-
-  input[type="checkbox"] {
-    display: none;
-  }
-
-  &:hover {
-    border-color: color-mix(in srgb, $med 30%, $light);
-    background: color-mix(in srgb, $med 5%, $white);
-  }
-
-  &.selected {
-    background: linear-gradient(135deg, $med, var(--turquoise-tunisie, #00a8b5));
-    color: #fff;
-    border-color: transparent;
-    box-shadow: 0 4px 12px rgba(0,102,162,0.2);
-  }
-
-  &.disabled {
-    opacity: .6;
-    cursor: default;
-    pointer-events: none;
   }
 }
 
@@ -753,4 +709,28 @@ $white:   var(--blanc-sante, #fff);
   .appt-card { grid-template-columns: 50px 1fr; gap: 12px; }
   .appt-action-col { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; }
   .appt-hour { font-size: 15px; }
+}
+
+.prescription-info {
+  padding: 8px 0;
+}
+
+.dp-btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.badge-prescription {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  &.muted {
+    background: #f5f5f5;
+    color: #999;
+  }
 }

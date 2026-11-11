@@ -21,6 +21,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -185,5 +186,21 @@ class ConsultationControllerTest {
         mockMvc.perform(delete("/api/doctors/consultations/1")
                         .requestAttr("userId", doctorId))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void linkPrescription_returns200() throws Exception {
+        doNothing().when(service).linkPrescription(1L, 10L);
+
+        mockMvc.perform(put("/api/doctors/consultations/1/prescription/10"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void linkPrescription_notFound_returns404() throws Exception {
+        doThrow(new RuntimeException("Consultation not found: 99")).when(service).linkPrescription(99L, 10L);
+
+        mockMvc.perform(put("/api/doctors/consultations/99/prescription/10"))
+                .andExpect(status().isNotFound());
     }
 }

@@ -1,5 +1,6 @@
 package com.medilinktunisia.authservice.exception;
 
+import com.medilinktunisia.authservice.dto.response.AccountStatusResponse;
 import com.medilinktunisia.authservice.dto.response.MessageResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -46,6 +47,20 @@ public class GlobalExceptionHandler {
         log.warn("Authentication failed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(new MessageResponse("Email ou mot de passe incorrect", false));
+    }
+
+    /** Compte suspendu ou désactivé : connexion refusée (403) avec les infos de statut. */
+    @ExceptionHandler(AccountStatusException.class)
+    public ResponseEntity<AccountStatusResponse> handleAccountStatus(AccountStatusException ex) {
+        log.warn("Login refused, account status {}: {}", ex.getStatus(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(AccountStatusResponse.builder()
+                        .message(ex.getMessage())
+                        .success(false)
+                        .status(ex.getStatus().name())
+                        .role(ex.getRole())
+                        .suspendUntil(ex.getSuspendUntil())
+                        .build());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

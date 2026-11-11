@@ -117,15 +117,29 @@ export class LoginComponent implements OnInit {
       }
 
       this.authService.login(credentials).subscribe({
-        next: () => {
+        next: (response) => {
           this.loading = false;
 
-          // Apres connexion, on renvoie l'utilisateur vers la home.
-          // Il accedera ensuite a son panel via le menu du navbar.
-          this.router.navigate(['/']);
+          // Rediriger l'admin vers son panel, les autres vers la home.
+          const isAdmin = response.user?.roles?.some(r => r === 'ADMIN' || r === 'ROLE_ADMIN');
+          this.router.navigate(isAdmin ? ['/dashboard/admin'] : ['/']);
         },
         error: (error) => {
           this.loading = false;
+
+          // Compte suspendu ou désactivé → page dédiée (avec compteur pour la suspension).
+          const st = error.error?.status;
+          if (st === 'SUSPENDED' || st === 'INACTIVE') {
+            this.router.navigate(['/auth/account-status'], {
+              queryParams: {
+                status: st,
+                role: this.selectedRole,
+                until: error.error?.suspendUntil || null
+              }
+            });
+            return;
+          }
+
           this.errorMessage = error.error?.message || 'Identifiant ou mot de passe incorrect';
           console.error('Erreur de connexion:', error);
         }

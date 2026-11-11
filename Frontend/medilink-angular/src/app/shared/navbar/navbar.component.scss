@@ -84,27 +84,15 @@
       &:hover {
         color: var(--turquoise-tunisie); // Turquoise Tunisie
 
-        .ministry-logo,
-        .tunisia-flag {
+        .medilink-logo {
           transform: scale(1.05);
         }
       }
 
-      .ministry-logo {
+      .medilink-logo {
         height: 42px;
         width: auto;
         object-fit: contain;
-        transition: transform 0.25s ease;
-        -webkit-user-drag: none;
-        pointer-events: none;
-      }
-
-      .tunisia-flag {
-        height: 28px;
-        width: 42px;
-        object-fit: cover;
-        border-radius: 4px;
-        box-shadow: 0 1px 4px rgba(26, 43, 60, 0.2);
         transition: transform 0.25s ease;
         -webkit-user-drag: none;
         pointer-events: none;

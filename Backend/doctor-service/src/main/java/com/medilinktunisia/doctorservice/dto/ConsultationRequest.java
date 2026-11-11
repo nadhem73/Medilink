@@ -19,5 +19,6 @@ public class ConsultationRequest {
     private BigDecimal weight;
     private BigDecimal height;
     private String requestedExams;
+    private String prescribedTreatments;
     private LocalDateTime followUpDate;
 }

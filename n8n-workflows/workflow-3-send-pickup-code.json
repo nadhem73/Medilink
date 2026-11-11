@@ -1,0 +1,50 @@
+{
+  "name": "3 - Ordonnance prête → Code retrait patient",
+  "nodes": [
+    {
+      "id": "w3-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "prescription-prepared",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "w3-code",
+      "name": "Telegram - Envoyer code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [750, 300],
+      "parameters": {
+        "jsCode": "const input = $input.first().json.body;\n\nif (!input || !input.patientTelegramChatId || !input.pickupCode) {\n  return [{ json: { skipped: true, reason: 'Missing required fields' } }];\n}\n\nconst chatId = input.patientTelegramChatId;\nconst prescriptionId = input.id;\nconst pickupCode = input.pickupCode;\nconst token = \"8644047281:AAHywXMMM9zpDThyBj_FOgme46RZi_GhzRk\";\n\nconst text = '\\u2705 *Ordonnance #' + prescriptionId + ' pr\\u00EAte !*\\n\\n\\uD83D\\uDC8A Vos m\\u00E9dicaments sont pr\\u00EAts en pharmacie.\\n\\uD83D\\uDD11 *Code de retrait : ' + pickupCode + '*\\n\\nPr\\u00E9sentez ce code au pharmacien pour r\\u00E9cup\\u00E9rer vos m\\u00E9dicaments.';\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://api.telegram.org/bot' + token + '/sendMessage',\n  headers: { 'Content-Type': 'application/json' },\n  body: {\n    chat_id: chatId,\n    text: text,\n    parse_mode: 'Markdown'\n  }\n});\n\nreturn [{ json: { success: true, chatId, prescriptionId, messageId: response.result.message_id } }];"
+      }
+    },
+    {
+      "id": "w3-respond",
+      "name": "Répondre",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Telegram - Envoyer code", "index": 0 }]]
+    },
+    "Telegram - Envoyer code": {
+      "main": [[{ "node": "Répondre", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "tags": []
+}

@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+const db = fs.readFileSync('/tmp/db_types.txt', 'utf8').split('\n').map(s => s.trim()).filter(Boolean).sort();
+const ts = fs.readFileSync('Frontend/medilink-angular/src/app/pages/pharmacy-panel/pharmacy-stock/pharmacy-stock.component.ts', 'utf8');
+const m = ts.match(/readonly types = \[([\s\S]*?)\];/);
+const comp = [...m[1].matchAll(/'([^']+)'/g)].map(x => x[1]).filter(x => x.trim()).sort();
+const missing = db.filter(x => !comp.includes(x));
+const extra = comp.filter(x => !db.includes(x));
+console.log('DB:', db.length, '| Composant:', comp.length);
+console.log('Manquants dans composant:', missing.length ? missing : 'AUCUN ✓');
+console.log('En trop (inexistants en base):', extra.length ? extra : 'AUCUN ✓');

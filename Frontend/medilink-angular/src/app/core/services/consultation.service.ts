@@ -15,6 +15,7 @@ export interface ConsultationRequest {
   weight?: number;
   height?: number;
   requestedExams?: string;
+  prescribedTreatments?: string;
   followUpDate?: string;
   followUpTime?: string;
 }
@@ -38,6 +39,7 @@ export interface ConsultationResponse {
   height?: number;
   bmi?: number;
   requestedExams?: string;
+  prescribedTreatments?: string;
   followUpDate?: string;
   prescriptionId?: number;
   createdAt: string;
@@ -63,6 +65,10 @@ export class ConsultationService {
 
   getPatientConsultations(patientId: number): Observable<ConsultationResponse[]> {
     return this.http.get<ConsultationResponse[]>(`${this.API_URL}/patient/${patientId}`);
+  }
+
+  getConsultationsByDoctorId(doctorId: number): Observable<ConsultationResponse[]> {
+    return this.http.get<ConsultationResponse[]>(`${this.API_URL}/doctor/${doctorId}`);
   }
 
   getConsultation(id: number): Observable<ConsultationResponse> {

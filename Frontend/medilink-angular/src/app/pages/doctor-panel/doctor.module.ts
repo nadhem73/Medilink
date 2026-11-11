@@ -7,7 +7,9 @@ import { SharedModule } from '../../shared/shared.module';
 import { DoctorDashboardComponent } from './doctor-dashboard/doctor-dashboard.component';
 import { DoctorSectionComponent } from './doctor-section/doctor-section.component';
 import { ConsultationsComponent } from './consultations/consultations.component';
+import { PrescriptionModalComponent } from './consultations/prescription-modal/prescription-modal.component';
 import { MedicalRecordsComponent } from './medical-records/medical-records.component';
+import { CompareDoctorComponent } from './compare-doctor/compare-doctor.component';
 import { TeleconsultationComponent } from './teleconsultation/teleconsultation.component';
 import { MessagesComponent } from './messages/messages.component';
 import { NotificationsComponent } from './notifications/notifications.component';
@@ -22,7 +24,9 @@ import { MedicalHologramComponent } from '../auth-pages/register/medical-hologra
     DoctorDashboardComponent,
     DoctorSectionComponent,
     ConsultationsComponent,
+    PrescriptionModalComponent,
     MedicalRecordsComponent,
+    CompareDoctorComponent,
     TeleconsultationComponent,
     MessagesComponent,
     NotificationsComponent,

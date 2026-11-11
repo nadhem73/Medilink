@@ -61,6 +61,9 @@ public abstract class User {
     private boolean emailVerified = false;
 
     /** dateInscription dans le diagramme. */
+    @Column(name = "suspend_until")
+    private LocalDateTime suspendUntil;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

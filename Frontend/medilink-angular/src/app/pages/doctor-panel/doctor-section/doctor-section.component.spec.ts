@@ -1,12 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DoctorSectionComponent } from './doctor-section.component';
 import { AuthService, PatientListDto } from '../../../core/services/auth.service';
 import { AppointmentService, AppointmentDto } from '../../../core/services/appointment.service';
 import { ConsultationService, ConsultationResponse } from '../../../core/services/consultation.service';
 import { PatientService, MedicalRecord } from '../../../core/services/patient.service';
+import { BilanService, BilanSummary, ScanBilanResponse } from '../../../core/services/bilan.service';
 
 describe('DoctorSectionComponent', () => {
   let component: DoctorSectionComponent;
@@ -15,6 +17,7 @@ describe('DoctorSectionComponent', () => {
   let appointmentServiceSpy: jasmine.SpyObj<AppointmentService>;
   let consultationServiceSpy: jasmine.SpyObj<ConsultationService>;
   let patientServiceSpy: jasmine.SpyObj<PatientService>;
+  let bilanServiceSpy: jasmine.SpyObj<BilanService>;
   let activatedRouteStub: Partial<ActivatedRoute>;
 
   const mockPatients: PatientListDto[] = [
@@ -35,20 +38,25 @@ describe('DoctorSectionComponent', () => {
     appointmentServiceSpy = jasmine.createSpyObj('AppointmentService', ['getDoctorAppointments', 'confirmAppointment']);
     consultationServiceSpy = jasmine.createSpyObj('ConsultationService', ['getPatientConsultations']);
     patientServiceSpy = jasmine.createSpyObj('PatientService', ['getPatientMedicalRecord']);
+    bilanServiceSpy = jasmine.createSpyObj('BilanService', ['getDoctorBilans', 'getBilanForDoctor', 'updateReviewStatus']);
     activatedRouteStub = {
       data: of({ section: 'patients', title: 'Mes Patients' })
     };
 
     authServiceSpy.getCurrentUser.and.returnValue(mockUser);
+    bilanServiceSpy.getDoctorBilans.and.returnValue(of({ content: [] }));
 
     await TestBed.configureTestingModule({
       declarations: [DoctorSectionComponent],
+      imports: [HttpClientTestingModule],
       providers: [
         { provide: ActivatedRoute, useValue: activatedRouteStub },
         { provide: AuthService, useValue: authServiceSpy },
         { provide: AppointmentService, useValue: appointmentServiceSpy },
         { provide: ConsultationService, useValue: consultationServiceSpy },
-        { provide: PatientService, useValue: patientServiceSpy }
+        { provide: PatientService, useValue: patientServiceSpy },
+        { provide: BilanService, useValue: bilanServiceSpy },
+        { provide: Router, useValue: jasmine.createSpyObj('Router', ['navigate']) }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -415,5 +423,156 @@ describe('DoctorSectionComponent', () => {
 
     component.searchQuery = '';
     expect(component.filteredAppointments.length).toBe(3);
+  });
+});
+
+describe('DoctorSectionComponent - Bilan', () => {
+  let component: DoctorSectionComponent;
+  let fixture: ComponentFixture<DoctorSectionComponent>;
+  let bilanServiceSpy: jasmine.SpyObj<BilanService>;
+
+  const mockBilans: BilanSummary[] = [
+    { id: 'uuid-1', typeBilan: 'Bilan sanguin', dateBilan: '2026-06-15', status: 'PENDING', resultCount: 3, abnormalCount: 1, reviewStatus: 'EN_ATTENTE', patientId: 1, doctorId: 2 },
+    { id: 'uuid-2', typeBilan: 'Bilan urinaire', dateBilan: '2026-05-10', status: 'CONFIRMED', resultCount: 2, abnormalCount: 0, reviewStatus: 'LU', patientId: 2, doctorId: 2 }
+  ];
+
+  beforeEach(async () => {
+    bilanServiceSpy = jasmine.createSpyObj('BilanService', ['getDoctorBilans', 'getBilanForDoctor', 'updateReviewStatus']);
+
+    const authSpy = jasmine.createSpyObj('AuthService', ['getCurrentUser', 'getAllPatients']);
+    authSpy.getCurrentUser.and.returnValue({ id: 2, firstName: 'Dr', lastName: 'Test' });
+    authSpy.getAllPatients.and.returnValue(of([]));
+
+    bilanServiceSpy.getDoctorBilans.and.returnValue(of({ content: mockBilans }));
+
+    await TestBed.configureTestingModule({
+      declarations: [DoctorSectionComponent],
+      imports: [HttpClientTestingModule],
+      providers: [
+        { provide: ActivatedRoute, useValue: { data: of({ section: 'labs', title: 'Resultats de laboratoire' }) } },
+        { provide: AuthService, useValue: authSpy },
+        { provide: AppointmentService, useValue: jasmine.createSpyObj('AppointmentService', ['getDoctorAppointments', 'confirmAppointment']) },
+        { provide: ConsultationService, useValue: jasmine.createSpyObj('ConsultationService', ['getPatientConsultations']) },
+        { provide: PatientService, useValue: jasmine.createSpyObj('PatientService', ['getPatientMedicalRecord']) },
+        { provide: BilanService, useValue: bilanServiceSpy },
+        { provide: Router, useValue: jasmine.createSpyObj('Router', ['navigate']) }
+      ],
+      schemas: [NO_ERRORS_SCHEMA]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(DoctorSectionComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should load doctor bilans on init when section is labs', () => {
+    expect(component.section).toBe('labs');
+    expect(component.doctorBilans.length).toBe(2);
+    expect(bilanServiceSpy.getDoctorBilans).toHaveBeenCalled();
+  });
+
+  it('should set filteredDoctorBilans after loading', () => {
+    expect(component.filteredDoctorBilans.length).toBe(2);
+  });
+
+  it('should select and deselect a doctor bilan', () => {
+    const mockDetail = { id: 'uuid-1', typeBilan: 'Bilan sanguin', format: 'NOUVEAU_PATIENT', dateBilan: '2026-06-15', laboratoire: 'Labo', status: 'PENDING', reviewStatus: 'EN_ATTENTE', patientId: 1, doctorId: 2, resultats: [] };
+    bilanServiceSpy.getBilanForDoctor.and.returnValue(of(mockDetail));
+
+    component.selectDoctorBilan('uuid-1');
+
+    expect(bilanServiceSpy.getBilanForDoctor).toHaveBeenCalledWith('uuid-1');
+    expect(component.selectedDoctorBilan).toEqual(mockDetail);
+  });
+
+  it('should deselect doctor bilan', () => {
+    component.deselectDoctorBilan();
+    expect(component.selectedDoctorBilan).toBeNull();
+  });
+
+  it('should handle doctor bilans load error', () => {
+    bilanServiceSpy.getDoctorBilans.and.returnValue(throwError(() => new Error('error')));
+    component.loadDoctorBilans();
+    expect(component.loadingDoctorBilans).toBeFalse();
+  });
+
+  it('should handle select doctor bilan error', () => {
+    bilanServiceSpy.getBilanForDoctor.and.returnValue(throwError(() => new Error('error')));
+    component.selectDoctorBilan('invalid');
+    expect(component.loadingDoctorBilanDetail).toBeFalse();
+  });
+
+  it('should update review status', () => {
+    component.doctorBilans = mockBilans;
+    const updatedDetail: ScanBilanResponse = { ...mockBilans[0], reviewStatus: 'LU', format: '', laboratoire: '', resultats: [] };
+    bilanServiceSpy.updateReviewStatus.and.returnValue(of(updatedDetail));
+
+    component.selectedDoctorBilan = { id: 'uuid-1' } as any;
+    component.updateReviewStatus('uuid-1', 'LU');
+
+    expect(bilanServiceSpy.updateReviewStatus).toHaveBeenCalledWith('uuid-1', 'LU');
+  });
+
+  it('should filter bilans by search query', () => {
+    component.doctorBilanSearchQuery = 'urinaire';
+    component.applyDoctorBilanFilters();
+    expect(component.filteredDoctorBilans.length).toBe(1);
+    expect(component.filteredDoctorBilans[0].typeBilan).toBe('Bilan urinaire');
+  });
+
+  it('should sort bilans by date (recent first)', () => {
+    component.doctorBilanSortOrder = 'recent';
+    component.applyDoctorBilanFilters();
+    expect(component.filteredDoctorBilans[0].dateBilan).toBe('2026-06-15');
+  });
+
+  it('should sort bilans by date (ancien first)', () => {
+    component.doctorBilanSortOrder = 'ancien';
+    component.applyDoctorBilanFilters();
+    expect(component.filteredDoctorBilans[0].dateBilan).toBe('2026-05-10');
+  });
+
+  it('should clear selection when filtered list no longer contains it', () => {
+    component.selectedDoctorBilan = { id: 'uuid-999' } as any;
+    component.doctorBilanSearchQuery = 'nonexistent';
+    component.applyDoctorBilanFilters();
+    expect(component.selectedDoctorBilan).toBeNull();
+  });
+
+  it('should return correct review status label', () => {
+    expect(component.getDoctorReviewStatusLabel('LU')).toBe('Consulté');
+    expect(component.getDoctorReviewStatusLabel('TRAITE')).toBe('Traité');
+    expect(component.getDoctorReviewStatusLabel('EN_ATTENTE')).toBe('En attente');
+    expect(component.getDoctorReviewStatusLabel('UNKNOWN')).toBe('En attente');
+  });
+
+  it('should return correct review status class', () => {
+    expect(component.getDoctorReviewStatusClass('LU')).toBe('review-lu');
+    expect(component.getDoctorReviewStatusClass('TRAITE')).toBe('review-traite');
+    expect(component.getDoctorReviewStatusClass('EN_ATTENTE')).toBe('review-en-attente');
+  });
+
+  it('should return correct bilan status label', () => {
+    expect(component.getBilanStatusLabel('PENDING')).toBe('En attente');
+    expect(component.getBilanStatusLabel('CONFIRMED')).toBe('Confirmé');
+  });
+
+  it('should return correct bilan status class', () => {
+    expect(component.getBilanStatusClass('CONFIRMED')).toBe('status-confirmed');
+    expect(component.getBilanStatusClass('PENDING')).toBe('status-pending');
+  });
+
+  it('should return correct result status label', () => {
+    expect(component.getResultStatusLabel('NORMAL')).toBe('Normal');
+    expect(component.getResultStatusLabel('ANORMAL')).toBe('Anormal');
+    expect(component.getResultStatusLabel('CRITIQUE')).toBe('Critique');
+    expect(component.getResultStatusLabel('UNKNOWN')).toBe('N/A');
+  });
+
+  it('should return correct result status class', () => {
+    expect(component.getResultStatusClass('NORMAL')).toBe('result-normal');
+    expect(component.getResultStatusClass('ANORMAL')).toBe('result-anormal');
+    expect(component.getResultStatusClass('CRITIQUE')).toBe('result-critique');
+    expect(component.getResultStatusClass('UNKNOWN')).toBe('result-na');
   });
 });

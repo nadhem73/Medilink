@@ -3,6 +3,8 @@ import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { DoctorService, DoctorWithProfile } from '../../../core/services/doctor.service';
 import { AppointmentService, AppointmentDto, AppointmentRequest } from '../../../core/services/appointment.service';
+import { PrescriptionService, PrescriptionResponse } from '../../../core/services/prescription.service';
+import { BilanService, BilanSummary, ScanBilanResponse } from '../../../core/services/bilan.service';
 
 type PatientSectionKey = 'appointments' | 'prescriptions' | 'labs' | 'profile';
 
@@ -46,54 +48,26 @@ export class PatientSectionComponent implements OnInit {
   successMessage: string = '';
   errorMessage: string = '';
 
-  // Pre-existing mock data for other tabs
-  prescriptions = [
-    {
-      medication: 'Amlodipine 5 mg',
-      dosage: '1 comprime / jour',
-      prescriber: 'Dr. Yasmine Ben Salem',
-      renewal: 'Renouvellement dans 4 jours',
-      status: 'Actif'
-    },
-    {
-      medication: 'Vitamine D',
-      dosage: '1 capsule / soir',
-      prescriber: 'Dr. Ines Gharbi',
-      renewal: 'Valable jusqu au 28 juin',
-      status: 'Suivi'
-    },
-    {
-      medication: 'Omeprazole 20 mg',
-      dosage: 'Avant le petit-dejeuner',
-      prescriber: 'Dr. Mehdi Trabelsi',
-      renewal: 'Ordonnance recente',
-      status: 'Nouveau'
-    }
-  ];
+  prescriptions: PrescriptionResponse[] = [];
+  filteredPrescriptions: PrescriptionResponse[] = [];
+  pagedPrescriptions: PrescriptionResponse[] = [];
+  archivedPrescriptions: PrescriptionResponse[] = [];
+  loadingPrescriptions = false;
+  selectedPrescription: PrescriptionResponse | null = null;
+  showArchiveModal = false;
 
-  labResults = [
-    {
-      exam: 'Bilan lipidique',
-      lab: 'Centre de biologie El Menzah',
-      date: '08 juin 2026',
-      result: 'Disponible',
-      note: 'LDL en baisse, controle recommande dans 3 mois.'
-    },
-    {
-      exam: 'Glycemie a jeun',
-      lab: 'Laboratoire Charles Nicolle',
-      date: '06 juin 2026',
-      result: 'Disponible',
-      note: 'Valeurs dans la norme.'
-    },
-    {
-      exam: 'NFS complete',
-      lab: 'Laboratoire Pasteur',
-      date: 'Aujourd hui',
-      result: 'En attente',
-      note: 'Publication estimee avant 18:00.'
-    }
-  ];
+  prescSearchQuery = '';
+  prescSortOrder: 'recent' | 'ancien' = 'recent';
+  prescPage = 0;
+  prescPageSize = 5;
+
+  bilans: BilanSummary[] = [];
+  filteredBilans: BilanSummary[] = [];
+  bilanSearchQuery = '';
+  bilanSortOrder: 'recent' | 'ancien' = 'recent';
+  loadingBilans = false;
+  selectedBilan: ScanBilanResponse | null = null;
+  loadingBilanDetail = false;
 
   profileCards: { label: string; value: string }[] = [];
 
@@ -107,7 +81,9 @@ export class PatientSectionComponent implements OnInit {
     private route: ActivatedRoute,
     private authService: AuthService,
     private doctorService: DoctorService,
-    private appointmentService: AppointmentService
+    private appointmentService: AppointmentService,
+    private prescriptionService: PrescriptionService,
+    private bilanService: BilanService
   ) {
     this.currentUser = this.authService.getCurrentUser();
     this.profileCards = [
@@ -128,6 +104,11 @@ export class PatientSectionComponent implements OnInit {
       if (this.section === 'appointments') {
         this.loadAppointments();
         this.loadDoctors();
+      } else if (this.section === 'prescriptions') {
+        this.loadPrescriptions();
+        this.loadDoctors();
+      } else if (this.section === 'labs') {
+        this.loadBilans();
       }
     });
   }
@@ -145,6 +126,132 @@ export class PatientSectionComponent implements OnInit {
         this.loadingAppointments = false;
       }
     });
+  }
+
+  // Load prescriptions from backend
+  loadPrescriptions(): void {
+    const patientId = this.currentUser?.id;
+    if (!patientId) return;
+    this.loadingPrescriptions = true;
+    this.prescriptionService.getPrescriptionsByPatient(patientId).subscribe({
+      next: (data) => {
+        this.archivedPrescriptions = data.filter(p => p.status === 'ARCHIVEE');
+        this.prescriptions = data.filter(p => p.status !== 'ARCHIVEE');
+        this.prescPage = 0;
+        this.applyFiltersAndPagination();
+        this.loadingPrescriptions = false;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des ordonnances', err);
+        this.loadingPrescriptions = false;
+      }
+    });
+  }
+
+  selectPrescription(prescription: PrescriptionResponse): void {
+    this.selectedPrescription = prescription;
+  }
+
+  deselectPrescription(): void {
+    this.selectedPrescription = null;
+  }
+
+  archivePrescription(id: number): void {
+    if (!confirm('Archiver cette ordonnance ?')) return;
+    this.prescriptionService.updateStatus(id, 'ARCHIVEE').subscribe({
+      next: () => {
+        const archived = this.prescriptions.find(p => p.id === id);
+        if (archived) {
+          archived.status = 'ARCHIVEE';
+          this.archivedPrescriptions.unshift(archived);
+          this.prescriptions = this.prescriptions.filter(p => p.id !== id);
+        }
+        if (this.selectedPrescription?.id === id) {
+          this.selectedPrescription = null;
+        }
+      },
+      error: (err) => {
+        console.error('Erreur lors de l\'archivage', err);
+      }
+    });
+  }
+
+  applyFiltersAndPagination(): void {
+    let list = [...this.prescriptions];
+
+    if (this.prescSearchQuery.trim()) {
+      const q = this.prescSearchQuery.trim().toLowerCase();
+      list = list.filter(p =>
+        p.id.toString().includes(q) ||
+        this.getDoctorDetails(p.doctorId).name.toLowerCase().includes(q)
+      );
+    }
+
+    if (this.prescSortOrder === 'recent') {
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else {
+      list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
+
+    this.filteredPrescriptions = list;
+    this.prescPage = 0;
+    this.updatePage();
+  }
+
+  updatePage(): void {
+    const start = this.prescPage * this.prescPageSize;
+    this.pagedPrescriptions = this.filteredPrescriptions.slice(start, start + this.prescPageSize);
+  }
+
+  get prescTotalPages(): number {
+    return Math.ceil(this.filteredPrescriptions.length / this.prescPageSize) || 1;
+  }
+
+  goToPrescPage(page: number): void {
+    if (page < 0 || page >= this.prescTotalPages) return;
+    this.prescPage = page;
+    this.updatePage();
+    this.selectedPrescription = null;
+  }
+
+  openArchiveModal(): void {
+    this.showArchiveModal = true;
+  }
+
+  closeArchiveModal(): void {
+    this.showArchiveModal = false;
+  }
+
+  getPrescriptionStatusClass(status: string): string {
+    switch (status.toUpperCase()) {
+      case 'SOUMISE': return 'status-pending';
+      case 'EN_PREPARATION': return 'status-pending';
+      case 'PREPAREE': return 'status-confirmed';
+      case 'RETIREE': return 'status-confirmed';
+      case 'DISPENSEE': return 'status-confirmed';
+      case 'ANNULEE': return 'status-cancelled';
+      case 'ARCHIVEE': return 'status-archived';
+      case 'BROUILLON':
+      default: return 'status-pending';
+    }
+  }
+
+  getPrescriptionStatusLabel(status: string): string {
+    switch (status.toUpperCase()) {
+      case 'BROUILLON': return 'Brouillon';
+      case 'SOUMISE': return 'Soumise';
+      case 'EN_PREPARATION': return 'En préparation';
+      case 'PREPAREE': return 'Préparée';
+      case 'RETIREE': return 'Retirée';
+      case 'DISPENSEE': return 'Dispensée';
+      case 'ANNULEE': return 'Annulée';
+      case 'ARCHIVEE': return 'Archivée';
+      default: return status;
+    }
+  }
+
+  canArchive(status: string): boolean {
+    return status.toUpperCase() === 'DISPENSEE';
   }
 
   // Load doctors from backend
@@ -303,6 +410,98 @@ export class PatientSectionComponent implements OnInit {
         this.submitting = false;
       }
     });
+  }
+
+  // Load bilans from backend
+  loadBilans(): void {
+    this.loadingBilans = true;
+    this.selectedBilan = null;
+    this.bilanService.getBilans().subscribe({
+      next: (data) => {
+        this.bilans = data.content;
+        this.applyBilanFilters();
+        this.loadingBilans = false;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des bilans', err);
+        this.loadingBilans = false;
+      }
+    });
+  }
+
+  applyBilanFilters(): void {
+    let list = [...this.bilans];
+
+    if (this.bilanSearchQuery.trim()) {
+      const q = this.bilanSearchQuery.trim().toLowerCase();
+      list = list.filter(b =>
+        (b.typeBilan || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (this.bilanSortOrder === 'recent') {
+      list.sort((a, b) => new Date(b.dateBilan).getTime() - new Date(a.dateBilan).getTime());
+    } else {
+      list.sort((a, b) => new Date(a.dateBilan).getTime() - new Date(b.dateBilan).getTime());
+    }
+
+    this.filteredBilans = list;
+    if (this.selectedBilan && !this.filteredBilans.find(b => b.id === this.selectedBilan!.id)) {
+      this.selectedBilan = null;
+    }
+  }
+
+  selectBilan(id: string): void {
+    this.loadingBilanDetail = true;
+    this.selectedBilan = null;
+    this.bilanService.getBilan(id).subscribe({
+      next: (data) => {
+        this.selectedBilan = data;
+        this.loadingBilanDetail = false;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement du bilan', err);
+        this.loadingBilanDetail = false;
+      }
+    });
+  }
+
+  deselectBilan(): void {
+    this.selectedBilan = null;
+  }
+
+  getBilanStatusLabel(status: string): string {
+    switch (status) {
+      case 'PENDING': return 'En attente';
+      case 'CONFIRMED': return 'Confirmé';
+      default: return status;
+    }
+  }
+
+  getBilanStatusClass(status: string): string {
+    switch (status) {
+      case 'CONFIRMED': return 'status-confirmed';
+      case 'PENDING':
+      default: return 'status-pending';
+    }
+  }
+
+  getResultStatusLabel(status: string): string {
+    switch (status) {
+      case 'NORMAL': return 'Normal';
+      case 'ANORMAL': return 'Anormal';
+      case 'CRITIQUE': return 'Critique';
+      default: return 'N/A';
+    }
+  }
+
+  getResultStatusClass(status: string): string {
+    switch (status) {
+      case 'NORMAL': return 'result-normal';
+      case 'ANORMAL': return 'result-anormal';
+      case 'CRITIQUE': return 'result-critique';
+      default: return 'result-na';
+    }
   }
 
   // Helper method to resolve doctor details in appointments list

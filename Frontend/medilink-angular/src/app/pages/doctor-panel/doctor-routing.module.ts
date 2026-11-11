@@ -4,6 +4,7 @@ import { DoctorDashboardComponent } from './doctor-dashboard/doctor-dashboard.co
 import { DoctorSectionComponent } from './doctor-section/doctor-section.component';
 import { ConsultationsComponent } from './consultations/consultations.component';
 import { MedicalRecordsComponent } from './medical-records/medical-records.component';
+import { CompareDoctorComponent } from './compare-doctor/compare-doctor.component';
 import { TeleconsultationComponent } from './teleconsultation/teleconsultation.component';
 import { MessagesComponent } from './messages/messages.component';
 import { NotificationsComponent } from './notifications/notifications.component';
@@ -42,6 +43,7 @@ const routes: Routes = [
     data: { section: 'profile', title: 'Mon profil' }
   },
   { path: 'medical-records', component: MedicalRecordsComponent },
+  { path: 'compare', component: CompareDoctorComponent },
   { path: 'teleconsultation', component: TeleconsultationComponent },
   { path: 'messages', component: MessagesComponent },
   { path: 'notifications', component: NotificationsComponent },

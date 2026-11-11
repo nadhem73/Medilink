@@ -31,6 +31,11 @@ public class SecurityConfig {
                         // Liste des profils pharmacies (accessible aux utilisateurs authentifies)
                         .requestMatchers("/pharmacy-profiles/all").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        // Endpoints medicaments et stock (accessibles aux docteurs)
+                        .requestMatchers(HttpMethod.GET, "/medicaments/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/medicaments/stock-check").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/medicaments/resolve-images").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/stock/**").authenticated()
                         // Le reste (ex. /pharmacy-profiles/me) necessite un JWT valide
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -1,0 +1,33 @@
+$admin-ink: #1a1a2e;
+$admin-gold: #c9962f;
+$admin-gold-bright: #f5c451;
+$admin-muted: #5b6b85;
+$admin-line: #e6eaf2;
+$admin-surface: #ffffff;
+$admin-soft: #f7f8fb;
+$admin-bg: #f0f2f8;
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseLive {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes drawLine {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
